@@ -4,9 +4,11 @@
 
 | دسترسی سریع | لینک |
 |---|---|
+| 📱 **APK اندروید (قابل نصب)** | https://github.com/hjalilvand2004-coder/LabelVoice/releases — فایل `LabelVoice-Android-*.apk` |
 | ▶️ نسخه زنده قابل حمل (بدون نصب، روی هر دستگاهی) | https://hjalilvand2004-coder.github.io/LabelVoice/ |
 | ⬇️ دانلود ZIP نسخه قابل حمل و پروژه کامل | https://github.com/hjalilvand2004-coder/LabelVoice/releases |
 | 📱 راهنمای نسخه موبایل/قابل حمل | [mobile-app/README-MOBILE-fa.md](mobile-app/README-MOBILE-fa.md) |
+| 🤖 راهنمای نسخه اندروید | [android/README-ANDROID-fa.md](android/README-ANDROID-fa.md) |
 
 > **محدوده محصول:** این ابزار فقط می‌گوید «روی بسته چه نوشته شده است»؛ نه سامانه تشخیص دارو است، نه تجویز، نه تعیین مقدار مصرف، نه توصیه پزشکی. اطلاعات غایب از اینترنت، حافظه مدل یا شناخت نام محصول تکمیل نمی‌شود.
 

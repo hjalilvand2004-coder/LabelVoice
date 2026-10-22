@@ -19,3 +19,7 @@ Thumbs.db
 # خروجی‌های موقت
 *.log
 tmp/
+
+# خروجی و کلید build اندروید
+android/build/
+android/keystore/

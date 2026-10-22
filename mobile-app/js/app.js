@@ -508,7 +508,7 @@
   // ---------- راه‌اندازی ----------
   function init() {
     // ثبت Service Worker فقط در حالت http(s) (در file:// بی‌معناست)
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    if ('serviceWorker' in navigator && location.protocol !== 'file:' && !/\.local$/.test(location.hostname)) {
       navigator.serviceWorker.register('./sw.js').catch(function () { /* نادیده */ });
     }
 
