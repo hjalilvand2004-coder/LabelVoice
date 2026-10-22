@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d7377">
+<meta name="description" content="برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل؛ همه پردازش‌ها روی همین دستگاه انجام می‌شود.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="برچسب‌خوان">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="app-header">
+  <div class="header-row">
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="10" fill="#0d7377"/><rect x="11" y="12" width="20" height="4" rx="2" fill="#fff"/><rect x="11" y="20" width="26" height="4" rx="2" fill="#9bcdcf"/><rect x="11" y="28" width="14" height="4" rx="2" fill="#9bcdcf"/><circle cx="34" cy="34" r="7" fill="none" stroke="#fff" stroke-width="3"/><line x1="39" y1="39" x2="43" y2="43" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <div>
+      <h1>برچسب‌خوان هوشمند</h1>
+      <p class="subtitle">نسخه موبایل — خواندن متن بسته، بدون ارسال هیچ داده‌ای</p>
+    </div>
+  </div>
+  <div class="safety-banner">
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><path d="M12 2L4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    این ابزار فقط «متن روی بسته» را می‌خواند؛ توصیه پزشکی، مقدار مصرف یا تشخیص ارائه نمی‌دهد.
+  </div>
+</header>
+
+<main id="main">
+  <!-- گام ۱: ورود تصویر -->
+  <section class="card" id="input-section" aria-labelledby="input-title">
+    <h2 id="input-title">۱. تصویر برچسب را وارد کنید</h2>
+    <div class="input-buttons">
+      <label class="btn btn-primary" for="file-camera">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><path d="M4 7h3l2-2h6l2 2h3v12H4V7z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        عکس با دوربین
+      </label>
+      <input type="file" id="file-camera" accept="image/*" capture="environment" hidden>
+      <label class="btn btn-secondary" for="file-picker">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><path d="M4 5h16v14H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 15l4-4 3 3 4-5 5 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        انتخاب از گالری
+      </label>
+      <input type="file" id="file-picker" accept="image/*" hidden>
+    </div>
+    <details class="samples-box" id="samples-box" open>
+      <summary>نمونه‌های آماده برای آزمایش</summary>
+      <div class="sample-chips" id="sample-chips"></div>
+    </details>
+    <div id="preview-wrap" class="preview-wrap hidden">
+      <canvas id="preview-canvas" aria-label="پیش‌نمایش تصویر"></canvas>
+      <button type="button" class="btn btn-ghost btn-small" id="btn-clear">حذف تصویر</button>
+    </div>
+    <div id="quality-box" class="quality-box hidden" aria-live="polite"></div>
+
+    <details class="settings-box" id="settings-box">
+      <summary>تنظیمات پردازش (پیشرفته)</summary>
+      <div class="setting-row">
+        <label for="opt-lang-quality">داده زبان OCR:</label>
+        <select id="opt-lang-quality">
+          <option value="integer" selected>سریع (پیش‌فرض)</option>
+          <option value="best">دقیق‌تر (کندتر)</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label for="opt-deskew">اصلاح چرخش کم‌زاویه:</label>
+        <input type="checkbox" id="opt-deskew" checked>
+      </div>
+      <div class="setting-row">
+        <label for="opt-binarized">اجازه خوانش دوباره با نسخه دودویی (در صورت خوانش ضعیف):</label>
+        <input type="checkbox" id="opt-binarized" checked>
+      </div>
+      <p class="hint" id="mode-note"></p>
+    </details>
+
+    <button type="button" class="btn btn-primary btn-big" id="btn-analyze" disabled>
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      خواندن برچسب
+    </button>
+    <div id="progress-box" class="progress-box hidden">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <p id="progress-text" aria-live="polite">آماده…</p>
+    </div>
+    <p id="error-box" class="error-box hidden" role="alert"></p>
+  </section>
+
+  <!-- گام ۲: نتیجه -->
+  <section class="card hidden" id="result-section" aria-labelledby="result-title">
+    <h2 id="result-title">۲. پاسخ (فقط بر اساس متن روی بسته)</h2>
+    <div class="response-box">
+      <p id="response-text" dir="auto"></p>
+      <div class="response-actions">
+        <button type="button" class="btn btn-secondary" id="btn-tts">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 8.5a5 5 0 010 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          پخش صوتی پاسخ
+        </button>
+        <button type="button" class="btn btn-secondary" id="btn-copy">کپی متن</button>
+        <button type="button" class="btn btn-secondary hidden" id="btn-share">اشتراک</button>
+        <button type="button" class="btn btn-secondary" id="btn-json">دانلود JSON</button>
+      </div>
+      <p class="hint" id="tts-note">پخش صوتی روی همین دستگاه انجام می‌شود؛ هیچ داده‌ای به سرور ارسال نمی‌شود.</p>
+    </div>
+
+    <h3>فیلدهای خوانده‌شده</h3>
+    <p class="hint">هر فیلد به قطعه‌های متن خوانده‌شده (شواهد) متصل است. اگر مقداری اشتباه خوانده شده، آن را ویرایش کنید؛ مقدار قبلی حفظ می‌شود.</p>
+    <div id="fields-list"></div>
+
+    <h3>شواهد OCR (متن خام خوانده‌شده)</h3>
+    <details class="evidence-box" id="evidence-box" open>
+      <summary id="evidence-summary">نمایش شواهد</summary>
+      <ol id="evidence-list" dir="auto"></ol>
+    </details>
+
+    <h3>خروجی کامل</h3>
+    <details class="json-box">
+      <summary>مشاهده JSON کامل</summary>
+      <pre id="json-pre" dir="ltr"></pre>
+    </details>
+  </section>
+</main>
+
+<footer class="app-footer">
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۱.۰</p>
+  <p>همه پردازش‌ها (OCR، استخراج، صوت) روی همین دستگاه انجام می‌شود. این ابزار تأیید هویت یا اصالت محصول نیست.</p>
+</footer>
+
+<noscript>
+  <div style="padding:1rem;text-align:center">این برنامه به جاوااسکریپت نیاز دارد. لطفاً جاوااسکریپت مرورگر را فعال کنید.</div>
+</noscript>
+
+<script src="js/textnorm.js"></script>
+<script src="js/patterns.js"></script>
+<script src="js/guard.js"></script>
+<script src="js/extractor.js"></script>
+<script src="js/responder.js"></script>
+<script src="js/pipeline.js"></script>
+<script src="js/preprocess.js"></script>
+<script src="js/samples-data.js"></script>
+<script src="vendor/tesseract/tesseract.min.js"></script>
+<script src="js/ocr.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# موتور OCR اختیاری EasyOCR — نصب سنگین (PyTorch CPU حدود ۲۰۰ مگابایت + مدل‌ها)
+# روش نصب: pip install -r requirements-easyocr.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.1+cpu
+torchvision==0.29.1+cpu
+easyocr==1.7.2

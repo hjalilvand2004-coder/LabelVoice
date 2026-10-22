@@ -1,0 +1,16 @@
+[theme]
+base = "light"
+primaryColor = "#c2410c"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f8fafc"
+textColor = "#0f172a"
+font = "sans serif"
+
+[server]
+enableXsrfProtection = true
+maxUploadSize = 10
+# حریم خصوصی: سرویس فقط روی localhost ارائه شود (در صورت نیاز تغییر دهید)
+address = "127.0.0.1"
+
+[browser]
+gatherUsageStats = false

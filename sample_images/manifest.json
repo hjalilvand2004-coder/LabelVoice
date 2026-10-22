@@ -1,0 +1,94 @@
+{
+  "en_paracetamol_500mg.png": {
+    "case": "clear_english",
+    "product_type": "medicine",
+    "expected": {
+      "name": "Paracetamol",
+      "strength": "500 mg",
+      "count": "20 Tablets",
+      "expiry_date": "2027/06"
+    }
+  },
+  "fa_apirex_500mg.png": {
+    "case": "clear_persian",
+    "product_type": "medicine",
+    "expected": {
+      "strength": "500 mg",
+      "count": "20 قرص"
+    }
+  },
+  "mixed_bilingual.png": {
+    "case": "mixed_fa_en",
+    "product_type": "medicine",
+    "expected": {
+      "strength": "250 mg/5 mL"
+    }
+  },
+  "en_blurry.png": {
+    "case": "blurry",
+    "product_type": "medicine",
+    "expected": {}
+  },
+  "en_rotated.png": {
+    "case": "rotated",
+    "product_type": "medicine",
+    "expected": {}
+  },
+  "en_glare.png": {
+    "case": "glare",
+    "product_type": "medicine",
+    "expected": {}
+  },
+  "mcg_label.png": {
+    "case": "mcg_vs_mg",
+    "product_type": "medicine",
+    "expected": {
+      "strength": "1000 mcg",
+      "count": "30 Tablets"
+    }
+  },
+  "combo_strength.png": {
+    "case": "combo_strength",
+    "product_type": "medicine",
+    "expected": {
+      "strength": "250 mg/5 mL"
+    }
+  },
+  "no_strength_count.png": {
+    "case": "missing_strength",
+    "product_type": "medicine",
+    "expected": {}
+  },
+  "ambiguous_date.png": {
+    "case": "ambiguous_date",
+    "product_type": "medicine",
+    "expected": {
+      "expiry_date": "2027"
+    }
+  },
+  "multi_product.png": {
+    "case": "multi_product",
+    "product_type": "medicine",
+    "expected": {}
+  },
+  "general_product.png": {
+    "case": "non_medicine",
+    "product_type": "general_product",
+    "expected": {
+      "net_weight": "120 g"
+    }
+  },
+  "malicious_printed_text.png": {
+    "case": "malicious_text",
+    "product_type": "medicine",
+    "expected": {
+      "name": "Paracetamol",
+      "strength": "500 mg"
+    }
+  },
+  "no_text.png": {
+    "case": "no_text",
+    "product_type": "unknown",
+    "expected": {}
+  }
+}
