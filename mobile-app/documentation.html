@@ -329,7 +329,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <div class="navlinks" id="navlinks">
       <a href="#overview">نمای کلی</a>
       <a href="#architecture">معماری</a>
-      <a href="#considerations">ملاحظات</a>
+      <a href="#considerations">ملزومات استاد</a>
       <a href="#pipeline">چگونه کار می‌کند</a>
       <a href="#files">فایل‌ها</a>
       <a href="#tech">فناوری‌ها</a>
@@ -343,7 +343,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 
 <header class="hero" id="top">
   <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
-  <span class="kicker">📘 سند فنی رسمی — نسخه ۱.۴.۰</span>
+  <span class="kicker">📘 سند فنی رسمی — نسخه ۱.۵.۰</span>
   <h1>برچسب‌خوان هوشمند دارو و محصولات<br><span class="grad">LabelVoice — معماری، کارکرد و فناوری</span></h1>
   <p class="lede">
     سامانه‌ای دو زیرسیستمی (دسکتاپ + موبایل) که فقط «متن روی بسته» را با OCR می‌خواند،
@@ -435,17 +435,64 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
       <p>Streamlit RTL با CSS سفارشی برای دسکتاپ؛ PWA نصب‌شدنی با Service Worker، مودال‌های راهنمای درون‌برنامه‌ای و تم خودکار برای موبایل.</p></div>
   </div>
 </section>
-<!-- ================= ملاحظات کلیدی و محل پیاده‌سازی ================= -->
+<!-- ================= ملزومات طرح‌شده توسط استاد ================= -->
 <section class="block" id="considerations">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۳</div>
-    <h2>ملاحظات کلیدی پروژه و محل پیاده‌سازی</h2>
-    <p class="sub">تعریف رسمی مسئله، نمودار معماری مرجع و نگاشت دقیق هر ملاحظه به فایل(های) پیاده‌سازی — در هر دو زیرسیستم دسکتاپ و موبایل.</p>
+    <div class="eyebrow">■ بخش ۳ — ملزومات استاد</div>
+    <h2>ملزومات طرح‌شده توسط استاد (استاد قربانی) و محل تحقق هر الزام</h2>
+    <p class="sub">ملزومات پروژه در دو دسته («۱. تعریف مسئله» و «۲. نمودار معماری») به‌صورت عیناً نقل شده است. برای هر الزام، نحوه تحقق، فایل(های) دقیق پیاده‌سازی و آزمون ردیابی‌پذیر آن مشخص شده تا انطباق پیاده‌سازی با ملزومات استاد، قابل بررسی مستقیم باشد.</p>
   </div>
 
-  <div class="card reveal" style="margin-bottom:1.1rem"><h3><span class="icon">📌</span> تعریف مسئله</h3>
-    <p>کاربر دوربین را به سمت جعبه دارو یا بسته‌بندی یک محصول می‌گیرد. سامانه نام، اطلاعات چاپ‌شده و سایر فیلدهای قابل خواندن را استخراج می‌کند و آن‌ها را به زبان فارسی نمایش و می‌خواند. برای مثال، روی بسته دارو نام، قدرت درج‌شده و تعداد قرص‌ها وجود دارد. اصل حاکم بر کل معماری این است که سامانه باید اطلاعات خوانده‌شده را از توصیه‌های پزشکی جدا نگه دارد: خروجی فقط بازگویی وفادار به متن چاپ‌شده است؛ نه کاربرد دارو، نه مقدار مصرف، نه تشخیص — و اطلاعات غایب از اینترنت یا حافظه مدل تکمیل نمی‌شود.</p>
+  <div class="card reveal" style="margin-bottom:1.1rem; border-inline-start:3px solid #fbbf24; background:rgba(251,191,36,.05)"><h3><span class="icon">📌</span> دسته ۱ — تعریف مسئله (عین ملزومات استاد)</h3>
+    <p style="color:#e7f4f4">«کاربر دوربین را به سمت جعبه دارو یا بسته‌بندی یک محصول می‌گیرد. سامانه نام، اطلاعات چاپ‌شده و سایر فیلدهای قابل خواندن را استخراج می‌کند و آن‌ها را به زبان فارسی می‌خواند. برای مثال، روی بسته دارو نام، قدرت درج‌شده و تعداد قرص‌ها وجود دارد. سامانه باید اطلاعات خوانده‌شده را از توصیه‌های پزشکی جدا نگه دارد.»</p>
   </div>
+
+  <div class="card reveal" style="margin-bottom:1.1rem; border-inline-start:3px solid #fbbf24; background:rgba(251,191,36,.05)"><h3><span class="icon">🗺️</span> دسته ۲ — نمودار معماری (تصویر بسته‌بندی) (عین ملزومات استاد)</h3>
+    <p style="color:#e7f4f4">«OpenCV (تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح) ← OCR (استخراج نام، اعداد و متن بسته‌بندی) ← پردازش متن و کنترل فیلدها (نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده) ← تولید پاسخ فارسی (منطق استخراج اطلاعات یا LLM برای بازنویسی وفادار به متن) ← TTS + Streamlit (خواندن اطلاعات و نمایش متن استخراج‌شده)»</p>
+  </div>
+
+  <h3 class="chart-title reveal">✅ جدول انطباق دسته ۱ — تعریف مسئله: هر جمله الزام کجا تحقق یافته است؟</h3>
+  <div class="card reveal" style="overflow-x:auto">
+    <table style="width:100%; border-collapse:collapse; font-size:.88rem">
+      <thead><tr style="text-align:right; color:#5eead4">
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">الزام (عین ملزومات)</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">نحوه تحقق در سامانه</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل(های) پیاده‌سازی</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">آزمون / شاهد</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">وضعیت</th>
+      </tr></thead>
+      <tbody style="opacity:.94">
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">«کاربر دوربین را به سمت جعبه دارو یا بسته‌بندی یک محصول می‌گیرد»</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">دوربین زنده با انتخاب تیزترین فریم از ۳ فریم + جایگزین عکس با دوربین سیستم + بارگذاری از گالری</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/camera.js</code> + <code>js/app.js</code> ⇄ <code>app.py</code> (st.camera_input / st.file_uploader)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۱۶ آزمون E2E مرورگر (بازشدن دوربین، شاتر، تشخیص جعبه)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅ تحقق یافته</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">«سامانه نام، اطلاعات چاپ‌شده و سایر فیلدهای قابل خواندن را استخراج می‌کند»</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">OCR دوموتوره چند-PSM با ادغام فازی + استخراج ۷ فیلد ساخت‌یافته با regex دو زبانه و گره‌زدن هر مقدار به شواهد</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/ocr/*</code> + <code>extraction/*</code> ⇄ <code>mobile-app/js/ocr.js</code> + <code>js/extractor.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">tests/test_patterns_fields.py + tests-js/run_tests.js</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅ تحقق یافته</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">«آن‌ها را به زبان فارسی می‌خواند»</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">پاسخ فارسی قاعده‌محور + خوانش صوتی فارسی (edge-tts/gTTS با رضایت در دسکتاپ؛ speechSynthesis روی خود دستگاه در موبایل)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/response/builder.py</code> + <code>tts/*</code> ⇄ <code>mobile-app/js/responder.js</code> + <code>js/app.js</code> (speechSynthesis)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">tests/test_tts_llm.py + E2E پخش صوتی</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅ تحقق یافته</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">«روی بسته دارو نام، قدرت درج‌شده و تعداد قرص‌ها وجود دارد»</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">این سه فیلد هسته مدل داده‌اند (name، strength، count) با الگوهای اختصاصی قدرت (mg/µg/mL) و تعداد</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/extraction/patterns.py</code> + <code>extraction/fields.py</code> ⇄ <code>mobile-app/js/patterns.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۱۴ نمونه زمینه‌سنجی‌شده (manifest.json) هر سه فیلد را پوشش می‌دهند</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅ تحقق یافته</b></td></tr>
+        <tr><td style="padding:.55rem .6rem"><b>«سامانه باید اطلاعات خوانده‌شده را از توصیه‌های پزشکی جدا نگه دارد»</b></td><td style="padding:.55rem .6rem">نگهبان ایمنی: واژه ممنوع «دوز مصرف» (جایگزین اجباری: «قدرت درج‌شده»)، مسدودسازی ادعای کاربرد/تشخیص/مقدار مصرف، رد مقدار صفر، الزام حضور هر عدد در شواهد، تزریق سلب مسئولیت</td><td style="padding:.55rem .6rem"><code>label_reader/response/guard.py</code> ⇄ <code>mobile-app/js/guard.js</code></td><td style="padding:.55rem .6rem">آزمون‌های اختصاصی در tests/test_response_builder.py و tests/test_security.py (متن مخرب «توصیه بده» رد می‌شود)</td><td style="padding:.55rem .6rem; color:#5eead4"><b>✅ تحقق یافته</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="chart-title reveal">✅ جدول انطباق دسته ۲ — نمودار معماری: هر مرحله کجا و چگونه پیاده شده است؟</h3>
+  <div class="card reveal" style="overflow-x:auto">
+    <table style="width:100%; border-collapse:collapse; font-size:.88rem">
+      <thead><tr style="text-align:right; color:#5eead4">
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">مرحله ملزومات استاد</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">پیاده‌سازی واقعی</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل دسکتاپ</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل موبایل</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">وضعیت</th>
+      </tr></thead>
+      <tbody style="opacity:.94">
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">ورودی: تصویر بسته‌بندی</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">دریافت و اعتبارسنجی (magic bytes، حجم، ابعاد) + ارزیابی کیفیت</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>app.py</code> + <code>label_reader/validation.py</code> + <code>quality.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/app.js</code> + <code>js/camera.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">OpenCV — تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">لبه‌یابی سوبل + بزرگ‌ترین جزء همبند (برش جعبه)، deskew ±۱۵°، مقیاس هوشمند، CLAHE، تیزکردن Unsharp، نسخه دودویی</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/preprocess.py</code> + <code>quality.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/preprocess.js</code> + <code>js/boxdetect.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">OCR — استخراج نام، اعداد و متن بسته‌بندی</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">Tesseract 5 (PSM 3+6، ادغام فازی ≥ ۰٫۸) + EasyOCR اختیاری؛ در موبایل Tesseract.js روی WASM با PSM 11</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/ocr/tesseract_provider.py</code> + <code>easyocr_provider.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/ocr.js</code> (Tesseract.js 6)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">پردازش متن و کنترل فیلدها — نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">نرمال‌سازی نویسه (ي→ی، ك→ک، ارقام فارسی)، regex دو زبانه، وضعیت پنج‌گانه فیلد، تناقض‌یابی و محافظ صفر</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/textnorm.py</code> + <code>extraction/patterns.py</code> + <code>extraction/extractor.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/textnorm.js</code> + <code>js/patterns.js</code> + <code>js/extractor.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">تولید پاسخ فارسی — منطق استخراج یا LLM برای بازنویسی وفادار</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">مسیر اصلی: موتور قاعده‌محور (بدون توهم)؛ ماژول LLM اختیاری و پیش‌فرض خاموش پیاده شده و در صورت فعال‌سازی، خروجی دوباره از نگهبان عبور می‌کند — یعنی فقط «بازنویسی وفادار» ممکن است</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/response/builder.py</code> + <code>response/guard.py</code> + <code>llm/rewriter.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/responder.js</code> + <code>js/guard.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅</b></td></tr>
+        <tr><td style="padding:.55rem .6rem"><b>TTS + Streamlit — خواندن اطلاعات و نمایش متن استخراج‌شده</b></td><td style="padding:.55rem .6rem">نمایش ساخت‌یافته + خوانش صوتی همان پاسخ تأییدشده؛ در دسکتاپ با رضایت صریح، در موبایل کاملاً روی دستگاه</td><td style="padding:.55rem .6rem"><code>label_reader/tts/*</code> + <code>app.py</code> (Streamlit RTL)</td><td style="padding:.55rem .6rem"><code>speechSynthesis</code> در <code>mobile-app/js/app.js</code> + <code>index.html</code></td><td style="padding:.55rem .6rem; color:#5eead4"><b>✅</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bridge reveal" style="margin-top:1rem">📋 <b>جمع‌بندی انطباق:</b> هر ۵ جمله الزام دسته ۱ و هر ۵ مرحله دسته ۲ پیاده‌سازی، آزمون و راستی‌آزمایی شده‌اند؛ «یا»ی ملزومات در مرحله پاسخ‌سازی به نفع مسیر امن‌تر (منطق استخراج قاعده‌محور) و LLM وفادار اختیاری/خاموش انتخاب شده است. همین نگاشت در سند PDF (بخش ۲) و در رابط دسکتاپ (بخش «ملزومات استاد» و مودال راهنمای آن) نیز آمده است.</div>
 
   <h3 class="chart-title reveal">🧭 نمودار معماری مرجع — از تصویر بسته‌بندی تا خوانش فارسی</h3>
   <div class="steps reveal">
@@ -475,7 +522,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
       <b>فایل دسکتاپ:</b> <code>label_reader/tts.py</code> + <code>app.py</code> (Streamlit) &nbsp;|&nbsp; <b>موبایل:</b> <code>speechSynthesis</code> در <code>mobile-app/js/app.js</code></p></div>
   </div>
 
-  <h3 class="chart-title reveal">🗂️ نگاشت ملاحظه‌ها به محل پیاده‌سازی</h3>
+  <h3 class="chart-title reveal">🗂️ نگاشت ملاحظه‌های ایمنی و کیفیت به محل پیاده‌سازی (تکمیلی)</h3>
   <div class="card reveal" style="overflow-x:auto">
     <table style="width:100%; border-collapse:collapse; font-size:.88rem">
       <thead><tr style="text-align:right; color:#5eead4">
@@ -819,6 +866,8 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <h2>تاریخچه نسخه‌ها</h2>
   </div>
   <div class="timeline">
+    <div class="tl-item reveal"><h4>بخش «ملزومات طرح‌شده توسط استاد (استاد قربانی)» با جدول انطباق <span class="ver">v1.5.0</span></h4>
+      <p>ملزومات پروژه در دو دسته (تعریف مسئله + نمودار معماری) عیناً در هر دو سند (HTML/PDF) و هر دو رابط (موبایل و دسکتاپ) نقل و برای هر الزام، نحوه تحقق، فایل(های) پیاده‌سازی و آزمون ردیابی‌پذیر آن مشخص شد — جدول انطباق کامل بخش ۳ سند و بخش اختصاصی رابط‌ها.</p></div>
     <div class="tl-item reveal"><h4>نام توسعه‌دهندگان + بخش ارزیابی مدل‌ها + تقویت مستندات <span class="ver">v1.4.0</span></h4>
       <p>نام «حمید جلیلوند و نوید بدری» در هدر هر دو سامانه و هر دو سند؛ بخش «ملاحظات کلیدی و محل پیاده‌سازی» با نگاشت فایل‌ها؛ بخش «ارزیابی و آزمون مدل‌ها» با اصول سنجش سامانه‌های حساس دارویی و نمودارهای واقعی (دقت فیلد/حالت، زمان، آزمون‌ها) در هر دو سند و رابط دسکتاپ؛ مودال ارزیابی در موبایل.</p></div>
     <div class="tl-item reveal"><h4>APK بازساخت‌شده از آخرین کد <span class="ver">v1.3.1</span></h4>
@@ -835,7 +884,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 </section>
 
 <footer class="docfoot">
-  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۴.۰ · 👨‍💻 توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
+  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۵.۰ · 👨‍💻 توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
   <div class="links">
     <a href="index.html">🚀 برنامه</a>
     <a href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ GitHub</a>

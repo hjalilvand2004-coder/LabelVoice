@@ -438,3 +438,22 @@ body.help-open { overflow: hidden; }
   margin: 1rem 0 0; font-size: .75rem; color: var(--text-soft);
   border-top: 1px dashed var(--border); padding-top: .6rem; text-align: center;
 }
+
+/* ===== بخش ملزومات استاد (v1.5.0) ===== */
+.reqs-box {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: .7rem .9rem; margin: .6rem 0; background: var(--card);
+}
+.reqs-box > summary { font-weight: 700; color: var(--teal-dark); font-size: .88rem; }
+@media (prefers-color-scheme: dark) { .reqs-box > summary { color: var(--teal); } }
+.req-quote {
+  border-inline-start: 3px solid var(--teal); background: var(--teal-light);
+  border-radius: 8px; padding: .6rem .8rem; font-size: .84rem;
+  line-height: 1.9; margin: .6rem 0; color: var(--text);
+}
+.req-map { margin: .4rem 0 0; padding-inline-start: 1.1rem; }
+.req-map li { font-size: .8rem; color: var(--text-soft); margin: .3rem 0; line-height: 1.8; }
+.req-map code {
+  font-size: .74rem; direction: ltr; unicode-bidi: embed;
+  background: var(--teal-light); border-radius: 4px; padding: 0 .3rem;
+}

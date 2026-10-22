@@ -17,8 +17,8 @@ BT="${BUILD_TOOLS:-$HOME/android-sdk/build-tools/34.0.0}"
 AJ="${ANDROID_JAR:-$HOME/android-sdk/platforms/android-34/android.jar}"
 if [ -n "${JDK_BIN:-}" ]; then export PATH="$JDK_BIN:$PATH"; fi
 
-VERSION_NAME="${VERSION_NAME:-1.4.0}"
-VERSION_CODE="${VERSION_CODE:-7}"
+VERSION_NAME="${VERSION_NAME:-1.5.0}"
+VERSION_CODE="${VERSION_CODE:-8}"
 OUT_APK="build/LabelVoice-Android-${VERSION_NAME}.apk"
 
 command -v javac >/dev/null || { echo "خطا: javac یافت نشد (JDK_BIN را تنظیم کنید)"; exit 1; }

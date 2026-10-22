@@ -135,13 +135,44 @@
       <pre id="json-pre" dir="ltr"></pre>
     </details>
   </section>
+
+  <!-- بخش ملزومات استاد (v1.5.0) -->
+  <section class="card" id="reqs-section" aria-labelledby="reqs-title">
+    <h2 id="reqs-title">📌 ملزومات طرح‌شده توسط استاد (استاد قربانی) و محل تحقق
+      <button type="button" class="help-btn" data-help="reqs" aria-label="راهنمای ملزومات استاد و جدول انطباق">؟</button>
+    </h2>
+    <details class="reqs-box" open>
+      <summary>دسته ۱ — تعریف مسئله (عین ملزومات استاد)</summary>
+      <p class="req-quote">«کاربر دوربین را به سمت جعبه دارو یا بسته‌بندی یک محصول می‌گیرد. سامانه نام، اطلاعات چاپ‌شده و سایر فیلدهای قابل خواندن را استخراج می‌کند و آن‌ها را به زبان فارسی می‌خواند. برای مثال، روی بسته دارو نام، قدرت درج‌شده و تعداد قرص‌ها وجود دارد. سامانه باید اطلاعات خوانده‌شده را از توصیه‌های پزشکی جدا نگه دارد.»</p>
+      <ul class="req-map">
+        <li>دوربین به سمت جعبه ← <code>js/camera.js</code> (زنده + تیزترین فریم) ⇄ <code>app.py</code> (دسکتاپ) — ۱۶ آزمون E2E ✅</li>
+        <li>استخراج نام و فیلدها ← <code>js/ocr.js</code> + <code>js/extractor.js</code> ⇄ <code>label_reader/ocr/*</code> + <code>extraction/*</code> ✅</li>
+        <li>خواندن فارسی ← <code>js/responder.js</code> + speechSynthesis ⇄ <code>response/builder.py</code> + <code>tts/*</code> ✅</li>
+        <li>نام، قدرت درج‌شده، تعداد ← هسته مدل داده (name/strength/count) با ۱۴ نمونه زمینه‌سنجی‌شده ✅</li>
+        <li>جداسازی از توصیه پزشکی ← نگهبان <code>js/guard.js</code> ⇄ <code>response/guard.py</code> (ممنوع‌واژه «دوز مصرف»، رد صفر، اعداد فقط از شواهد) ✅</li>
+      </ul>
+    </details>
+    <details class="reqs-box">
+      <summary>دسته ۲ — نمودار معماری (عین ملزومات استاد) و فایل هر مرحله</summary>
+      <p class="req-quote">«OpenCV (تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح) ← OCR (استخراج نام، اعداد و متن بسته‌بندی) ← پردازش متن و کنترل فیلدها (نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده) ← تولید پاسخ فارسی (منطق استخراج اطلاعات یا LLM برای بازنویسی وفادار به متن) ← TTS + Streamlit (خواندن اطلاعات و نمایش متن استخراج‌شده)»</p>
+      <ul class="req-map">
+        <li>OpenCV ← <code>js/boxdetect.js</code> + <code>js/preprocess.js</code> ⇄ <code>label_reader/preprocess.py</code> + <code>quality.py</code> ✅</li>
+        <li>OCR ← <code>js/ocr.js</code> (Tesseract.js/WASM) ⇄ <code>label_reader/ocr/*</code> (Tesseract 5 + EasyOCR) ✅</li>
+        <li>پردازش متن و کنترل فیلدها ← <code>js/textnorm.js</code> + <code>js/patterns.js</code> ⇄ <code>textnorm.py</code> + <code>extraction/*</code> ✅</li>
+        <li>پاسخ فارسی ← <code>js/responder.js</code> + <code>js/guard.js</code> ⇄ <code>response/builder.py</code> + <code>guard.py</code> (+ <code>llm/rewriter.py</code> اختیاری/خاموش — انطباق با «یا» ملزومات) ✅</li>
+        <li>TTS + Streamlit ← speechSynthesis ⇄ <code>label_reader/tts/*</code> + <code>app.py</code> ✅</li>
+      </ul>
+    </details>
+    <p class="hint">جدول انطباق کامل (الزام ← تحقق ← فایل ← آزمون ← وضعیت): <a href="documentation.html#considerations">مستندات فنی، بخش «ملزومات استاد»</a></p>
+  </section>
 </main>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۴.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۵.۰</p>
   <p>👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
+  <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">📌 ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="eval">📊 ارزیابی و آزمون مدل‌ها</button></p>
-  <p><a href="documentation.html">📚 مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها، ارزیابی)</a></p>
+  <p><a href="documentation.html">📚 مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها، ملزومات استاد، ارزیابی)</a></p>
   <p>همه پردازش‌ها (OCR، استخراج، صوت) روی همین دستگاه انجام می‌شود. این ابزار تأیید هویت یا اصالت محصول نیست.</p>
 </footer>
 

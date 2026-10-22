@@ -203,6 +203,32 @@
         { t: 'sample_images/manifest.json', r: 'زمینه‌سنجی (ground-truth) ۱۴ نمونه با حالت‌های چالشی', c: 'std' },
         { t: 'pandas + Altair', r: 'نمودارهای بخش ارزیابی در نسخه دسکتاپ (Streamlit)', c: 'lib' }
       ]
+    },
+
+    reqs: {
+      icon: '📌',
+      title: 'ملزومات طرح‌شده توسط استاد (استاد قربانی) و محل تحقق',
+      intro: 'ملزومات پروژه در دو دسته طرح شده است: «۱. تعریف مسئله» و «۲. نمودار معماری (تصویر بسته‌بندی)». این برنامه دقیقاً بر اساس همین ملزومات ساخته شده است و برای هر الزام، نحوه تحقق و فایل پیاده‌سازی آن در همین مودال و در جدول انطباق مستندات مشخص است.',
+      points: [
+        'دسته ۱ (عین ملزومات): «کاربر دوربین را به سمت جعبه دارو یا بسته‌بندی یک محصول می‌گیرد. سامانه نام، اطلاعات چاپ‌شده و سایر فیلدهای قابل خواندن را استخراج می‌کند و آن‌ها را به زبان فارسی می‌خواند… سامانه باید اطلاعات خوانده‌شده را از توصیه‌های پزشکی جدا نگه دارد.»',
+        'دسته ۲ (عین ملزومات): «OpenCV ← OCR ← پردازش متن و کنترل فیلدها ← تولید پاسخ فارسی (منطق استخراج یا LLM بازنویسی وفادار) ← TTS + Streamlit».',
+        'دوربین به سمت جعبه: js/camera.js (getUserMedia + تیزترین فریم از ۳ فریم) ⇄ app.py (st.camera_input) — راستی‌آزمایی: ۱۶ آزمون E2E مرورگر.',
+        'OpenCV: js/boxdetect.js + js/preprocess.js ⇄ label_reader/preprocess.py + quality.py (برش جعبه، deskew، CLAHE، تیزکردن).',
+        'OCR: js/ocr.js (Tesseract.js روی WASM) ⇄ label_reader/ocr/* (Tesseract 5 + EasyOCR اختیاری).',
+        'پردازش متن و کنترل فیلدها: js/textnorm.js + js/patterns.js + js/extractor.js ⇄ textnorm.py + extraction/* (نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده).',
+        'تولید پاسخ فارسی: js/responder.js + js/guard.js ⇄ response/builder.py + response/guard.py — منطق استخراج قاعده‌محور؛ ماژول LLM (llm/rewriter.py) فقط اختیاری و پیش‌فرض خاموش است و خروجی‌اش دوباره از نگهبان عبور می‌کند (انطباق با «یا» ملزومات).',
+        'TTS + رابط: speechSynthesis روی خود دستگاه ⇄ label_reader/tts/* + app.py (Streamlit).',
+        'الزام ایمنی «جداسازی اطلاعات از توصیه پزشکی»: نگهبان ایمنی (ممنوع‌واژه «دوز مصرف»، رد مقدار صفر، الزام حضور هر عدد در شواهد، مسدودسازی ادعای کاربرد/تشخیص) — با آزمون اختصاصی.',
+        'جدول انطباق کامل: documentation.html بخش «ملزومات استاد» + سند PDF (بخش ۲) + بخش همان‌نام در رابط دسکتاپ.'
+      ],
+      tech: [
+        { t: 'getUserMedia', r: 'الزام «دوربین به سمت جعبه» — js/camera.js ⇄ app.py', c: 'api' },
+        { t: 'OpenCV / Canvas', r: 'الزام مرحله ۱ معماری — js/boxdetect.js ⇄ preprocess.py', c: 'lib' },
+        { t: 'Tesseract 5 / Tesseract.js 6', r: 'الزام مرحله ۲ معماری — ocr/* ⇄ js/ocr.js', c: 'lib' },
+        { t: 'Regex دو زبانه + Pydantic', r: 'الزام مرحله ۳ — patterns ⇄ extractor', c: 'lib' },
+        { t: 'نگهبان ایمنی (Guard)', r: 'الزام «جداسازی از توصیه پزشکی» — js/guard.js ⇄ response/guard.py', c: 'std' },
+        { t: 'edge-tts / Web Speech API', r: 'الزام مرحله ۵ — TTS + Streamlit', c: 'lib' }
+      ]
     }
   };
 
