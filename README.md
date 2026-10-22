@@ -2,12 +2,14 @@
 
 ابزار خواندن برچسب بسته‌بندی دارو و محصولات: از تصویر بسته، فقط متنِ **واقعاً قابل خواندن** را استخراج می‌کند و همان را به فارسی نمایش و می‌خواند.
 
+👨‍💻 **توسعه و طراحی: حمید جلیلوند و نوید بدری** — نسخه فعلی: **v1.4.0** (بخش «ارزیابی و آزمون مدل‌ها» با نمودار در هر دو سند و رابط دسکتاپ)
+
 | دسترسی سریع | لینک |
 |---|---|
 | 📚 **مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها) — HTML** | https://hjalilvand2004-coder.github.io/LabelVoice/documentation.html |
-| 📄 **همان سند به‌صورت PDF شکیل** | https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest — فایل `LabelVoice-v1.3.1-Documentation.pdf` |
+| 📄 **همان سند به‌صورت PDF شکیل** | https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest — فایل `LabelVoice-v1.4.0-Documentation.pdf` |
 | ▶️ نسخه زنده قابل حمل (بدون نصب، روی هر دستگاهی) | https://hjalilvand2004-coder.github.io/LabelVoice/ |
-| 📲 **APK قابل نصب اندروید (v1.3.1)** | https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest — فایل `LabelVoice-Android-1.3.1.apk` |
+| 📲 **APK قابل نصب اندروید (v1.4.0)** | https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest — فایل `LabelVoice-Android-1.4.0.apk` |
 | ⬇️ دانلود ZIP نسخه قابل حمل و پروژه کامل | https://github.com/hjalilvand2004-coder/LabelVoice/releases |
 | 📱 راهنمای نسخه موبایل/قابل حمل | [mobile-app/README-MOBILE-fa.md](mobile-app/README-MOBILE-fa.md) |
 | 🤖 راهنمای نسخه اندروید | [android/README-ANDROID-fa.md](android/README-ANDROID-fa.md) |
@@ -41,7 +43,7 @@ TTS فارسی (edge-tts با gTTS جایگزین؛ فقط با رضایت کا�
 نسخه‌ای کامل از این محصول در پوشه **`mobile-app/`** قرار دارد که **بدون پایتون، بدون پای‌چارم، بدون نصب هیچ وابستگی‌ای** روی هر سیستم و هر گوشی اجرا می‌شود — فقط یک مرورگر مدرن لازم است:
 
 - **ویندوز:** دابل‌کلیک روی `mobile-app/شروع-در-ویندوز.bat` (سرور محلی با PowerShell؛ بدون دسترسی مدیریتی) یا مستقیم `index.html` را باز کنید.
-- **موبایل (اندروید/iOS):** پوشه را روی یک میزبان HTTPS (مثل GitHub Pages) بگذارید و «افزودن به صفحه اصلی» بزنید — به‌صورت اپ (PWA) نصب و آفلاین اجرا می‌شود؛ از v1.2.0 دکمه «دوربین زنده و خواندن جعبه» دارد (getUserMedia + تشخیص خودکار جعبه) و از v1.3.0 راهنماهای مودالی با معرفی فناوری هر بخش دارد (دکمه «؟»). **اندروید ۷ به بالا؟** APK آماده را از Releases نصب کنید (`LabelVoice-Android-1.3.1.apk`).
+- **موبایل (اندروید/iOS):** پوشه را روی یک میزبان HTTPS (مثل GitHub Pages) بگذارید و «افزودن به صفحه اصلی» بزنید — به‌صورت اپ (PWA) نصب و آفلاین اجرا می‌شود؛ از v1.2.0 دکمه «دوربین زنده و خواندن جعبه» دارد (getUserMedia + تشخیص خودکار جعبه) و از v1.3.0 راهنماهای مودالی با معرفی فناوری هر بخش دارد (دکمه «؟»). **اندروید ۷ به بالا؟** APK آماده را از Releases نصب کنید (`LabelVoice-Android-1.4.0.apk`). بخش «📊 ارزیابی و آزمون مدل‌ها» در پایین رابط دسکتاپ و در مستندات (HTML/PDF) نتایج واقعی را با نمودار نشان می‌دهد.
 - **تک‌فایل قابل اشتراک:** `mobile-app/label-reader-singlefile.html` — همه چیز در یک فایل HTML.
 - کل منطق ایمنی (نگهبان، شواهد، پاسخ قالبی) عیناً از پایتون به جاوااسکریپت منتقل و با ۴۸ آزمون و تست E2E مرورگر راستی‌آزمایی شده است. جزئیات: `mobile-app/README-MOBILE-fa.md`
 

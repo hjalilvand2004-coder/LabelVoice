@@ -160,6 +160,22 @@ section.block { padding: 3.2rem 0 0; }
 .reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s ease; }
 .reveal.in { opacity: 1; transform: none; }
 
+/* --- نمودارهای میله‌ای ارزیابی (CSS خالص) --- */
+.chart-title { margin: 1.2rem 0 .6rem; font-size: 1rem; }
+.chart { display: flex; flex-direction: column; gap: .55rem; }
+.bar-row { display: grid; grid-template-columns: minmax(110px, 180px) 1fr 58px; gap: .65rem; align-items: center; }
+.bar-row .bar-label { font-size: .84rem; font-weight: 600; opacity: .94; }
+.bar-track { height: 13px; border-radius: 999px; background: rgba(148,163,184,.16); overflow: hidden; }
+.bar-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #2dd4bf, #0d9488); transition: width 1.1s cubic-bezier(.2,.7,.2,1) .1s; }
+.bar-fill.alt { background: linear-gradient(90deg, #60a5fa, #2563eb); }
+.bar-fill.warn { background: linear-gradient(90deg, #fbbf24, #d97706); }
+.bar-fill.vio { background: linear-gradient(90deg, #c084fc, #7c3aed); }
+.reveal.in .bar-fill { width: var(--w); }
+.bar-val { font-size: .78rem; font-weight: 700; color: #5eead4; text-align: left; white-space: nowrap; }
+.bar-row:nth-child(odd) .bar-val.alt { color: #93c5fd; }
+.hero .authors-line { margin-top: 1.1rem; font-size: 1.02rem; letter-spacing: .2px; }
+.hero .authors-line b { color: #5eead4; }
+
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 @media (max-width: 860px) { .grid3 { grid-template-columns: 1fr 1fr; } }
@@ -313,10 +329,12 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <div class="navlinks" id="navlinks">
       <a href="#overview">نمای کلی</a>
       <a href="#architecture">معماری</a>
+      <a href="#considerations">ملاحظات</a>
       <a href="#pipeline">چگونه کار می‌کند</a>
       <a href="#files">فایل‌ها</a>
       <a href="#tech">فناوری‌ها</a>
       <a href="#safety">ایمنی</a>
+      <a href="#evaluation">ارزیابی</a>
       <a href="#install">نصب</a>
       <a href="#history">نسخه‌ها</a>
     </div>
@@ -325,7 +343,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 
 <header class="hero" id="top">
   <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
-  <span class="kicker">📘 سند فنی رسمی — نسخه ۱.۳.۰</span>
+  <span class="kicker">📘 سند فنی رسمی — نسخه ۱.۴.۰</span>
   <h1>برچسب‌خوان هوشمند دارو و محصولات<br><span class="grad">LabelVoice — معماری، کارکرد و فناوری</span></h1>
   <p class="lede">
     سامانه‌ای دو زیرسیستمی (دسکتاپ + موبایل) که فقط «متن روی بسته» را با OCR می‌خواند،
@@ -333,6 +351,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     کاملاً روی دستگاه شما، بدون ارسال هیچ داده‌ای. این سند معماری، نحوه کارکرد،
     تک‌تک فایل‌های پروژه و همه کتابخانه‌ها و فناوری‌های به‌کاررفته را توضیح می‌دهد.
   </p>
+  <p class="authors-line">👨‍💻 توسعه و طراحی: <b>حمید جلیلوند</b> و <b>نوید بدری</b></p>
   <div class="badges">
     <span class="badge">🔒 <b>۱۰۰٪ محلی</b> بدون سرور</span>
     <span class="badge">📴 <b>آفلاین</b> پس از بار اول</span>
@@ -416,10 +435,70 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
       <p>Streamlit RTL با CSS سفارشی برای دسکتاپ؛ PWA نصب‌شدنی با Service Worker، مودال‌های راهنمای درون‌برنامه‌ای و تم خودکار برای موبایل.</p></div>
   </div>
 </section>
+<!-- ================= ملاحظات کلیدی و محل پیاده‌سازی ================= -->
+<section class="block" id="considerations">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۳</div>
+    <h2>ملاحظات کلیدی پروژه و محل پیاده‌سازی</h2>
+    <p class="sub">تعریف رسمی مسئله، نمودار معماری مرجع و نگاشت دقیق هر ملاحظه به فایل(های) پیاده‌سازی — در هر دو زیرسیستم دسکتاپ و موبایل.</p>
+  </div>
+
+  <div class="card reveal" style="margin-bottom:1.1rem"><h3><span class="icon">📌</span> تعریف مسئله</h3>
+    <p>کاربر دوربین را به سمت جعبه دارو یا بسته‌بندی یک محصول می‌گیرد. سامانه نام، اطلاعات چاپ‌شده و سایر فیلدهای قابل خواندن را استخراج می‌کند و آن‌ها را به زبان فارسی نمایش و می‌خواند. برای مثال، روی بسته دارو نام، قدرت درج‌شده و تعداد قرص‌ها وجود دارد. اصل حاکم بر کل معماری این است که سامانه باید اطلاعات خوانده‌شده را از توصیه‌های پزشکی جدا نگه دارد: خروجی فقط بازگویی وفادار به متن چاپ‌شده است؛ نه کاربرد دارو، نه مقدار مصرف، نه تشخیص — و اطلاعات غایب از اینترنت یا حافظه مدل تکمیل نمی‌شود.</p>
+  </div>
+
+  <h3 class="chart-title reveal">🧭 نمودار معماری مرجع — از تصویر بسته‌بندی تا خوانش فارسی</h3>
+  <div class="steps reveal">
+    <div class="step"><span class="n">۰</span>
+      <h4>تصویر بسته‌بندی (ورودی) <span class="chip">دوربین / فایل</span></h4>
+      <p>عکس جعبه دارو یا بسته محصول با دوربین زنده یا فایل گالری وارد می‌شود و اعتبارسنجی می‌گردد.<br>
+      <b>فایل دسکتاپ:</b> <code>app.py</code> + <code>label_reader/validation.py</code> &nbsp;|&nbsp; <b>موبایل:</b> <code>mobile-app/js/app.js</code> + <code>js/camera.js</code></p></div>
+    <div class="step"><span class="n">۱</span>
+      <h4>OpenCV — تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح <span class="chip">OpenCV / Canvas</span></h4>
+      <p>تشخیص ناحیه برچسب و جعبه (لبه‌یابی و بزرگ‌ترین جزء همبند)، صاف‌کردن چرخش، مقیاس‌گذاری، CLAHE و تیزکردن.<br>
+      <b>فایل دسکتاپ:</b> <code>label_reader/preprocess.py</code> + <code>quality.py</code> &nbsp;|&nbsp; <b>موبایل:</b> <code>mobile-app/js/preprocess.js</code> + <code>js/boxdetect.js</code></p></div>
+    <div class="step"><span class="n">۲</span>
+      <h4>OCR — استخراج نام، اعداد و متن بسته‌بندی <span class="chip">Tesseract 5 / Tesseract.js (WASM)</span></h4>
+      <p>خوانش چندنسخه‌ای و چند-PSM با ادغام فازی خوانش‌های مشابه؛ خروجی: قطعه‌های متنی با کادر و اطمینان.<br>
+      <b>فایل دسکتاپ:</b> <code>label_reader/ocr.py</code> &nbsp;|&nbsp; <b>موبایل:</b> <code>mobile-app/js/ocr.js</code></p></div>
+    <div class="step"><span class="n">۳</span>
+      <h4>پردازش متن و کنترل فیلدها <span class="chip">Regex دو زبانه + Pydantic</span></h4>
+      <p>نرمال‌سازی نام و ارقام فارسی، استخراج قدرت و تعداد درج‌شده، گره‌زدن هر مقدار به شواهد و تشخیص تناقض.<br>
+      <b>فایل دسکتاپ:</b> <code>label_reader/textnorm.py</code> + <code>extraction/patterns.py</code> + <code>extraction/extractor.py</code> &nbsp;|&nbsp; <b>موبایل:</b> <code>mobile-app/js/textnorm.js</code> + <code>js/patterns.js</code> + <code>js/extractor.js</code></p></div>
+    <div class="step"><span class="n">۴</span>
+      <h4>تولید پاسخ فارسی — وفادار به متن <span class="chip">موتور قاعده‌محور + نگهبان</span></h4>
+      <p>بازگویی وفادار به متن استخراج‌شده (بدون LLM ابری یا تکمیل از حافظه) و عبور اجباری از نگهبان ایمنی.<br>
+      <b>فایل دسکتاپ:</b> <code>label_reader/response/builder.py</code> + <code>response/guard.py</code> &nbsp;|&nbsp; <b>موبایل:</b> <code>mobile-app/js/responder.js</code> + <code>js/guard.js</code></p></div>
+    <div class="step"><span class="n">۵</span>
+      <h4>TTS + رابط کاربری — خواندن اطلاعات و نمایش متن استخراج‌شده <span class="chip">edge-tts / Web Speech API</span></h4>
+      <p>نمایش ساخت‌یافته فیلدها و خواندن همان پاسخ تأییدشده؛ در دسکتاپ با رضایت صریح، در موبایل کاملاً روی دستگاه.<br>
+      <b>فایل دسکتاپ:</b> <code>label_reader/tts.py</code> + <code>app.py</code> (Streamlit) &nbsp;|&nbsp; <b>موبایل:</b> <code>speechSynthesis</code> در <code>mobile-app/js/app.js</code></p></div>
+  </div>
+
+  <h3 class="chart-title reveal">🗂️ نگاشت ملاحظه‌ها به محل پیاده‌سازی</h3>
+  <div class="card reveal" style="overflow-x:auto">
+    <table style="width:100%; border-collapse:collapse; font-size:.88rem">
+      <thead><tr style="text-align:right; color:#5eead4">
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">ملاحظه</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">چگونه پیاده شده است</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل(ها)</th>
+      </tr></thead>
+      <tbody style="opacity:.94">
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><b>جداسازی اطلاعات از توصیه پزشکی</b></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">نگهبان پاسخ: ممنوع‌واژه‌ها (ازجمله «دوز مصرف»)، مسدودسازی ادعای کاربرد/تشخیص، سلب مسئولیت اجباری در پایان پاسخ</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/response/guard.py</code> ⇄ <code>mobile-app/js/guard.js</code> + آزمون‌ها در <code>tests/test_response_builder.py</code> و <code>tests-js/run_tests.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><b>وفاداری به شواهد (بدون توهم)</b></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">هر فیلد به شناسه قطعه‌های OCR (source_ids) گره می‌خورد و هر عدد در پاسخ باید در شواهد موجود باشد</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/extraction/extractor.py</code> + <code>response/builder.py</code> ⇄ <code>mobile-app/js/extractor.js</code> + <code>js/responder.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><b>«قدرت درج‌شده» ≠ «دوز مصرف»</b></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">واژه‌گزینی اجباری در قالب‌های پاسخ + رد قطعی واژه ممنوع در نگهبان (آزمون اختصاصی دارد)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/response/builder.py</code> + <code>response/guard.py</code> ⇄ <code>mobile-app/js/responder.js</code> + <code>js/guard.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><b>شفافیت ناخوانا/متناقض</b></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">وضعیت‌های پنج‌گانه فیلد (extracted/uncertain/missing/conflicting/user_corrected) + اصلاح دستی کاربر</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/models.py</code> + <code>ui_helpers.py</code> ⇄ <code>mobile-app/js/pipeline.js</code> + <code>js/app.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><b>ورودی امن</b></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">بررسی امضای باینری (magic bytes) PNG/JPEG/WebP، سقف حجم ۱۰MB و حداقل ابعاد</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/validation.py</code> ⇄ <code>mobile-app/js/app.js</code> (تابع اعتبارسنجی)</td></tr>
+        <tr><td style="padding:.55rem .6rem"><b>کیفیت تصویر پیش از OCR</b></td><td style="padding:.55rem .6rem">سنجش تاری (واریانس لاپلاسین)، تاریکی و انعکاس با هشدار شفاف به کاربر</td><td style="padding:.55rem .6rem"><code>label_reader/quality.py</code> ⇄ <code>mobile-app/js/app.js</code> (ارزیابی کیفیت)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
 <!-- ================= چگونه کار می‌کند ================= -->
 <section class="block" id="pipeline">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۳</div>
+    <div class="eyebrow">■ بخش ۴</div>
     <h2>چگونه کار می‌کند؟ — خط پردازش ۹ مرحله‌ای</h2>
     <p class="sub">این خط در هر دو زیرسیستم با همان ترتیب اجرا می‌شود؛ تفاوت فقط در پیاده‌سازی (OpenCV ⇄ Canvas) است، نه در قواعد. هر مرحله با فناوری واقعی‌اش مشخص شده است.</p>
   </div>
@@ -457,7 +536,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= فایل‌های سامانه ================= -->
 <section class="block" id="files">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۴</div>
+    <div class="eyebrow">■ بخش ۵</div>
     <h2>فایل‌های سامانه — مرجع کامل</h2>
     <p class="sub">تک‌تک فایل‌های مخزن به تفکیک دسته، همراه با نقش هر فایل. پوشه‌های داده حجیم (مدل‌ها، نمونه‌ها، آیکون‌ها) به‌صورت گروهی معرفی شده‌اند.</p>
   </div>
@@ -573,7 +652,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= فناوری‌ها ================= -->
 <section class="block" id="tech">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۵</div>
+    <div class="eyebrow">■ بخش ۶</div>
     <h2>کتابخانه‌ها، ابزارها و فناوری‌ها</h2>
     <p class="sub">همه چیزهایی که این سامانه روی آن ساخته شده — با نقش دقیق و محل استفاده در پروژه.</p>
   </div>
@@ -602,7 +681,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= ایمنی و حریم خصوصی ================= -->
 <section class="block" id="safety">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۶</div>
+    <div class="eyebrow">■ بخش ۷</div>
     <h2>حریم خصوصی و خطوط ایمنی</h2>
     <p class="sub">ایمنی در این پروژه ویژگی افزودنی نیست؛ ستون معماری است و با آزمون‌های اختصاصی (test_security.py و نگهبان JS) محافظت می‌شود.</p>
   </div>
@@ -618,10 +697,91 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
   </div>
 </section>
 
+<!-- ================= ارزیابی و آزمون مدل‌ها ================= -->
+<section class="block" id="evaluation">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۸</div>
+    <h2>ارزیابی و آزمون مدل‌ها — نتایج واقعی و اصول سنجش</h2>
+    <p class="sub">موضوع این سامانه دارو است و هر اشتباه می‌تواند آسیب‌زا باشد؛ بنابراین ارزیابی بر اساس اصول بنیادین و منطقی سنجش سامانه‌های حساس انجام شده است: زمینه‌سنجی برچسب‌خورده، سنجش در سطح فیلد، شمردن غیبت و تعارض به‌عنوان خطا، و هیچ عدد جعلی. همه اعداد این بخش از اجرای واقعی در محیط توسعه به‌دست آمده و با <code>scripts/evaluate.py</code> قابل بازتولید است.</p>
+  </div>
+
+  <div class="grid3 reveal" style="margin-bottom:1rem">
+    <div class="card"><h3><span class="icon">🎯</span> دقت کل فیلدها</h3>
+      <p style="font-size:2rem; font-weight:800; color:#5eead4; margin:.2rem 0">۸۵٫۷٪</p>
+      <p>۱۲ از ۱۴ فیلد با Tesseract 5 روی ۱۴ تصویر نمونه برچسب‌خورده — مطابق خط پایه منتشرشده از v1.0.0.</p></div>
+    <div class="card"><h3><span class="icon">⏱️</span> زمان پاسخ</h3>
+      <p style="font-size:2rem; font-weight:800; color:#93c5fd; margin:.2rem 0">۱٫۸۷ ثانیه</p>
+      <p>میانگین خط لوله کامل (پیش‌پردازش تا پاسخ) روی CPU معمولی؛ میانه ۱٫۸۲ و بیشینه ۲٫۸ ثانیه.</p></div>
+    <div class="card"><h3><span class="icon">🧪</span> آزمون‌های خودکار</h3>
+      <p style="font-size:2rem; font-weight:800; color:#c084fc; margin:.2rem 0">۱۳۳ پاس</p>
+      <p>۷۹ آزمون pytest دسکتاپ + ۵۴ آزمون پاریتی Node موبایل — بدون هیچ شکست در اجرای این سند.</p></div>
+  </div>
+
+  <div class="card reveal" style="margin-bottom:1rem">
+    <h3><span class="icon">📐</span> اصول ارزیابی (چرا این روش؟)</h3>
+    <p>در حوزه دارو، ارزیابی «کلی» خطرناک است؛ سنجش باید در سطح همان چیزی باشد که کاربر مصرف می‌کند — فیلدهای ساخت‌یافته. اصول به‌کاررفته:</p>
+    <p>۱) <b>زمینه‌سنجی برچسب‌خورده (ground-truth):</b> ۱۴ تصویر نمونه شامل حالت‌های چالشی (تار، انعکاس، چرخش، دوز mcg/mg، ترکیبی، تاریخ مبهم، چندمحصولی، غیردارویی، متن مخرب، بدون متن) با مقادیر واقعی در <code>sample_images/manifest.json</code> ثبت شده‌اند.<br>
+    ۲) <b>سنجش در سطح فیلد:</b> نام، قدرت درج‌شده، تعداد، تاریخ انقضا و وزن هرکدام جداگانه با تطبیق نرمال‌شده (حروف و ارقام فارسی/لاتین) سنجیده می‌شوند — نه «متن شبیه هم».<br>
+    ۳) <b>خطای ایمنی = خطا:</b> غیبت (missing) و تعارض (conflicting) هم خطا شمرده می‌شوند؛ سامانه هرگز مقدار حدسی را به‌عنوان قطعه ارائه نمی‌دهد.<br>
+    ۴) <b>نگهبان‌های ضدخطر با آزمون اختصاصی:</b> «قدرت درج‌شده» هرگز «دوز مصرف» نامیده نمی‌شود؛ مقدار صفر رد می‌شود؛ اعداد خارج از شواهد ممنوع‌اند؛ دستورهای تزریق‌شده در تصویر پالایش می‌شوند.<br>
+    ۵) <b>شفافیت محدودیت:</b> نتایج ضعیف پنهان نمی‌شوند (نمودار پایین را ببینید) و با نشان «نامطمئن» + اصلاح دستی مدیریت می‌شوند.<br>
+    ۶) <b>تکرارپذیری:</b> هر عدد این بخش با <code>python scripts/evaluate.py</code> و سابقه کامل در <code>docs/evaluation/evaluation-results.json</code> بازتولید‌پذیر است.</p>
+  </div>
+
+  <h3 class="chart-title reveal">📊 دقت به تفکیک فیلد (٪) — Tesseract 5</h3>
+  <div class="chart card reveal" style="padding:1rem 1.1rem">
+    <div class="bar-row"><span class="bar-label">نام محصول</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۲/۲)</span></div>
+    <div class="bar-row"><span class="bar-label">تاریخ انقضا</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۲/۲)</span></div>
+    <div class="bar-row"><span class="bar-label">وزن/حجم</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">قدرت درج‌شده</span><span class="bar-track"><span class="bar-fill alt" style="--w:83.3%"></span></span><span class="bar-val">۸۳٫۳٪ (۵/۶)</span></div>
+    <div class="bar-row"><span class="bar-label">تعداد/شکل</span><span class="bar-track"><span class="bar-fill warn" style="--w:66.7%"></span></span><span class="bar-val">۶۶٫۷٪ (۲/۳)</span></div>
+  </div>
+
+  <h3 class="chart-title reveal">🖼️ دقت به تفکیک حالت تصویر (٪)</h3>
+  <div class="chart card reveal" style="padding:1rem 1.1rem">
+    <div class="bar-row"><span class="bar-label">انگلیسی ساده</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">دوزبانه (فارسی/انگلیسی)</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">تفکیک mcg/mg</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۲/۲)</span></div>
+    <div class="bar-row"><span class="bar-label">قدرت ترکیبی</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">تاریخ مبهم</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">متن مخرب</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۲/۲)</span></div>
+    <div class="bar-row"><span class="bar-label">غیردارویی</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">فارسی ساده (ارقام فارسی)</span><span class="bar-track"><span class="bar-fill warn" style="--w:0%"></span></span><span class="bar-val">۰٪ (۰/۲)</span></div>
+  </div>
+
+  <h3 class="chart-title reveal">⏱️ زمان پردازش هر تصویر (میلی‌ثانیه)</h3>
+  <div class="chart card reveal" style="padding:1rem 1.1rem">
+    <div class="bar-row"><span class="bar-label">کمینه</span><span class="bar-track"><span class="bar-fill alt" style="--w:42.4%"></span></span><span class="bar-val">۱٬۱۸۹</span></div>
+    <div class="bar-row"><span class="bar-label">میانه</span><span class="bar-track"><span class="bar-fill alt" style="--w:65%"></span></span><span class="bar-val">۱٬۸۲۴</span></div>
+    <div class="bar-row"><span class="bar-label">میانگین</span><span class="bar-track"><span class="bar-fill alt" style="--w:66.8%"></span></span><span class="bar-val">۱٬۸۷۴</span></div>
+    <div class="bar-row"><span class="bar-label">بیشینه / p95</span><span class="bar-track"><span class="bar-fill alt" style="--w:100%"></span></span><span class="bar-val">۲٬۸۰۵</span></div>
+  </div>
+
+  <h3 class="chart-title reveal">🧪 آزمون‌های واحد پایتون به تفکیک ماژول (۷۹ آزمون)</h3>
+  <div class="chart card reveal" style="padding:1rem 1.1rem">
+    <div class="bar-row"><span class="bar-label">پاسخ‌ساز و نگهبان ایمنی</span><span class="bar-track"><span class="bar-fill vio" style="--w:100%"></span></span><span class="bar-val">۱۵</span></div>
+    <div class="bar-row"><span class="bar-label">الگوها و فیلدها</span><span class="bar-track"><span class="bar-fill vio" style="--w:93.3%"></span></span><span class="bar-val">۱۴</span></div>
+    <div class="bar-row"><span class="bar-label">کیفیت و اعتبارسنجی</span><span class="bar-track"><span class="bar-fill vio" style="--w:86.7%"></span></span><span class="bar-val">۱۳</span></div>
+    <div class="bar-row"><span class="bar-label">TTS و LLM</span><span class="bar-track"><span class="bar-fill vio" style="--w:86.7%"></span></span><span class="bar-val">۱۳</span></div>
+    <div class="bar-row"><span class="bar-label">یکپارچگی خط پردازش</span><span class="bar-track"><span class="bar-fill vio" style="--w:73.3%"></span></span><span class="bar-val">۱۱</span></div>
+    <div class="bar-row"><span class="bar-label">نرمال‌سازی متن</span><span class="bar-track"><span class="bar-fill vio" style="--w:53.3%"></span></span><span class="bar-val">۸</span></div>
+    <div class="bar-row"><span class="bar-label">امنیت (تزریق و مخرب)</span><span class="bar-track"><span class="bar-fill vio" style="--w:33.3%"></span></span><span class="bar-val">۵</span></div>
+  </div>
+
+  <div class="grid2 reveal" style="margin-top:1rem">
+    <div class="card redline"><h3><span class="icon">⚠️</span> یافته‌های صادقانه</h3>
+      <p><b>ارقام فارسی:</b> هر دو موتور OCR در ارقام فارسی ضعیف‌اند (حالت «فارسی ساده» ۰٪) — به همین دلیل چنین مقادیری «نامطمئن» علامت می‌خورند و اصلاح دستی ارائه می‌شود؛ هیچ مقدار حدسی به‌عنوان قطعه نمایش داده نمی‌شود.<br>
+      <b>EasyOCR:</b> در محیط اجرای این سند نصب نبود؛ انتخاب صریح آن با پیام شفاف <code>OcrUnavailableError</code> رد می‌شود — رفتار درست: شکست شفاف، نه سکوت. ارزیابی متقاطع آن به خط پایه v1.0.0 ارجاع می‌شود.<br>
+      جزئیات کامل: <code>docs/LIMITATIONS.md</code>.</p></div>
+    <div class="card"><h3><span class="icon">🔬</span> محل پیاده‌سازی و بازتولید</h3>
+      <p>سنجش خط لوله: <code>scripts/evaluate.py</code> — آزمون‌های دسکتاپ: <code>tests/</code> (۷۹) — آزمون پاریتی موبایل: <code>tests-js/run_tests.js</code> (۵۴) — نتایج JSON این اجرا: <code>docs/evaluation/evaluation-results.json</code> — نمودارهای زنده همین ارزیابی در رابط دسکتاپ (بخش «📊 ارزیابی و آزمون مدل‌ها» با pandas + Altair) و در برنامه موبایل (مودال «ارزیابی و آزمون مدل‌ها»). فناوری‌های ارزیابی: pytest، Node Test Runner، OpenCV + Tesseract 5، pandas/Altair.</p></div>
+  </div>
+</section>
+
 <!-- ================= محدودیت‌ها ================= -->
 <section class="block" id="limits">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۷</div>
+    <div class="eyebrow">■ بخش ۹</div>
     <h2>محدودیت‌های شناخته‌شده (شفافیت کامل)</h2>
   </div>
   <div class="grid2">
@@ -639,7 +799,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= نصب ================= -->
 <section class="block" id="install">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۸</div>
+    <div class="eyebrow">■ بخش ۱۰</div>
     <h2>نصب و اجرا</h2>
   </div>
   <div class="grid3">
@@ -655,10 +815,14 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= نسخه‌ها ================= -->
 <section class="block" id="history">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۹</div>
+    <div class="eyebrow">■ بخش ۱۱</div>
     <h2>تاریخچه نسخه‌ها</h2>
   </div>
   <div class="timeline">
+    <div class="tl-item reveal"><h4>نام توسعه‌دهندگان + بخش ارزیابی مدل‌ها + تقویت مستندات <span class="ver">v1.4.0</span></h4>
+      <p>نام «حمید جلیلوند و نوید بدری» در هدر هر دو سامانه و هر دو سند؛ بخش «ملاحظات کلیدی و محل پیاده‌سازی» با نگاشت فایل‌ها؛ بخش «ارزیابی و آزمون مدل‌ها» با اصول سنجش سامانه‌های حساس دارویی و نمودارهای واقعی (دقت فیلد/حالت، زمان، آزمون‌ها) در هر دو سند و رابط دسکتاپ؛ مودال ارزیابی در موبایل.</p></div>
+    <div class="tl-item reveal"><h4>APK بازساخت‌شده از آخرین کد <span class="ver">v1.3.1</span></h4>
+      <p>فایل قابل نصب اندروید (versionCode 6) از کد v1.3.0 ساخته و در Release منتشر شد — شامل دوربین زنده و مودال‌های راهنما که در APK قدیمی v1.0.2 نبود.</p></div>
     <div class="tl-item reveal"><h4>دوربین زنده، تشخیص جعبه، کیفیت بالاتر OCR و پاسخ <span class="ver">v1.2.0</span></h4>
       <p>دکمه دوربین به دوربین زنده واقعی (getUserMedia) تبدیل شد؛ تشخیص خودکار جعبه دارو، ۳ فریم و انتخاب تیزترین، PSM 11، تلاش چرخش ۹۰° و پاسخ غنی‌تر. پشتیبانی اندروید (مجوز CAMERA).</p></div>
     <div class="tl-item reveal"><h4>رفع اشکال راه‌اندازی ویندوز <span class="ver">v1.0.1</span></h4>
@@ -671,7 +835,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 </section>
 
 <footer class="docfoot">
-  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۳.۰</p>
+  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۴.۰ · 👨‍💻 توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
   <div class="links">
     <a href="index.html">🚀 برنامه</a>
     <a href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ GitHub</a>

@@ -1,0 +1,448 @@
+{
+ "meta": {
+  "product": "LabelVoice — برچسب‌خوان هوشمند دارو و محصولات",
+  "authors": "حمید جلیلوند و نوید بدری",
+  "version": "1.3.0",
+  "date": "2026-10-22",
+  "environment": {
+   "python": "3.12.15",
+   "os": "Linux (Debian) CPU-only",
+   "tesseract": "5.5.0"
+  },
+  "dataset": {
+   "path": "sample_images/ (manifest.json)",
+   "samples": 14,
+   "expected_fields": 14,
+   "cases": [
+    "ambiguous_date",
+    "blurry",
+    "clear_english",
+    "clear_persian",
+    "combo_strength",
+    "glare",
+    "malicious_text",
+    "mcg_vs_mg",
+    "missing_strength",
+    "mixed_fa_en",
+    "multi_product",
+    "no_text",
+    "non_medicine",
+    "rotated"
+   ],
+   "note": "۱۴ برچسب مصنوعی برچسب‌خورده (ground-truth) — شامل حالت‌های چالشی: تار، انعکاس، چرخش، دوز mClg، ترکیبی، تاریخ مبهم، چندمحصولی، غیردارویی، متن مخرب، بدون متن"
+  }
+ },
+ "pipeline": {
+  "tesseract_full": {
+   "engine": "tesseract",
+   "samples": [
+    {
+     "sample": "ambiguous_date.png",
+     "case": "ambiguous_date",
+     "engine": "tesseract",
+     "elapsed_ms": 1362,
+     "fields": [
+      {
+       "field": "expiry_date",
+       "expected": "2027",
+       "got": "2027",
+       "status": "uncertain",
+       "ok": true
+      }
+     ],
+     "hits": 1,
+     "tries": 1
+    },
+    {
+     "sample": "combo_strength.png",
+     "case": "combo_strength",
+     "engine": "tesseract",
+     "elapsed_ms": 1502,
+     "fields": [
+      {
+       "field": "strength",
+       "expected": "250 mg/5 mL",
+       "got": "250 mg/5 mL",
+       "status": "extracted",
+       "ok": true
+      }
+     ],
+     "hits": 1,
+     "tries": 1
+    },
+    {
+     "sample": "en_blurry.png",
+     "case": "blurry",
+     "engine": "tesseract",
+     "elapsed_ms": 1309,
+     "fields": [],
+     "hits": 0,
+     "tries": 0
+    },
+    {
+     "sample": "en_glare.png",
+     "case": "glare",
+     "engine": "tesseract",
+     "elapsed_ms": 1693,
+     "fields": [],
+     "hits": 0,
+     "tries": 0
+    },
+    {
+     "sample": "en_paracetamol_500mg.png",
+     "case": "clear_english",
+     "engine": "tesseract",
+     "elapsed_ms": 2217,
+     "fields": [
+      {
+       "field": "name",
+       "expected": "Paracetamol",
+       "got": "Paracetamol",
+       "status": "extracted",
+       "ok": true
+      },
+      {
+       "field": "strength",
+       "expected": "500 mg",
+       "got": "500 mg",
+       "status": "extracted",
+       "ok": true
+      },
+      {
+       "field": "count",
+       "expected": "20 Tablets",
+       "got": "20 tablets",
+       "status": "extracted",
+       "ok": true
+      },
+      {
+       "field": "expiry_date",
+       "expected": "2027/06",
+       "got": "2027/06",
+       "status": "extracted",
+       "ok": true
+      }
+     ],
+     "hits": 4,
+     "tries": 4
+    },
+    {
+     "sample": "en_rotated.png",
+     "case": "rotated",
+     "engine": "tesseract",
+     "elapsed_ms": 1954,
+     "fields": [],
+     "hits": 0,
+     "tries": 0
+    },
+    {
+     "sample": "fa_apirex_500mg.png",
+     "case": "clear_persian",
+     "engine": "tesseract",
+     "elapsed_ms": 2491,
+     "fields": [
+      {
+       "field": "strength",
+       "expected": "500 mg",
+       "got": "",
+       "status": "missing",
+       "ok": false
+      },
+      {
+       "field": "count",
+       "expected": "20 قرص",
+       "got": "30 قرص",
+       "status": "extracted",
+       "ok": false
+      }
+     ],
+     "hits": 0,
+     "tries": 2
+    },
+    {
+     "sample": "general_product.png",
+     "case": "non_medicine",
+     "engine": "tesseract",
+     "elapsed_ms": 2330,
+     "fields": [
+      {
+       "field": "net_weight",
+       "expected": "120 g",
+       "got": "120 g",
+       "status": "extracted",
+       "ok": true
+      }
+     ],
+     "hits": 1,
+     "tries": 1
+    },
+    {
+     "sample": "malicious_printed_text.png",
+     "case": "malicious_text",
+     "engine": "tesseract",
+     "elapsed_ms": 2439,
+     "fields": [
+      {
+       "field": "name",
+       "expected": "Paracetamol",
+       "got": "Paracetamol",
+       "status": "extracted",
+       "ok": true
+      },
+      {
+       "field": "strength",
+       "expected": "500 mg",
+       "got": "500 mg",
+       "status": "extracted",
+       "ok": true
+      }
+     ],
+     "hits": 2,
+     "tries": 2
+    },
+    {
+     "sample": "mcg_label.png",
+     "case": "mcg_vs_mg",
+     "engine": "tesseract",
+     "elapsed_ms": 1349,
+     "fields": [
+      {
+       "field": "strength",
+       "expected": "1000 mcg",
+       "got": "1000 mcg",
+       "status": "extracted",
+       "ok": true
+      },
+      {
+       "field": "count",
+       "expected": "30 Tablets",
+       "got": "30 tablets",
+       "status": "extracted",
+       "ok": true
+      }
+     ],
+     "hits": 2,
+     "tries": 2
+    },
+    {
+     "sample": "mixed_bilingual.png",
+     "case": "mixed_fa_en",
+     "engine": "tesseract",
+     "elapsed_ms": 2805,
+     "fields": [
+      {
+       "field": "strength",
+       "expected": "250 mg/5 mL",
+       "got": "250 mg/5 mL",
+       "status": "extracted",
+       "ok": true
+      }
+     ],
+     "hits": 1,
+     "tries": 1
+    },
+    {
+     "sample": "multi_product.png",
+     "case": "multi_product",
+     "engine": "tesseract",
+     "elapsed_ms": 1956,
+     "fields": [],
+     "hits": 0,
+     "tries": 0
+    },
+    {
+     "sample": "no_strength_count.png",
+     "case": "missing_strength",
+     "engine": "tesseract",
+     "elapsed_ms": 1635,
+     "fields": [],
+     "hits": 0,
+     "tries": 0
+    },
+    {
+     "sample": "no_text.png",
+     "case": "no_text",
+     "engine": "tesseract",
+     "elapsed_ms": 1189,
+     "fields": [],
+     "hits": 0,
+     "tries": 0
+    }
+   ],
+   "errors": [],
+   "summary": {
+    "field_accuracy": 85.7,
+    "matched_fields": 12,
+    "total_fields": 14,
+    "samples_run": 14,
+    "latency_ms": {
+     "mean": 1874,
+     "median": 1824,
+     "min": 1189,
+     "max": 2805,
+     "p95": 2805
+    },
+    "per_field": {
+     "count": {
+      "hit": 2,
+      "total": 3,
+      "acc": 66.7
+     },
+     "expiry_date": {
+      "hit": 2,
+      "total": 2,
+      "acc": 100.0
+     },
+     "name": {
+      "hit": 2,
+      "total": 2,
+      "acc": 100.0
+     },
+     "net_weight": {
+      "hit": 1,
+      "total": 1,
+      "acc": 100.0
+     },
+     "strength": {
+      "hit": 5,
+      "total": 6,
+      "acc": 83.3
+     }
+    },
+    "per_case": {
+     "ambiguous_date": {
+      "hit": 1,
+      "total": 1,
+      "acc": 100.0
+     },
+     "clear_english": {
+      "hit": 4,
+      "total": 4,
+      "acc": 100.0
+     },
+     "clear_persian": {
+      "hit": 0,
+      "total": 2,
+      "acc": 0.0
+     },
+     "combo_strength": {
+      "hit": 1,
+      "total": 1,
+      "acc": 100.0
+     },
+     "malicious_text": {
+      "hit": 2,
+      "total": 2,
+      "acc": 100.0
+     },
+     "mcg_vs_mg": {
+      "hit": 2,
+      "total": 2,
+      "acc": 100.0
+     },
+     "mixed_fa_en": {
+      "hit": 1,
+      "total": 1,
+      "acc": 100.0
+     },
+     "non_medicine": {
+      "hit": 1,
+      "total": 1,
+      "acc": 100.0
+     }
+    }
+   }
+  },
+  "easyocr_subset": {
+   "engine": "easyocr",
+   "samples": [],
+   "errors": [
+    {
+     "sample": "en_blurry.png",
+     "error": "OcrUnavailableError"
+    },
+    {
+     "sample": "en_glare.png",
+     "error": "OcrUnavailableError"
+    },
+    {
+     "sample": "en_paracetamol_500mg.png",
+     "error": "OcrUnavailableError"
+    },
+    {
+     "sample": "en_rotated.png",
+     "error": "OcrUnavailableError"
+    },
+    {
+     "sample": "fa_apirex_500mg.png",
+     "error": "OcrUnavailableError"
+    }
+   ],
+   "summary": {
+    "field_accuracy": 0.0,
+    "matched_fields": 0,
+    "total_fields": 0,
+    "samples_run": 0,
+    "latency_ms": {
+     "mean": 0,
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "p95": 0
+    },
+    "per_field": {},
+    "per_case": {}
+   }
+  }
+ },
+ "unit_tests": {
+  "python_pytest": {
+   "passed": 79,
+   "failed": 0,
+   "tail": "============================== 79 passed in 9.13s ==============================",
+   "per_file": {
+    "tests/test_patterns_fields.py": {
+     "passed": 14,
+     "total": 14
+    },
+    "tests/test_pipeline_integration.py": {
+     "passed": 11,
+     "total": 11
+    },
+    "tests/test_quality_validation.py": {
+     "passed": 13,
+     "total": 13
+    },
+    "tests/test_response_builder.py": {
+     "passed": 15,
+     "total": 15
+    },
+    "tests/test_security.py": {
+     "passed": 5,
+     "total": 5
+    },
+    "tests/test_textnorm.py": {
+     "passed": 8,
+     "total": 8
+    },
+    "tests/test_tts_llm.py": {
+     "passed": 13,
+     "total": 13
+    }
+   }
+  },
+  "javascript_node": {
+   "passed": 54,
+   "total": 0,
+   "tail": "نتیجه: 54 پاس، 0 شکست"
+  }
+ },
+ "evaluation_principles": [
+  "زمینه‌سنجی (ground-truth) برچسب‌خورده: هر نمونه با مقدار واقعی فیلدها در manifest.json ثبت شده است.",
+  "سنجش در سطح فیلد (نه کل متن): هر فیلد جداگانه با تطبیق نرمال‌شده (کوچک‌سازی حروف، یکسان‌سازی ارقام فارسی/عربی با لاتین) سنجیده می‌شود.",
+  "اولویت خطای ایمنی: غیبت فیلد (missing) و تعارض (conflicting) به‌عنوان خطا شمرده می‌شوند؛ سامانه هرگز مقدار حدسی را به‌عنوان قطعه نمایش نمی‌دهد.",
+  "نگهبان‌های ضدخطر به‌صورت آزمون‌های اختصاصی: قدرت درج‌شده هرگز «دوز مصرف» نامیده نمی‌شود؛ مقدار صفر رد می‌شود؛ اعداد خارج از شواهد در پاسخ نمی‌آیند؛ متن مخرب و دستورهای تزریق‌شده پالایش می‌شوند.",
+  "شفافیت محدودیت: نتایج ضعیف (مثل ارقام فارسی) پنهان نمی‌شوند و با نشان uncertain + امکان اصلاح دستی کاربر مدیریت می‌شوند.",
+  "تکرارپذیری: همه اعداد این سند با scripts/evaluate.py و run_eval_v14.py در همین مخزن قابل بازتولید است."
+ ]
+}

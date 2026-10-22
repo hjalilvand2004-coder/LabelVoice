@@ -81,6 +81,7 @@ body {
 .logo { width: 46px; height: 46px; flex-shrink: 0; }
 .app-header h1 { font-size: 1.25rem; margin: 0; }
 .subtitle { margin: .1rem 0 0; font-size: .85rem; opacity: .92; }
+.authors { margin: .15rem 0 0; font-size: .74rem; opacity: .85; font-weight: 600; letter-spacing: .2px; }
 
 .safety-banner {
   max-width: 720px; margin: .8rem auto 0;

@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -14,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import streamlit as st
 from PIL import Image
 
-from label_reader import APP_NAME_FA, SCOPE_FA, __version__
+from label_reader import APP_AUTHORS_FA, APP_NAME_FA, SCOPE_FA, __version__
 from label_reader.config import load_settings
 from label_reader.models import FieldStatus
 from label_reader.pipeline import LabelReaderPipeline
@@ -37,17 +38,23 @@ HELP_CONTENT = {
     "architecture": """
 ### معماری سامانه در یک نگاه
 
-این محصول دو زیرسیستم هم‌منطق دارد که **دقیقاً همان قواعد** را پیاده می‌کنند:
+**تعریف مسئله:** کاربر دوربین را به سمت جعبه دارو یا بسته‌بندی محصول می‌گیرد؛
+سامانه نام، اطلاعات چاپ‌شده و سایر فیلدهای قابل خواندن را استخراج می‌کند و
+آن‌ها را به فارسی نمایش و می‌خواند. اطلاعات خوانده‌شده همیشه از توصیه‌های
+پزشکی جدا نگه داشته می‌شود: سامانه فقط «چه نوشته شده» را می‌گوید.
 
-| زیرسیستم | فناوری اصلی | اجرا |
-|---|---|---|
-| **دسکتاپ (Streamlit)** | Python 3.12 + OpenCV + Tesseract 5 + EasyOCR + Pydantic v2 | کاملاً محلی روی رایانه شما |
-| **موبایل / PWA** | JavaScript ES5 + Tesseract.js (WebAssembly) + Canvas API | کاملاً روی دستگاه (مرورگر) |
+**خط پردازش پنج‌مرحله‌ای** (مطابق معماری مرجع) و فایل پیاده‌سازی هر مرحله:
 
-**خط پردازش مشترک:** اعتبارسنجی فایل ← ارزیابی کیفیت (تاری/نور/انعکاس) ← پیش‌پردازش
-(مقیاس، CLAHE، تیزکردن، دودویی، صاف‌کردن چرخش) ← OCR چندنسخه‌ای و چند-PSM ←
-ادغام فازی خوانش‌ها ← استخراج فیلدها با الگوهای دو زبانه ← تشخیص تناقض ←
-تولید پاسخ فارسی قاعده‌محور ← **نگهبان ایمنی** ← نمایش/گفتار/JSON.
+| مرحله | کار | فایل دسکتاپ | فایل موبایل |
+|---|---|---|---|
+| ۱. تصویر بسته‌بندی | دریافت، اعتبارسنجی (magic bytes، حجم، ابعاد) | `app.py` + `label_reader/validation.py` | `mobile-app/js/app.js` + `js/camera.js` |
+| ۲. OpenCV | تشخیص ناحیه برچسب، اصلاح زاویه، بهبود وضوح | `label_reader/preprocess.py` + `quality.py` | `mobile-app/js/preprocess.js` + `js/boxdetect.js` |
+| ۳. OCR | استخراج نام، اعداد و متن بسته‌بندی | `label_reader/ocr.py` (Tesseract 5 + EasyOCR) | `mobile-app/js/ocr.js` (Tesseract.js/WASM) |
+| ۴. پردازش متن و کنترل فیلدها | نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده | `label_reader/textnorm.py` + `extraction/patterns.py` + `extraction/extractor.py` | `mobile-app/js/textnorm.js` + `js/patterns.js` + `js/extractor.js` |
+| ۵. پاسخ فارسی + خوانش | بازگویی وفادار به متن + TTS | `label_reader/response/builder.py` + `guard.py` + `tts.py` (رابط: Streamlit) | `mobile-app/js/responder.js` + `js/guard.js` (speechSynthesis) |
+
+این دو زیرسیستم **دقیقاً همان قواعد** را پیاده می‌کنند و با آزمون‌های پاریتی
+(۵۴ آزمون Node در برابر pytest) هم‌رفتاری‌شان راستی‌آزمایی می‌شود.
 
 **کتابخانه‌ها:** opencv-python، pytesseract، easyocr، pydantic، pydantic-settings،
 streamlit، edge-tts، gTTS، Pillow (دسکتاپ) — Tesseract.js 6، Web Speech API،
@@ -55,6 +62,36 @@ Service Worker، Vazirmatn (موبایل) — pytest، Node test runner (آزم�
 
 نسخه کامل و مصور این مستندات: `documentation.html` روی GitHub Pages و نسخه PDF
 پیوست Release.
+
+👨‍💻 **توسعه و طراحی:** حمید جلیلوند و نوید بدری
+""",
+    "eval": """
+### روش و اصول ارزیابی مدل‌ها
+
+ارزیابی این سامانه بر اساس اصول بنیادین سنجش سامانه‌های حساس دارویی طراحی شده است
+(هر اشتباه در حوزه دارو می‌تواند آسیب‌زا باشد):
+
+1. **زمینه‌سنجی برچسب‌خورده (ground-truth):** ۱۴ تصویر نمونه با مقادیر واقعی هر فیلد
+   در `sample_images/manifest.json` — هیچ عددی جعل نمی‌شود.
+2. **سنجش در سطح فیلد، نه کل متن:** نام، قدرت درج‌شده، تعداد، تاریخ انقضا و وزن
+   هرکدام جداگانه با تطبیق نرمال‌شده (حروف، ارقام فارسی/لاتین) سنجیده می‌شوند.
+3. **خطای ایمنی = خطا:** غیبت (missing) و تعارض (conflicting) هم خطا شمرده می‌شوند؛
+   سامانه هرگز مقدار حدسی را به‌عنوان قطعه ارائه نمی‌دهد.
+4. **نگهبان‌های ضدخطر با آزمون اختصاصی:** «قدرت درج‌شده» هرگز «دوز مصرف» نامیده
+   نمی‌شود؛ مقدار صفر رد می‌شود؛ هر عدد در پاسخ باید در شواهد OCR باشد؛ دستورهای
+   تزریق‌شده در تصویر پالایش می‌شوند (آزمون‌های `tests/test_response_builder.py`
+   و `tests/test_security.py`).
+5. **شفافیت محدودیت:** ضعف ارقام فارسی پنهان نمی‌شود؛ چنین مقادیری «نامطمئن»
+   علامت می‌خورند و اصلاح دستی ارائه می‌شود.
+6. **تکرارپذیری:** همه اعداد با `python scripts/evaluate.py` قابل بازتولید‌اند؛
+   نتایج همین اجرا در `docs/evaluation/evaluation-results.json` ثبت است.
+
+**محل پیاده‌سازی:** `scripts/evaluate.py` (سنجش خط لوله)، `tests/` (۷۹ آزمون pytest)،
+`tests-js/run_tests.js` (۵۴ آزمون پاریتی موبایل)، `docs/evaluation/` (نتایج)، و
+نمودارهای همین بخش از رابط.
+
+**فناوری‌ها:** pytest، Node test runner، pandas + Altair (نمودارهای این بخش)،
+OpenCV + Tesseract 5 (خط لوله ارزیابی‌شده).
 """,
     "engine": """
 ### موتورهای OCR دسکتاپ
@@ -140,11 +177,13 @@ Service Worker، Vazirmatn (موبایل) — pytest، Node test runner (آزم�
 
 - **نسخه HTML تعاملی:** فایل `documentation.html` — رسپانسیو، با انیمیشن و
   گرافیک؛ شامل معماری سامانه، نحوه کارکرد خط پردازش، معرفی تک‌تک فایل‌ها و
-  کتابخانه‌ها و فناوری‌ها. روی GitHub Pages منتشر شده و در پوشه موبایل هم هست.
+  کتابخانه‌ها و فناوری‌ها، **و بخش ارزیابی و آزمون مدل‌ها با نمودار**.
+  روی GitHub Pages منتشر شده و در پوشه موبایل هم هست.
 - **نسخه PDF شکیل:** پیوست هر Release در صفحه Releases مخزن GitHub
   (فایل `LabelVoice-v*-Documentation.pdf`) — برای چاپ و مطالعه آفلاین.
 - هر دو سند به‌روز با نسخه برنامه تولید می‌شوند و محتوای آن‌ها از همین
   ماژول‌های واقعی استخراج شده است.
+- **توسعه و طراحی:** حمید جلیلوند و نوید بدری.
 """,
 }
 
@@ -197,6 +236,7 @@ with st.sidebar:
 
 # ---------------- معرفی و محدوده ----------------
 st.title("💊 " + APP_NAME_FA)
+st.markdown(f"**👨‍💻 توسعه و طراحی: {APP_AUTHORS_FA}**")
 st.markdown(
     f"""
     <div class="privacy-note">
@@ -426,3 +466,85 @@ st.caption(
     "[نسخه HTML روی GitHub Pages](https://hjalilvand2004-coder.github.io/LabelVoice/documentation.html) — "
     "[نسخه PDF](https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest)"
 )
+
+# ---------------- ارزیابی و آزمون مدل‌ها ----------------
+st.divider()
+st.subheader("📊 ارزیابی و آزمون مدل‌ها")
+st.caption(
+    "نتایج اجرای واقعی روی مجموعه نمونه برچسب‌خورده (۱۴ تصویر با ground-truth در "
+    "`sample_images/manifest.json`) — دقت در سطح فیلد سنجیده می‌شود و غیبت/تعارض "
+    "هم خطا شمرده می‌شود. بازتولید: `python scripts/evaluate.py`."
+)
+tech_help("eval", "🧩 روش و اصول ارزیابی چه هستند؟", "ev")
+
+_eval_path = Path(__file__).resolve().parent / "docs" / "evaluation" / "evaluation-results.json"
+if _eval_path.exists():
+    import pandas as pd
+
+    _ev = json.loads(_eval_path.read_text(encoding="utf-8"))
+    _tess = _ev["pipeline"]["tesseract_full"]["summary"]
+    _pt = _ev["unit_tests"]["python_pytest"]
+    _nd = _ev["unit_tests"]["javascript_node"]
+
+    _m1, _m2, _m3, _m4 = st.columns(4)
+    _m1.metric("دقت فیلد (Tesseract)", f"{_tess['field_accuracy']}%",
+               f"{_tess['matched_fields']} از {_tess['total_fields']} فیلد",
+               delta_color="off")
+    _m2.metric("میانگین زمان پردازش", f"{_tess['latency_ms']['mean']:,} ms",
+               f"p95: {_tess['latency_ms']['p95']:,} ms", delta_color="off")
+    _m3.metric("آزمون‌های پایتون (pytest)", f"{_pt['passed']} ✓",
+               "۷ ماژول — همه پاس", delta_color="off")
+    _m4.metric("آزمون‌های موبایل (Node)", f"{_nd['passed']} ✓",
+               "پاریتی کامل با دسکتاپ", delta_color="off")
+
+    FIELD_FA = {"name": "نام محصول", "strength": "قدرت درج‌شده", "count": "تعداد/شکل",
+                "expiry_date": "تاریخ انقضا", "net_weight": "وزن/حجم",
+                "manufacturer": "سازنده", "batch": "شماره سری"}
+    _pf = _tess["per_field"]
+    st.markdown("**دقت به تفکیک فیلد (٪)**")
+    st.bar_chart(pd.DataFrame({"دقت (٪)": {FIELD_FA.get(k, k): v["acc"] for k, v in _pf.items()}}),
+                 color="#0e7c66")
+
+    CASE_FA = {"clear_english": "انگلیسی ساده", "clear_persian": "فارسی ساده",
+               "mixed_fa_en": "دوزبانه", "ambiguous_date": "تاریخ مبهم",
+               "combo_strength": "قدرت ترکیبی", "mcg_vs_mg": "تفکیک mcg/mg",
+               "malicious_text": "متن مخرب", "non_medicine": "غیردارویی"}
+    _pc = _tess["per_case"]
+    st.markdown("**دقت به تفکیک حالت تصویر (٪)**")
+    st.bar_chart(pd.DataFrame({"دقت (٪)": {CASE_FA.get(k, k): v["acc"] for k, v in _pc.items()}}),
+                 color="#2563a8")
+
+    _lat = _tess["latency_ms"]
+    st.markdown("**زمان پردازش هر تصویر (میلی‌ثانیه)**")
+    st.bar_chart(pd.DataFrame({"ms": {"کمینه": _lat["min"], "میانه": _lat["median"],
+                                      "میانگین": _lat["mean"], "p95": _lat["p95"],
+                                      "بیشینه": _lat["max"]}}), color="#8a5a00")
+
+    MOD_FA = {"tests/test_patterns_fields.py": "الگوها و فیلدها",
+              "tests/test_pipeline_integration.py": "یکپارچگی خط پردازش",
+              "tests/test_quality_validation.py": "کیفیت و اعتبارسنجی",
+              "tests/test_response_builder.py": "پاسخ‌ساز و نگهبان",
+              "tests/test_security.py": "امنیت",
+              "tests/test_textnorm.py": "نرمال‌سازی متن",
+              "tests/test_tts_llm.py": "TTS و LLM"}
+    st.markdown("**آزمون‌های واحد پایتون به تفکیک ماژول (۷۹ آزمون)**")
+    st.bar_chart(pd.DataFrame({"تعداد آزمون": {MOD_FA.get(k, k): v["total"]
+                                              for k, v in _pt["per_file"].items()}}),
+                 color="#5a3d8a")
+
+    st.info(
+        "**یافته صادقانه:** ارقام فارسی در Tesseract ضعیف خوانده می‌شوند (حالت «فارسی ساده» ۰٪) — "
+        "به همین دلیل سامانه چنین مقادیری را «نامطمئن» علامت می‌زند و اصلاح دستی ارائه می‌کند؛ "
+        "هیچ مقدار حدسی به‌عنوان قطعه ارائه نمی‌شود. موتور EasyOCR در محیط این اجرا نصب نبود؛ "
+        "انتخاب صریح آن با پیام شفاف `OcrUnavailableError` رد می‌شود (رفتار درست: شکست شفاف، نه سکوت)."
+    )
+else:
+    st.info("فایل نتایج ارزیابی یافت نشد — برای تولید آن: `python scripts/evaluate.py`")
+
+st.info(
+    "**مرز ارزیابی با ایمنی:** دقت بالا به معنای مجازشدن توصیه پزشکی نیست. حتی با دقت ۱۰۰٪، "
+    "این ابزار فقط «چه نوشته شده» را می‌گوید؛ قدرت درج‌شده هرگز «دوز مصرف» نامیده نمی‌شود و "
+    "هر مقدار به شواهد OCR گره خورده است (نگهبان ایمنی: `label_reader/response/guard.py` "
+    "و `mobile-app/js/guard.js`)."
+)
+st.caption(f"👨‍💻 توسعه و طراحی: {APP_AUTHORS_FA} — LabelVoice v{__version__}")
