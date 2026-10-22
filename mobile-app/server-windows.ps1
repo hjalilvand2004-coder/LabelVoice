@@ -1,11 +1,24 @@
-# راه‌انداز بدون پایتون برای ویندوز — سرور HTTP محلی خیلی سبک با PowerShell
-# (TcpListener؛ به هیچ نصب یا دسترسی مدیریتی نیاز ندارد)
-# استفاده: دابل‌کلیک روی «شروع-در-ویندوز.bat»
+# ============================================================
+#  LabelVoice - Smart Label Reader (Portable) - Windows launcher
+#  Lightweight local HTTP server built on TcpListener.
+#  No Python, no PyQt, no installation, no admin rights.
+#
+#  Start:  double-click "START-WINDOWS.bat"
+#  Stop :  close this console window (or press Ctrl+C)
+#
+#  NOTE: console messages are English ON PURPOSE.
+#  Windows PowerShell 5.1 parses .ps1 files WITHOUT a BOM using the
+#  legacy ANSI code page, so non-ASCII text breaks the parser.
+#  A pure-ASCII script runs on every Windows, in every language.
+#  (The web app itself is fully Persian / RTL.)
+# ============================================================
+
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$root = $PSScriptRoot
+if (-not $root) { $root = Split-Path -Parent $MyInvocation.MyCommand.Path }
 Set-Location $root
 
-# یافتن پورت آزاد
+# ---- find a free port in 8765..8775 ------------------------
 $port = $null
 foreach ($p in 8765..8775) {
   $c = $null
@@ -15,7 +28,7 @@ foreach ($p in 8765..8775) {
     $c.Close()
   } catch { $port = $p; break } finally { if ($c) { $c.Dispose() } }
 }
-if (-not $port) { Write-Host 'هیچ پورت آزادی یافت نشد.'; exit 1 }
+if (-not $port) { Write-Host 'No free port found (8765..8775).'; exit 1 }
 
 $mime = @{
   '.html' = 'text/html; charset=utf-8'
@@ -37,8 +50,12 @@ $mime = @{
 
 $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, $port)
 $listener.Start()
-Write-Host ("برچسب‌خوان موبایل روی http://127.0.0.1:{0}/ در حال اجراست — برای بستن، این پنجره را ببندید." -f $port)
-Start-Process ("http://127.0.0.1:{0}/" -f $port)
+Write-Host '============================================'
+Write-Host (' LabelVoice is running:  http://127.0.0.1:{0}/' -f $port)
+Write-Host ' Keep this window OPEN while using the app.'
+Write-Host ' Closing this window stops the server.'
+Write-Host '============================================'
+Start-Process ('http://127.0.0.1:{0}/' -f $port)
 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 while ($true) {
@@ -66,7 +83,7 @@ while ($true) {
       $client.Close(); continue
     }
 
-    # مسیر بدون query و بدون پیمایش دایرکتوری
+    # strip query string; block directory traversal
     $path = [Uri]::UnescapeDataString(($rawPath -split '\?')[0]) -replace '/', '\'
     if ($path -eq '\' -or $path -eq '') { $path = '\index.html' }
     $full = [IO.Path]::GetFullPath((Join-Path $root $path.TrimStart('\')))
@@ -91,8 +108,9 @@ while ($true) {
       $stream.Write($body, 0, $body.Length)
     }
   } catch {
-    Write-Host ("خطای پردازش درخواست: {0}" -f $_.Exception.Message)
+    Write-Host ('Request error: {0}' -f $_.Exception.Message)
   } finally {
     $client.Close()
   }
 }
+
