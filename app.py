@@ -32,6 +32,140 @@ inject_rtl(st)
 settings = load_settings()
 pipeline = LabelReaderPipeline(settings)
 
+# ---------------- فرم‌های مودال راهنما (فناوری هر بخش) ----------------
+HELP_CONTENT = {
+    "architecture": """
+### معماری سامانه در یک نگاه
+
+این محصول دو زیرسیستم هم‌منطق دارد که **دقیقاً همان قواعد** را پیاده می‌کنند:
+
+| زیرسیستم | فناوری اصلی | اجرا |
+|---|---|---|
+| **دسکتاپ (Streamlit)** | Python 3.12 + OpenCV + Tesseract 5 + EasyOCR + Pydantic v2 | کاملاً محلی روی رایانه شما |
+| **موبایل / PWA** | JavaScript ES5 + Tesseract.js (WebAssembly) + Canvas API | کاملاً روی دستگاه (مرورگر) |
+
+**خط پردازش مشترک:** اعتبارسنجی فایل ← ارزیابی کیفیت (تاری/نور/انعکاس) ← پیش‌پردازش
+(مقیاس، CLAHE، تیزکردن، دودویی، صاف‌کردن چرخش) ← OCR چندنسخه‌ای و چند-PSM ←
+ادغام فازی خوانش‌ها ← استخراج فیلدها با الگوهای دو زبانه ← تشخیص تناقض ←
+تولید پاسخ فارسی قاعده‌محور ← **نگهبان ایمنی** ← نمایش/گفتار/JSON.
+
+**کتابخانه‌ها:** opencv-python، pytesseract، easyocr، pydantic، pydantic-settings،
+streamlit، edge-tts، gTTS، Pillow (دسکتاپ) — Tesseract.js 6، Web Speech API،
+Service Worker، Vazirmatn (موبایل) — pytest، Node test runner (آزمون).
+
+نسخه کامل و مصور این مستندات: `documentation.html` روی GitHub Pages و نسخه PDF
+پیوست Release.
+""",
+    "engine": """
+### موتورهای OCR دسکتاپ
+
+- **Tesseract 5 (LSTM)** با دو بسته زبان `fas+eng` و دو حالت چیدمان (PSM 3 و 6)؛
+  خوانش‌های مشابه با شباهت فازی ≥ ۰٫۸ ادغام می‌شوند تا تکرار حذف شود.
+  کتابخانه اتصال: `pytesseract`.
+- **EasyOCR** مدل عمیق (PyTorch) با زبان‌های fa+en؛ به‌صورت lazy بارگیری می‌شود و
+  برای تصاویر سخت‌تر به‌کار می‌رود (نصب سنگین‌تر — اختیاری).
+- حالت `auto` انتخاب موتور بر اساس دسترس‌پذیری است.
+
+هر دو موتور روی **همان رایانه شما** اجرا می‌شوند و هیچ تصویری جایی ارسال نمی‌شود.
+""",
+    "input": """
+### فناوری ورود تصویر
+
+- **بارگذاری فایل:** کامپوننت `st.file_uploader` در Streamlit؛ فایل با Pillow
+  (`PIL.Image.open`) باز و به RGB تبدیل می‌شود.
+- **دوربین:** `st.camera_input` (عکس ثابت از وب‌کم).
+- **اعتبارسنجی:** بررسی امضای باینری (magic bytes) برای PNG/JPEG، سقف حجم و
+  ابعاد، و رد فایل‌های غیرتصویری — پیاده‌شده در `label_reader/validation.py`.
+- برای تصاویر چندمحصولی می‌توانید قبل از خواندن، ناحیه برچسب را دستی برش بزنید.
+""",
+    "preprocess": """
+### فناوری پیش‌پردازش و OCR (OpenCV)
+
+مراحل روی تصویر شما (`label_reader/preprocess.py` و `quality.py`):
+
+1. **ارزیابی کیفیت:** تاری با واریانس لاپلاسین، تاریکی با میانگین روشنایی،
+   انعکاس با نسبت پیکسل‌های خیلی روشن (هیوریستیک پس‌زمینه‌آگاه).
+2. **مقیاس‌گذاری هوشمند:** رساندن کوتاه‌ترین ضلع به ~۱۲۰۰ پیکسل.
+3. **CLAHE** (تقویت کنتراست محیطی) + حذف نویز + تیزکردن.
+4. **صاف‌کردن چرخش کم‌زاویه** (تا ±۱۵ درجه) با پروفایل سطرها.
+5. **سه نسخه خروجی:** اصلی، تقویت‌شده، دودویی — همه به OCR داده می‌شوند.
+6. **OCR چندگذری:** PSM 3 و 6 (و در نسخه موبایل PSM 11 پراکنده) + ادغام فازی.
+""",
+    "fields": """
+### استخراج فیلدها و مدل داده
+
+- فیلدها: نام محصول، قدرت درج‌شده، شکل دارویی، حجم/وزن، تاریخ انقضا، شماره سری،
+  سازنده — با **regex دو زبانه** فارسی/انگلیسی (`extraction/patterns.py`).
+- مدل‌ها با **Pydantic v2** تعریف شده‌اند؛ هر فیلد وضعیت دارد:
+  `extracted / uncertain / missing / conflicting / user_corrected`.
+- هر مقدار به شناسه قطعه‌های OCR (شواهد) گره خورده است (`source_ids`) —
+  یعنی می‌توانید ببینید هر عدد از کدام سطر تصویر آمده است.
+- **تشخیص تناقض:** اگر دو مقدار متفاوت برای یک فیلد خوانده شود، به‌جای انتخاب
+  خاموش یکی، وضعیت «متناقض» اعلام می‌شود.
+""",
+    "response": """
+### تولید پاسخ فارسی و نگهبان ایمنی
+
+- پاسخ از **قالب‌های قاعده‌محور** ساخته می‌شود (`response/builder.py`) — بدون
+  هیچ مدل زبانی ابری؛ نرمال‌سازی نویسه (ي→ی، ك→ک، ارقام فارسی) در `textnorm.py`.
+- **نگهبان ایمنی** (`response/guard.py`) پاسخ را پیش از نمایش بازبینی می‌کند:
+  - واژه‌های ممنوع (مانند «دوز مصرف» به‌جای «قدرت درج‌شده») رد می‌شوند؛
+  - هر عدد داخل پاسخ باید در شواهد OCR موجود باشد؛
+  - ادعای کاربرد، تشخیص یا توصیه پزشکی مسدود است.
+- نتیجه: پاسخ فقط «روی بسته چه نوشته شده» را می‌گوید — نه بیشتر.
+""",
+    "tts": """
+### فناوری تبدیل متن به گفتار
+
+- موتور اصلی: **edge-tts** (صداهای عصبی فارسی FaridNeural / DilaraNeural) —
+  این موتور ابری است؛ بنابراین فقط با رضایت صریح شما فعال می‌شود.
+- جایگزین: **gTTS** (Google Translate TTS) در صورت در دسترس نبودن edge-tts.
+- متن پاسخ قبل از ارسال با `response/tts_prep.py` برای تلفظ آماده می‌شود
+  (اعداد و علائم)، و **دقیقاً همان پاسخ تأییدشده** خوانده می‌شود.
+- صدا روی سرور شما ساخته می‌شود و فقط در حافظه همین نشست می‌ماند.
+""",
+    "json": """
+### ساختار خروجی JSON
+
+خروجی شامل: `ocr_pieces` (قطعه‌ها با کادر و اطمینان)، `raw_lines` (سطرهای خام)،
+`fields` (مقادیر + وضعیت + شواهد + تاریخچه)، `quality_issues` و `quality_metrics`،
+`response_fa` و `metadata` (مدت‌زمان هر مرحله، نسخه‌های استفاده‌شده، برش/چرخش).
+
+این ساختار در نسخه دسکتاپ و موبایل **یکسان** است تا آزمون‌های رگرسیون و
+گزارش‌گیری روی هر دو یک شکل کار کنند. فایل با `result.to_json_bytes()` ساخته
+می‌شود و فقط با کلیک شما دانلود می‌گردد.
+""",
+    "docs": """
+### مستندات فنی کامل پروژه
+
+- **نسخه HTML تعاملی:** فایل `documentation.html` — رسپانسیو، با انیمیشن و
+  گرافیک؛ شامل معماری سامانه، نحوه کارکرد خط پردازش، معرفی تک‌تک فایل‌ها و
+  کتابخانه‌ها و فناوری‌ها. روی GitHub Pages منتشر شده و در پوشه موبایل هم هست.
+- **نسخه PDF شکیل:** پیوست هر Release در صفحه Releases مخزن GitHub
+  (فایل `LabelVoice-v*-Documentation.pdf`) — برای چاپ و مطالعه آفلاین.
+- هر دو سند به‌روز با نسخه برنامه تولید می‌شوند و محتوای آن‌ها از همین
+  ماژول‌های واقعی استخراج شده است.
+""",
+}
+
+
+try:
+    @st.dialog("🧩 فناوری‌ها، ابزارها و کتابخانه‌های این بخش", width="large")
+    def show_help(key: str):
+        st.markdown(HELP_CONTENT.get(key, "—"), unsafe_allow_html=False)
+except TypeError:
+    @st.dialog("🧩 فناوری‌ها، ابزارها و کتابخانه‌های این بخش")
+    def show_help(key: str):
+        st.markdown(HELP_CONTENT.get(key, "—"), unsafe_allow_html=False)
+
+
+def tech_help(key: str, label: str = "🧩 فناوری و ابزارهای این بخش",
+              suffix: str = ""):
+    """دکمه کوچک راهنما که فرم مودال فناوری همان بخش را باز می‌کند."""
+    if st.button(label, key=f"help_{key}{suffix}",
+                 use_container_width=True):
+        show_help(key)
+
 
 def get_state(key, default=None):
     return st.session_state.get(key, default)
@@ -49,6 +183,7 @@ with st.sidebar:
     )
     voice = st.selectbox("صدای فارسی (edge-tts)", ["fa-IR-FaridNeural", "fa-IR-DilaraNeural"])
     rate = st.select_slider("سرعت خوانش", ["-15%", "-5%", "+0%", "+10%", "+20%"], value="+0%")
+    tech_help("engine", "🧩 موتورهای OCR چه هستند؟", "sb")
 
     st.divider()
     st.subheader("🔒 حریم خصوصی")
@@ -73,10 +208,13 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+tech_help("architecture", "🧩 معماری، فناوری‌ها و کتابخانه‌های سامانه (راهنمای مودال)")
+tech_help("docs", "📚 مستندات فنی کامل (HTML/PDF)")
 
 # ---------------- دریافت تصویر ----------------
 source = st.radio("روش دریافت تصویر", ["بارگذاری فایل", "عکس با دوربین"],
                   horizontal=True)
+tech_help("input", "🧩 فناوری ورود تصویر و اعتبارسنجی", "in")
 uploaded = None
 if source == "بارگذاری فایل":
     uploaded = st.file_uploader("تصویر بسته‌بندی (JPG / PNG)",
@@ -176,6 +314,7 @@ if result is not None:
         with st.expander("🧹 متن نرمال‌شده (فقط اصلاح نویسه: ي→ی، ك→ک، یکسان‌سازی فاصله)"):
             st.code("\n".join(line.text for line in result.raw_lines) or "—",
                     direction="rtl" if hasattr(st, "code") else None)
+        tech_help("preprocess", "🧩 فناوری پیش‌پردازش و OCR (OpenCV / Tesseract)", "pp")
 
     with right_col:
         st.subheader("📋 فیلدهای ساختاریافته")
@@ -188,11 +327,13 @@ if result is not None:
         st.markdown(f"**نوع بسته تشخیص‌داده‌شده:** "
                     f"{PRODUCT_TYPE_FA.get(result.product_type.value, result.product_type.value)}")
         st.caption(result.product_type_note_fa)
+        tech_help("fields", "🧩 فناوری استخراج فیلدها (Pydantic + الگوها)", "fd")
 
     # پاسخ فارسی
     st.subheader("🗣️ پاسخ فارسی")
     st.markdown(f'<div class="big-answer">{result.response_fa}</div>',
                 unsafe_allow_html=True)
+    tech_help("response", "🧩 فناوری تولید پاسخ و نگهبان ایمنی", "rs")
 
     # اصلاح دستی
     with st.expander("✏️ اصلاح دستی فیلدها و بازتولید پاسخ"):
@@ -226,6 +367,7 @@ if result is not None:
 
     # صوت
     st.subheader("🔊 پخش صوتی فارسی")
+    tech_help("tts", "🧩 فناوری تبدیل متن به گفتار (edge-tts / gTTS)", "tt")
     tts_provider = make_tts_provider(settings.tts_provider)
     _, tts_note = tts_provider.available()
     consent = st.checkbox(
@@ -266,6 +408,7 @@ if result is not None:
 
     # خروجی JSON
     st.divider()
+    tech_help("json", "🧩 ساختار خروجی JSON چیست؟", "js")
     st.download_button(
         "🧾 دریافت خروجی JSON کامل (فیلدها + شواهد + فراداده)",
         data=result.to_json_bytes(),
@@ -277,4 +420,9 @@ st.divider()
 st.caption(
     "⚠️ این محصول ابزار خواندن برچسب است؛ نه سامانه تشخیص دارو، تجویز یا توصیه "
     "پزشکی. اطلاعات ناخوانا یا متناقض به‌صورت شفاف اعلام می‌شوند."
+)
+st.caption(
+    "📚 مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها): "
+    "[نسخه HTML روی GitHub Pages](https://hjalilvand2004-coder.github.io/LabelVoice/documentation.html) — "
+    "[نسخه PDF](https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest)"
 )

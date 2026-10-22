@@ -22,6 +22,7 @@
       <h1>برچسب‌خوان هوشمند</h1>
       <p class="subtitle">نسخه موبایل — خواندن متن بسته، بدون ارسال هیچ داده‌ای</p>
     </div>
+    <button type="button" class="help-btn header-help" data-help="about" aria-label="درباره برنامه و فناوری‌ها">؟</button>
   </div>
   <div class="safety-banner">
     <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><path d="M12 2L4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -32,7 +33,9 @@
 <main id="main">
   <!-- گام ۱: ورود تصویر -->
   <section class="card" id="input-section" aria-labelledby="input-title">
-    <h2 id="input-title">۱. تصویر برچسب را وارد کنید</h2>
+    <h2 id="input-title">۱. تصویر برچسب را وارد کنید
+      <button type="button" class="help-btn" data-help="input" aria-label="راهنمای ورود تصویر و دوربین زنده">؟</button>
+    </h2>
     <div class="input-buttons">
       <button type="button" class="btn btn-primary btn-big" id="btn-camera-live">
         <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><path d="M4 7h3l2-2h6l2 2h3v12H4V7z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
@@ -57,9 +60,10 @@
       <button type="button" class="btn btn-ghost btn-small" id="btn-clear">حذف تصویر</button>
     </div>
     <div id="quality-box" class="quality-box hidden" aria-live="polite"></div>
+    <button type="button" class="btn btn-ghost btn-small" data-help="quality">کیفیت تصویر چطور سنجیده می‌شود؟</button>
 
     <details class="settings-box" id="settings-box">
-      <summary>تنظیمات پردازش (پیشرفته)</summary>
+      <summary>تنظیمات پردازش (پیشرفته) <button type="button" class="help-btn link-help" data-help="settings">فناوری این تنظیمات</button></summary>
       <div class="setting-row">
         <label for="opt-lang-quality">داده زبان OCR:</label>
         <select id="opt-lang-quality">
@@ -82,6 +86,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       خواندن برچسب
     </button>
+    <button type="button" class="btn btn-ghost btn-small" data-help="analyze">این دکمه دقیقاً چه مراحلی را اجرا می‌کند؟</button>
     <div id="progress-box" class="progress-box hidden">
       <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
       <p id="progress-text" aria-live="polite">آماده…</p>
@@ -91,7 +96,9 @@
 
   <!-- گام ۲: نتیجه -->
   <section class="card hidden" id="result-section" aria-labelledby="result-title">
-    <h2 id="result-title">۲. پاسخ (فقط بر اساس متن روی بسته)</h2>
+    <h2 id="result-title">۲. پاسخ (فقط بر اساس متن روی بسته)
+      <button type="button" class="help-btn" data-help="result" aria-label="راهنمای تولید پاسخ و نگهبان ایمنی">؟</button>
+    </h2>
     <p id="pipeline-note" class="pipeline-note hidden"></p>
     <div class="response-box">
       <p id="response-text" dir="auto"></p>
@@ -103,11 +110,15 @@
         <button type="button" class="btn btn-secondary" id="btn-copy">کپی متن</button>
         <button type="button" class="btn btn-secondary hidden" id="btn-share">اشتراک</button>
         <button type="button" class="btn btn-secondary" id="btn-json">دانلود JSON</button>
+        <button type="button" class="btn btn-ghost btn-small" data-help="tts">فناوری پخش صوتی</button>
+        <button type="button" class="btn btn-ghost btn-small" data-help="json">فناوری خروجی JSON</button>
       </div>
       <p class="hint" id="tts-note">پخش صوتی روی همین دستگاه انجام می‌شود؛ هیچ داده‌ای به سرور ارسال نمی‌شود.</p>
     </div>
 
-    <h3>فیلدهای خوانده‌شده</h3>
+    <h3>فیلدهای خوانده‌شده
+      <button type="button" class="help-btn" data-help="fields" aria-label="راهنمای فیلدها و شواهد">؟</button>
+    </h3>
     <p class="hint">هر فیلد به قطعه‌های متن خوانده‌شده (شواهد) متصل است. اگر مقداری اشتباه خوانده شده، آن را ویرایش کنید؛ مقدار قبلی حفظ می‌شود.</p>
     <div id="fields-list"></div>
 
@@ -126,7 +137,8 @@
 </main>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۲.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۳.۰</p>
+  <p><a href="documentation.html">📚 مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها)</a></p>
   <p>همه پردازش‌ها (OCR، استخراج، صوت) روی همین دستگاه انجام می‌شود. این ابزار تأیید هویت یا اصالت محصول نیست.</p>
 </footer>
 
@@ -175,6 +187,7 @@
 <script src="vendor/tesseract/tesseract.min.js"></script>
 <script src="js/ocr.js"></script>
 <script src="js/camera.js"></script>
+<script src="js/help.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

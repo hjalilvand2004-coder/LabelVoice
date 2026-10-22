@@ -337,6 +337,121 @@ summary { cursor: pointer; font-size: .9rem; color: var(--text-soft); font-weigh
 }
 .camera-fallback p { margin: 0 0 .5rem; }
 
+/* ---------- راهنمای درون‌برنامه‌ای (v1.3.0) ---------- */
+.help-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; margin-inline-start: .45rem;
+  border-radius: 50%; border: 1.5px solid var(--teal);
+  background: var(--teal-light); color: var(--teal-dark);
+  font-family: inherit; font-weight: 700; font-size: .95rem;
+  cursor: pointer; vertical-align: middle; padding: 0; flex-shrink: 0;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.help-btn:hover { transform: scale(1.08); box-shadow: 0 0 0 4px var(--teal-light); }
+.help-btn:active { transform: scale(.94); }
+@media (prefers-color-scheme: dark) { .help-btn { color: var(--teal); } }
+.help-btn.header-help {
+  width: 42px; height: 42px; font-size: 1.15rem;
+  border-color: #ffffffaa; background: rgba(255, 255, 255, .16); color: #fff;
+  margin-inline-start: auto;
+}
+.help-btn.link-help { width: auto; height: auto; border-radius: 10px; padding: .25rem .7rem; font-size: .82rem; }
+
+/* اورلی مودال */
+.help-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(7, 30, 31, .62);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: helpFade .22s ease;
+}
+@media (min-width: 560px) {
+  .help-overlay { align-items: center; padding: 2rem; }
+}
+@keyframes helpFade { from { opacity: 0; } to { opacity: 1; } }
+
+.help-modal {
+  width: 100%; max-width: 560px; max-height: 88vh;
+  background: var(--card); color: var(--text);
+  border-radius: 20px 20px 0 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, .35);
+  animation: helpPop .28s cubic-bezier(.2, .9, .3, 1.2);
+}
+@media (min-width: 560px) {
+  .help-modal { border-radius: 20px; max-height: 84vh; }
+}
+@keyframes helpPop {
+  from { transform: translateY(34px) scale(.97); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+body.help-open { overflow: hidden; }
+
+.help-modal-head {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .9rem 1rem;
+  background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+  color: #fff; flex-shrink: 0;
+}
+.help-modal-icon { font-size: 1.5rem; line-height: 1; }
+.help-modal-title { margin: 0; font-size: 1rem; flex: 1; }
+.help-close {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid rgba(255, 255, 255, .55); background: rgba(0, 0, 0, .18);
+  color: #fff; font-size: 1rem; cursor: pointer;
+}
+.help-close:active { transform: scale(.92); }
+
+.help-modal-body { padding: 1rem; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.help-intro { margin: 0 0 .9rem; font-size: .93rem; line-height: 2; }
+.help-sec-title {
+  margin: 0 0 .5rem; font-size: .88rem; font-weight: 700; color: var(--teal-dark);
+  display: flex; align-items: center; gap: .4rem;
+}
+@media (prefers-color-scheme: dark) { .help-sec-title { color: var(--teal); } }
+.help-sec-title::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: var(--teal); display: inline-block; }
+.help-points {
+  margin: 0 0 1rem; padding: 0; list-style: none;
+}
+.help-points li {
+  position: relative; padding: .3rem 1.25rem .3rem 0; font-size: .88rem; line-height: 1.95;
+}
+.help-points li::before {
+  content: ''; position: absolute; right: 0; top: .8rem;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--teal-light); border: 2px solid var(--teal);
+}
+
+.help-tech { display: flex; flex-wrap: wrap; gap: .45rem; }
+.tech-chip {
+  display: inline-flex; align-items: center; gap: .4rem;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--gray-bg); padding: .28rem .7rem;
+  font-size: .8rem; line-height: 1.6;
+  animation: chipIn .3s ease backwards;
+}
+.tech-chip:nth-child(1) { animation-delay: .04s; }
+.tech-chip:nth-child(2) { animation-delay: .08s; }
+.tech-chip:nth-child(3) { animation-delay: .12s; }
+.tech-chip:nth-child(4) { animation-delay: .16s; }
+.tech-chip:nth-child(5) { animation-delay: .2s; }
+.tech-chip:nth-child(6) { animation-delay: .24s; }
+@keyframes chipIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.tech-chip i {
+  width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+}
+.tech-engine i { background: #0d9488; }
+.tech-api i { background: #7c3aed; }
+.tech-lib i { background: #d97706; }
+.tech-std i { background: #2563eb; }
+.tech-chip b { font-weight: 700; }
+.tech-chip small { color: var(--text-soft); font-size: .74rem; }
+.help-cat-note { font-size: .75rem; color: var(--text-soft); margin: .55rem 0 0; }
+.help-foot {
+  margin: 1rem 0 0; font-size: .75rem; color: var(--text-soft);
+  border-top: 1px dashed var(--border); padding-top: .6rem; text-align: center;
+}
+
 </style>
 </head>
 <body>
@@ -347,6 +462,7 @@ summary { cursor: pointer; font-size: .9rem; color: var(--text-soft); font-weigh
       <h1>برچسب‌خوان هوشمند</h1>
       <p class="subtitle">نسخه موبایل — خواندن متن بسته، بدون ارسال هیچ داده‌ای</p>
     </div>
+    <button type="button" class="help-btn header-help" data-help="about" aria-label="درباره برنامه و فناوری‌ها">؟</button>
   </div>
   <div class="safety-banner">
     <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><path d="M12 2L4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -357,7 +473,9 @@ summary { cursor: pointer; font-size: .9rem; color: var(--text-soft); font-weigh
 <main id="main">
   <!-- گام ۱: ورود تصویر -->
   <section class="card" id="input-section" aria-labelledby="input-title">
-    <h2 id="input-title">۱. تصویر برچسب را وارد کنید</h2>
+    <h2 id="input-title">۱. تصویر برچسب را وارد کنید
+      <button type="button" class="help-btn" data-help="input" aria-label="راهنمای ورود تصویر و دوربین زنده">؟</button>
+    </h2>
     <div class="input-buttons">
       <button type="button" class="btn btn-primary btn-big" id="btn-camera-live">
         <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><path d="M4 7h3l2-2h6l2 2h3v12H4V7z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
@@ -382,9 +500,10 @@ summary { cursor: pointer; font-size: .9rem; color: var(--text-soft); font-weigh
       <button type="button" class="btn btn-ghost btn-small" id="btn-clear">حذف تصویر</button>
     </div>
     <div id="quality-box" class="quality-box hidden" aria-live="polite"></div>
+    <button type="button" class="btn btn-ghost btn-small" data-help="quality">کیفیت تصویر چطور سنجیده می‌شود؟</button>
 
     <details class="settings-box" id="settings-box">
-      <summary>تنظیمات پردازش (پیشرفته)</summary>
+      <summary>تنظیمات پردازش (پیشرفته) <button type="button" class="help-btn link-help" data-help="settings">فناوری این تنظیمات</button></summary>
       <div class="setting-row">
         <label for="opt-lang-quality">داده زبان OCR:</label>
         <select id="opt-lang-quality">
@@ -407,6 +526,7 @@ summary { cursor: pointer; font-size: .9rem; color: var(--text-soft); font-weigh
       <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       خواندن برچسب
     </button>
+    <button type="button" class="btn btn-ghost btn-small" data-help="analyze">این دکمه دقیقاً چه مراحلی را اجرا می‌کند؟</button>
     <div id="progress-box" class="progress-box hidden">
       <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
       <p id="progress-text" aria-live="polite">آماده…</p>
@@ -416,7 +536,9 @@ summary { cursor: pointer; font-size: .9rem; color: var(--text-soft); font-weigh
 
   <!-- گام ۲: نتیجه -->
   <section class="card hidden" id="result-section" aria-labelledby="result-title">
-    <h2 id="result-title">۲. پاسخ (فقط بر اساس متن روی بسته)</h2>
+    <h2 id="result-title">۲. پاسخ (فقط بر اساس متن روی بسته)
+      <button type="button" class="help-btn" data-help="result" aria-label="راهنمای تولید پاسخ و نگهبان ایمنی">؟</button>
+    </h2>
     <p id="pipeline-note" class="pipeline-note hidden"></p>
     <div class="response-box">
       <p id="response-text" dir="auto"></p>
@@ -428,11 +550,15 @@ summary { cursor: pointer; font-size: .9rem; color: var(--text-soft); font-weigh
         <button type="button" class="btn btn-secondary" id="btn-copy">کپی متن</button>
         <button type="button" class="btn btn-secondary hidden" id="btn-share">اشتراک</button>
         <button type="button" class="btn btn-secondary" id="btn-json">دانلود JSON</button>
+        <button type="button" class="btn btn-ghost btn-small" data-help="tts">فناوری پخش صوتی</button>
+        <button type="button" class="btn btn-ghost btn-small" data-help="json">فناوری خروجی JSON</button>
       </div>
       <p class="hint" id="tts-note">پخش صوتی روی همین دستگاه انجام می‌شود؛ هیچ داده‌ای به سرور ارسال نمی‌شود.</p>
     </div>
 
-    <h3>فیلدهای خوانده‌شده</h3>
+    <h3>فیلدهای خوانده‌شده
+      <button type="button" class="help-btn" data-help="fields" aria-label="راهنمای فیلدها و شواهد">؟</button>
+    </h3>
     <p class="hint">هر فیلد به قطعه‌های متن خوانده‌شده (شواهد) متصل است. اگر مقداری اشتباه خوانده شده، آن را ویرایش کنید؛ مقدار قبلی حفظ می‌شود.</p>
     <div id="fields-list"></div>
 
@@ -451,7 +577,8 @@ summary { cursor: pointer; font-size: .9rem; color: var(--text-soft); font-weigh
 </main>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۲.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۳.۰</p>
+  <p><a href="documentation.html">📚 مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها)</a></p>
   <p>همه پردازش‌ها (OCR، استخراج، صوت) روی همین دستگاه انجام می‌شود. این ابزار تأیید هویت یا اصالت محصول نیست.</p>
 </footer>
 
@@ -3265,6 +3392,304 @@ window.LBR_SAMPLES = [
     current: function () { return _session; }
   };
 })(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* راهنمای درون‌برنامه‌ای برچسب‌خوان موبایل (v1.3.0)
+ * فرم‌های مودال جذاب + معرفی فناوری/ابزار/کتابخانه هر بخش
+ * محتوای کاملاً ثابت — هیچ داده‌ای از این صفحه ارسال نمی‌شود.
+ */
+(function () {
+  'use strict';
+
+  /* دسته‌بندی رنگ چیپ فناوری: engine / api / lib / std */
+  var CAT_FA = {
+    engine: 'موتور پردازش',
+    api: 'استاندارد وب (API)',
+    lib: 'کتابخانه',
+    std: 'زیرساخت برنامه'
+  };
+
+  var HELP = {
+    about: {
+      icon: '💊',
+      title: 'درباره برچسب‌خوان هوشمند (LabelVoice)',
+      intro: 'این برنامه فقط «متن روی بسته» دارو و محصولات را می‌خواند و همان متن را به‌صورت پاسخ فارسی مرتب و گفتاری برمی‌گرداند. هیچ توصیه پزشکی، مقدار مصرف یا تشخیصی ارائه نمی‌دهد و هیچ داده‌ای از دستگاه شما خارج نمی‌شود.',
+      points: [
+        'همه پردازش‌ها (OCR، استخراج، صوت) روی همین دستگاه انجام می‌شود — بدون سرور.',
+        'به‌صورت PWA قابل نصب است (افزودن به صفحه اصلی) و پس از بار اول کاملاً آفلاین کار می‌کند.',
+        'پاسخ فقط از روی شواهد OCR ساخته می‌شود؛ اطلاعات غایب از اینترنت یا حافظه تکمیل نمی‌شود.',
+        '«قدرت درج‌شده» فقط به‌معنای عدد روی بسته است، نه دوز مصرف.'
+      ],
+      tech: [
+        { t: 'PWA (Web App Manifest)', r: 'قابل نصب بودن به‌صورت اپ روی گوشی', c: 'std' },
+        { t: 'Service Worker (cache-first)', r: 'اجرای آفلاین پس از بار اول', c: 'std' },
+        { t: 'Tesseract.js 6 (WebAssembly)', r: 'موتور OCR درون مرورگر', c: 'engine' },
+        { t: 'Web Speech API', r: 'پخش صوتی پاسخ روی دستگاه', c: 'api' },
+        { t: 'HTML5 + CSS3 + JavaScript (ES5/IIFE)', r: 'بدون هیچ چارچوب سنگین؛ سازگار با مرورگرهای قدیمی‌تر', c: 'std' },
+        { t: 'فونت وزیرمتن (Vazirmatn)', r: 'فونت محلی فارسی — آفلاین', c: 'lib' }
+      ]
+    },
+
+    input: {
+      icon: '📷',
+      title: 'ورود تصویر و دوربین زنده',
+      intro: 'دکمه «دوربین زنده و خواندن جعبه» پیش‌نمایش زنده دوربین پشتی را باز می‌کند؛ شما جعبه دارو را در کادر راهنما قرار می‌دهید و برنامه در لحظه شاتر می‌زند، تیزترین فریم را انتخاب می‌کند، خودش جعبه را پیدا و برش می‌زند و مستقیم وارد خط خواندن می‌شود.',
+      points: [
+        'دوربین زنده با استاندارد getUserMedia (دوربین پشتی — environment) باز می‌شود؛ دیگر گالری باز نمی‌شود.',
+        '۳ فریم پشت‌سرهم ثبت می‌شود و تیزترین فریم با «واریانس لاپلاسین» انتخاب می‌شود.',
+        'ناحیه جعبه دارو به‌صورت خودکار تشخیص و از پس‌زمینه برش داده می‌شود (کاهش نویز OCR).',
+        'اگر مرورگر دوربین زنده نداشت، محترمانه به «عکس با دوربین سیستم» برمی‌گردید.',
+        'فایل گالری/دوربین سیستم: بررسی امضای باینری (magic bytes) PNG/JPEG/WebP + سقف حجم ۱۰ مگابایت.'
+      ],
+      tech: [
+        { t: 'MediaDevices.getUserMedia', r: 'استاندارد W3C برای دوربین زنده', c: 'api' },
+        { t: 'Canvas API (2D Context)', r: 'ثبت فریم، برش و تبدیل‌های تصویری', c: 'api' },
+        { t: 'واریانس لاپلاسین (Laplacian)', r: 'سنجه تیزی تصویر برای انتخاب بهترین فریم', c: 'engine' },
+        { t: 'سوبل + اتساع مورفولوژیک', r: 'تشخیص ناحیه جعبه دارو (بزرگ‌ترین جزء همبند)', c: 'engine' },
+        { t: 'FileReader + ArrayBuffer', r: 'اعتبارسنجی magic bytes فایل تصویر', c: 'api' }
+      ]
+    },
+
+    quality: {
+      icon: '🩺',
+      title: 'ارزیابی کیفیت تصویر',
+      intro: 'پیش از خواندن، تصویر از نظر تاری، تاریکی و انعکاس نور سنجیده می‌شود تا اگر کیفیت پایین است، شما بدانید و در صورت نیاز عکس بهتری بگیرید.',
+      points: [
+        'تاری: واریانس لاپلاسین (آستانه‌های هشدار و هشدار شدید).',
+        'نور: میانگین روشنایی خاکستری (تشخیص تصویر تاریک).',
+        'انعکاس: نسبت پیکسل‌های خیلی روشن (گلَر روی بسته).',
+        'نتیجه به‌صورت چیپ رنگی (سبز/زرد/قرمز) نمایش داده می‌شود.'
+      ],
+      tech: [
+        { t: 'Canvas getImageData', r: 'خواندن پیکسل‌ها برای محاسبات آماری', c: 'api' },
+        { t: 'پردازش تصویر عددی (بدون کتابخانه)', r: 'لاپلاسین، میانگین، هیستوگرام — همان معادل OpenCV در دسکتاپ', c: 'engine' }
+      ]
+    },
+
+    settings: {
+      icon: '⚙️',
+      title: 'تنظیمات پردازش (پیشرفته)',
+      intro: 'این تنظیمات خط پیش‌پردازش را کنترل می‌کنند؛ پیش‌فرض‌ها برای اکثر برچسب‌ها بهینه‌اند.',
+      points: [
+        'داده زبان: «سریع» مدل integer و «دقیق‌تر» مدل best است — دقیق‌تر اما کندتر.',
+        'اصلاح چرخش کم‌زاویه: با پروفایل فرکانس سطرها، انحراف جزئی عکس صاف می‌شود.',
+        'خوانش دوباره با نسخه دودویی: اگر خوانش ضعیف بود، نسخه سیاه‌وسفید هم امتحان می‌شود.',
+        'در حالت file:// موتور OCR از CDN بارگیری می‌شود؛ با لانچر (شروع) همه‌چیز محلی است.'
+      ],
+      tech: [
+        { t: 'Tesseract traineddata (fas+eng)', r: 'دو کیفیت: integer (سریع) و tessdata_best (دقیق)', c: 'engine' },
+        { t: 'Unsharp Mask', r: 'تیزکردن لبه‌ها پیش از OCR', c: 'engine' },
+        { t: 'آستانه‌گذاری دودویی (Otsu)', r: 'نسخه سیاه‌وسفید برای خوانش مجدد', c: 'engine' },
+        { t: 'Deskew با پروفایل سطرها', r: 'اصلاح چرخش تا ±۱۵ درجه', c: 'engine' }
+      ]
+    },
+
+    analyze: {
+      icon: '🔍',
+      title: 'خط لوله خواندن برچسب',
+      intro: 'دکمه «خواندن برچسب» کل خط پردازش را اجرا می‌کند: مقیاس‌گذاری، تشخیص جعبه، کیفیت، OCR چندنسخه‌ای، ادغام هوشمند خوانش‌ها و در نهایت استخراج و پاسخ.',
+      points: [
+        'مقیاس هوشمند: کوتاه‌ترین ضلع به ۱۲۰۰ پیکسل می‌رسد (برای دقت بهتر OCR).',
+        'تشخیص جعبه: سوبل + آستانه درصدی + اتساع + بزرگ‌ترین جزء همبند → برش خودکار.',
+        'OCR با چند نسخه تصویر (اصلی، تیزشده، دودویی) و دو حالت چیدمان (PSM 3 و 6) اجرا می‌شود.',
+        'خوانش‌های مشابه با «شباهت فازی ≥ ۰٫۸» ادغام می‌شوند (معادل difflib در پایتون).',
+        'اگر بازده خوانش کم بود، چرخش ۹۰ درجه ساعتگرد و پادساعتگرد هم به‌طور خودکار آزموده می‌شود.'
+      ],
+      tech: [
+        { t: 'Tesseract.js 6 (LSTM در WebAssembly)', r: 'موتور OCR اصلی — همان Tesseract دسکتاپ در مرورگر', c: 'engine' },
+        { t: 'user_defined_dpi + PSM 3/6/11', r: 'پارامترهای دقت و چیدمان متن', c: 'engine' },
+        { t: 'ادغام فازی (شباهت ترتیبی ≥ ۰٫۸)', r: 'حذف تکرارها و انتخاب بهترین خوانش', c: 'engine' },
+        { t: 'Web Worker', r: 'اجرای OCR در پس‌زمینه بدون فریز شدن رابط', c: 'api' }
+      ]
+    },
+
+    result: {
+      icon: '🗣️',
+      title: 'پاسخ فارسی و نگهبان ایمنی',
+      intro: 'پاسخ نهایی از قالب‌های فارسی و فقط از روی فیلدهای خوانده‌شده ساخته می‌شود؛ یک «نگهبان ایمنی» قبل از نمایش، پاسخ را بازبینی می‌کند.',
+      points: [
+        'هر عدد داخل پاسخ باید در شواهد OCR موجود باشد — عدد از خودِ مدل ساخته نمی‌شود.',
+        'واژه‌های ممنوع (مانند «دوز مصرف» به‌جای «قدرت درج‌شده») رد می‌شوند و جایگزین ایمن می‌گیرند.',
+        'نوع بسته (دارو / محصول عمومی) از الگوها تشخیص داده می‌شود و مقدمه پاسخ تغییر می‌کند.',
+        'ناخواناها و موارد نامطمئن به‌صورت شفاف اعلام می‌شوند؛ چیزی «حدس» زده نمی‌شود.'
+      ],
+      tech: [
+        { t: 'موتور قاعده‌محور (قوانین + قالب)', r: 'تولید پاسخ فارسی بدون مدل زبانی ابری', c: 'engine' },
+        { t: 'نگهبان ایمنی (Guard)', r: 'فیلتر واژه‌های ممنوع + نظارت بر اعداد خارج از شواهد', c: 'engine' },
+        { t: 'نرمال‌سازی نویسه (ي→ی، ك→ک، ارقام)', r: 'یکنواخت‌سازی متن فارسی/عربی پیش از قواعد', c: 'engine' },
+        { t: 'Regex چندزبانه', r: 'الگوهای قدرت، تاریخ انقضا، شماره سری و سازنده', c: 'engine' }
+      ]
+    },
+
+    fields: {
+      icon: '📋',
+      title: 'فیلدهای ساختاریافته و شواهد',
+      intro: 'هر فیلد (نام، قدرت درج‌شده، شکل دارویی، حجم، تاریخ، سری، سازنده) به قطعه‌های متنی که از OCR آمده گره خورده است؛ می‌توانید مقدار اشتباه را ویرایش کنید.',
+      points: [
+        'وضعیت‌ها: خوانده‌شده، نامطمئن، متناقض، ناموجود و اصلاح‌شده توسط شما.',
+        'با لمس شاهد (مثل P3)، سطر مربوطه در فهرست شواهد برجسته می‌شود.',
+        'اصلاح دستی تاریخچه مقادیر قبلی را نگه می‌دارد (منشأ هر عدد حفظ می‌شود).'
+      ],
+      tech: [
+        { t: 'مدل فیلد با ردیابی منشأ', r: 'معادل مدل‌های Pydantic نسخه دسکتاپ در جاوااسکریپت', c: 'engine' },
+        { t: 'تشخیص تناقض', r: 'مقایسه خوانش‌های مختلف همان فیلد (مثلاً دو قدرت متفاوت)', c: 'engine' }
+      ]
+    },
+
+    tts: {
+      icon: '🔊',
+      title: 'پخش صوتی پاسخ',
+      intro: 'پاسخ فارسی با صدای خود دستگاه خوانده می‌شود؛ چون از Web Speech API استفاده می‌کنیم، هیچ متنی به هیچ سروری فرستاده نمی‌شود.',
+      points: [
+        'اگر دستگاه شما صدای فارسی نصب‌شده داشته باشد همان صدا استفاده می‌شود.',
+        'در غیر این صورت صدای پیش‌فرض تلاش می‌شود؛ برای کیفیت بهتر، بسته صدای فارسی سیستم را نصب کنید.',
+        'سرعت خوانش کمی آرام‌تر (۰٫۹۵) تنظیم شده تا اعداد واضح‌تر شنیده شوند.'
+      ],
+      tech: [
+        { t: 'Web Speech API (speechSynthesis)', r: 'استاندارد W3C برای متن‌به‌گفتار روی دستگاه', c: 'api' },
+        { t: 'SpeechSynthesisUtterance', r: 'تنظیم صدا، زبان fa-IR و سرعت', c: 'api' }
+      ]
+    },
+
+    json: {
+      icon: '🧾',
+      title: 'خروجی JSON',
+      intro: 'خروجی کامل دقیقاً همان ساختار نسخه دسکتاپ است: قطعه‌های OCR، سطرهای خام، فیلدها با شواهد، مشکلات کیفیت و فراداده پردازش.',
+      points: [
+        'قابل استفاده در گزارش‌گیری، آزمون رگرسیون یا پیوست پرونده.',
+        'فایل فقط با کلیک شما و محض شما ساخته و دانلود می‌شود.'
+      ],
+      tech: [
+        { t: 'JSON.stringify + Blob + URL.createObjectURL', r: 'ساخت و دانلود فایل روی دستگاه', c: 'api' }
+      ]
+    },
+
+    docs: {
+      icon: '📚',
+      title: 'مستندات فنی کامل',
+      intro: 'سند معماری کامل پروژه — شامل معماری سامانه، نحوه کارکرد، تک‌تک فایل‌ها، کتابخانه‌ها و فناوری‌ها — به‌صورت یک صفحه تعاملی زیبا.',
+      points: [
+        'نسخه HTML: فایل documentation.html در همین برنامه (و روی GitHub Pages).',
+        'نسخه PDF: پیوست Release در GitHub.',
+        'هر دو به‌صورت رسپانسیو و به‌روز با نسخه برنامه.'
+      ],
+      tech: [
+        { t: 'HTML5 تک‌فایلی + CSS Animation', r: 'مستندات تعاملی بدون وابستگی خارجی', c: 'std' }
+      ]
+    }
+  };
+
+  var modal = null;
+
+  function chip(item) {
+    var chipEl = document.createElement('span');
+    chipEl.className = 'tech-chip tech-' + (item.c || 'std');
+    var dot = document.createElement('i');
+    chipEl.appendChild(dot);
+    var name = document.createElement('b');
+    name.textContent = item.t;
+    chipEl.appendChild(name);
+    if (item.r) {
+      var role = document.createElement('small');
+      role.textContent = item.r;
+      chipEl.appendChild(role);
+    }
+    return chipEl;
+  }
+
+  function ensureModal() {
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.className = 'help-overlay hidden';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.innerHTML =
+      '<div class="help-modal" dir="rtl">' +
+      '  <div class="help-modal-head">' +
+      '    <span class="help-modal-icon" aria-hidden="true"></span>' +
+      '    <h3 class="help-modal-title"></h3>' +
+      '    <button type="button" class="help-close" aria-label="بستن راهنما">✕</button>' +
+      '  </div>' +
+      '  <div class="help-modal-body">' +
+      '    <p class="help-intro"></p>' +
+      '    <div class="help-points-wrap"><p class="help-sec-title">این بخش چه می‌کند؟</p>' +
+      '      <ul class="help-points"></ul></div>' +
+      '    <div class="help-tech-wrap"><p class="help-sec-title">فناوری‌ها، ابزارها و کتابخانه‌های این بخش</p>' +
+      '      <div class="help-tech"></div>' +
+      '      <p class="help-cat-note"></p></div>' +
+      '    <p class="help-foot">هیچ داده‌ای از این برنامه به هیچ سروری ارسال نمی‌شود.</p>' +
+      '  </div>' +
+      '</div>';
+
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) close();
+    });
+    modal.querySelector('.help-close').addEventListener('click', close);
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  function open(id) {
+    var data = HELP[id];
+    if (!data) return;
+    var m = ensureModal();
+    m.querySelector('.help-modal-icon').textContent = data.icon;
+    m.querySelector('.help-modal-title').textContent = data.title;
+    m.querySelector('.help-intro').textContent = data.intro;
+
+    var ul = m.querySelector('.help-points');
+    ul.innerHTML = '';
+    (data.points || []).forEach(function (p) {
+      var li = document.createElement('li');
+      li.textContent = p;
+      ul.appendChild(li);
+    });
+    m.querySelector('.help-points-wrap').style.display =
+      (data.points && data.points.length) ? '' : 'none';
+
+    var tech = m.querySelector('.help-tech');
+    tech.innerHTML = '';
+    var cats = {};
+    (data.tech || []).forEach(function (item) {
+      tech.appendChild(chip(item));
+      cats[item.c || 'std'] = true;
+    });
+    var catNames = Object.keys(cats).map(function (c) { return CAT_FA[c] || c; });
+    m.querySelector('.help-cat-note').textContent =
+      'دسته‌ها: ' + catNames.join('، ') + '.';
+
+    m.classList.remove('hidden');
+    document.body.classList.add('help-open');
+    var body = m.querySelector('.help-modal-body');
+    if (body) body.scrollTop = 0;
+    var closeBtn = m.querySelector('.help-close');
+    if (closeBtn) closeBtn.focus();
+  }
+
+  function close() {
+    if (!modal) return;
+    modal.classList.add('hidden');
+    document.body.classList.remove('help-open');
+  }
+
+  // دکمه‌های راهنما: هر عنصر با data-help
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('[data-help]') : null;
+    if (btn) {
+      e.preventDefault();
+      e.stopPropagation();
+      open(btn.getAttribute('data-help'));
+    }
+  }, true);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.keyCode === 27) close();
+  });
+
+  window.LBR = window.LBR || {};
+  window.LBR.help = { open: open, close: close };
+})();
 
 </script>
 <script>

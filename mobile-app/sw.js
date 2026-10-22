@@ -3,7 +3,7 @@
  * - موتور OCR و داده زبان: cache-first پس از نخستین بارگیری (پشتیبانی آفلاین کامل)
  * - هیچ درخواستی به سرور خارجی از این سرویس‌کار صادر نمی‌شود.
  */
-var CACHE = 'lbr-mobile-v2';
+var CACHE = 'lbr-mobile-v3';
 
 var SHELL = [
   './',
@@ -21,6 +21,8 @@ var SHELL = [
   './js/samples-data.js',
   './js/ocr.js',
   './js/camera.js',
+  './js/help.js',
+  './documentation.html',
   './js/app.js',
   './vendor/tesseract/tesseract.min.js',
   './vendor/tesseract/worker.min.js',

@@ -49,7 +49,7 @@ export BUILD_TOOLS=/path/to/build-tools/34.0.0
 export ANDROID_JAR=/path/to/platforms/android-34/android.jar
 export R8_JAR=/path/to/r8-8.5.35.jar   # از dl.google.com/android/maven2/com/android/tools/r8/
 bash build_apk.sh
-# خروجی: android/build/LabelVoice-Android-1.2.0.apk
+# خروجی: android/build/LabelVoice-Android-1.3.0.apk
 ```
 
 کلید امضا در `keystore/labelvoice.keystore` (در گیت نیست) ساخته می‌شود؛ برای به‌روزرسانی‌های بعدی **همان کلید را نگه دارید** وگرنه کاربر باید اپ را حذف و دوباره نصب کند. رمز فعلی: `labelvoice-sign`.

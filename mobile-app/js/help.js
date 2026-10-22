@@ -1,0 +1,295 @@
+/* راهنمای درون‌برنامه‌ای برچسب‌خوان موبایل (v1.3.0)
+ * فرم‌های مودال جذاب + معرفی فناوری/ابزار/کتابخانه هر بخش
+ * محتوای کاملاً ثابت — هیچ داده‌ای از این صفحه ارسال نمی‌شود.
+ */
+(function () {
+  'use strict';
+
+  /* دسته‌بندی رنگ چیپ فناوری: engine / api / lib / std */
+  var CAT_FA = {
+    engine: 'موتور پردازش',
+    api: 'استاندارد وب (API)',
+    lib: 'کتابخانه',
+    std: 'زیرساخت برنامه'
+  };
+
+  var HELP = {
+    about: {
+      icon: '💊',
+      title: 'درباره برچسب‌خوان هوشمند (LabelVoice)',
+      intro: 'این برنامه فقط «متن روی بسته» دارو و محصولات را می‌خواند و همان متن را به‌صورت پاسخ فارسی مرتب و گفتاری برمی‌گرداند. هیچ توصیه پزشکی، مقدار مصرف یا تشخیصی ارائه نمی‌دهد و هیچ داده‌ای از دستگاه شما خارج نمی‌شود.',
+      points: [
+        'همه پردازش‌ها (OCR، استخراج، صوت) روی همین دستگاه انجام می‌شود — بدون سرور.',
+        'به‌صورت PWA قابل نصب است (افزودن به صفحه اصلی) و پس از بار اول کاملاً آفلاین کار می‌کند.',
+        'پاسخ فقط از روی شواهد OCR ساخته می‌شود؛ اطلاعات غایب از اینترنت یا حافظه تکمیل نمی‌شود.',
+        '«قدرت درج‌شده» فقط به‌معنای عدد روی بسته است، نه دوز مصرف.'
+      ],
+      tech: [
+        { t: 'PWA (Web App Manifest)', r: 'قابل نصب بودن به‌صورت اپ روی گوشی', c: 'std' },
+        { t: 'Service Worker (cache-first)', r: 'اجرای آفلاین پس از بار اول', c: 'std' },
+        { t: 'Tesseract.js 6 (WebAssembly)', r: 'موتور OCR درون مرورگر', c: 'engine' },
+        { t: 'Web Speech API', r: 'پخش صوتی پاسخ روی دستگاه', c: 'api' },
+        { t: 'HTML5 + CSS3 + JavaScript (ES5/IIFE)', r: 'بدون هیچ چارچوب سنگین؛ سازگار با مرورگرهای قدیمی‌تر', c: 'std' },
+        { t: 'فونت وزیرمتن (Vazirmatn)', r: 'فونت محلی فارسی — آفلاین', c: 'lib' }
+      ]
+    },
+
+    input: {
+      icon: '📷',
+      title: 'ورود تصویر و دوربین زنده',
+      intro: 'دکمه «دوربین زنده و خواندن جعبه» پیش‌نمایش زنده دوربین پشتی را باز می‌کند؛ شما جعبه دارو را در کادر راهنما قرار می‌دهید و برنامه در لحظه شاتر می‌زند، تیزترین فریم را انتخاب می‌کند، خودش جعبه را پیدا و برش می‌زند و مستقیم وارد خط خواندن می‌شود.',
+      points: [
+        'دوربین زنده با استاندارد getUserMedia (دوربین پشتی — environment) باز می‌شود؛ دیگر گالری باز نمی‌شود.',
+        '۳ فریم پشت‌سرهم ثبت می‌شود و تیزترین فریم با «واریانس لاپلاسین» انتخاب می‌شود.',
+        'ناحیه جعبه دارو به‌صورت خودکار تشخیص و از پس‌زمینه برش داده می‌شود (کاهش نویز OCR).',
+        'اگر مرورگر دوربین زنده نداشت، محترمانه به «عکس با دوربین سیستم» برمی‌گردید.',
+        'فایل گالری/دوربین سیستم: بررسی امضای باینری (magic bytes) PNG/JPEG/WebP + سقف حجم ۱۰ مگابایت.'
+      ],
+      tech: [
+        { t: 'MediaDevices.getUserMedia', r: 'استاندارد W3C برای دوربین زنده', c: 'api' },
+        { t: 'Canvas API (2D Context)', r: 'ثبت فریم، برش و تبدیل‌های تصویری', c: 'api' },
+        { t: 'واریانس لاپلاسین (Laplacian)', r: 'سنجه تیزی تصویر برای انتخاب بهترین فریم', c: 'engine' },
+        { t: 'سوبل + اتساع مورفولوژیک', r: 'تشخیص ناحیه جعبه دارو (بزرگ‌ترین جزء همبند)', c: 'engine' },
+        { t: 'FileReader + ArrayBuffer', r: 'اعتبارسنجی magic bytes فایل تصویر', c: 'api' }
+      ]
+    },
+
+    quality: {
+      icon: '🩺',
+      title: 'ارزیابی کیفیت تصویر',
+      intro: 'پیش از خواندن، تصویر از نظر تاری، تاریکی و انعکاس نور سنجیده می‌شود تا اگر کیفیت پایین است، شما بدانید و در صورت نیاز عکس بهتری بگیرید.',
+      points: [
+        'تاری: واریانس لاپلاسین (آستانه‌های هشدار و هشدار شدید).',
+        'نور: میانگین روشنایی خاکستری (تشخیص تصویر تاریک).',
+        'انعکاس: نسبت پیکسل‌های خیلی روشن (گلَر روی بسته).',
+        'نتیجه به‌صورت چیپ رنگی (سبز/زرد/قرمز) نمایش داده می‌شود.'
+      ],
+      tech: [
+        { t: 'Canvas getImageData', r: 'خواندن پیکسل‌ها برای محاسبات آماری', c: 'api' },
+        { t: 'پردازش تصویر عددی (بدون کتابخانه)', r: 'لاپلاسین، میانگین، هیستوگرام — همان معادل OpenCV در دسکتاپ', c: 'engine' }
+      ]
+    },
+
+    settings: {
+      icon: '⚙️',
+      title: 'تنظیمات پردازش (پیشرفته)',
+      intro: 'این تنظیمات خط پیش‌پردازش را کنترل می‌کنند؛ پیش‌فرض‌ها برای اکثر برچسب‌ها بهینه‌اند.',
+      points: [
+        'داده زبان: «سریع» مدل integer و «دقیق‌تر» مدل best است — دقیق‌تر اما کندتر.',
+        'اصلاح چرخش کم‌زاویه: با پروفایل فرکانس سطرها، انحراف جزئی عکس صاف می‌شود.',
+        'خوانش دوباره با نسخه دودویی: اگر خوانش ضعیف بود، نسخه سیاه‌وسفید هم امتحان می‌شود.',
+        'در حالت file:// موتور OCR از CDN بارگیری می‌شود؛ با لانچر (شروع) همه‌چیز محلی است.'
+      ],
+      tech: [
+        { t: 'Tesseract traineddata (fas+eng)', r: 'دو کیفیت: integer (سریع) و tessdata_best (دقیق)', c: 'engine' },
+        { t: 'Unsharp Mask', r: 'تیزکردن لبه‌ها پیش از OCR', c: 'engine' },
+        { t: 'آستانه‌گذاری دودویی (Otsu)', r: 'نسخه سیاه‌وسفید برای خوانش مجدد', c: 'engine' },
+        { t: 'Deskew با پروفایل سطرها', r: 'اصلاح چرخش تا ±۱۵ درجه', c: 'engine' }
+      ]
+    },
+
+    analyze: {
+      icon: '🔍',
+      title: 'خط لوله خواندن برچسب',
+      intro: 'دکمه «خواندن برچسب» کل خط پردازش را اجرا می‌کند: مقیاس‌گذاری، تشخیص جعبه، کیفیت، OCR چندنسخه‌ای، ادغام هوشمند خوانش‌ها و در نهایت استخراج و پاسخ.',
+      points: [
+        'مقیاس هوشمند: کوتاه‌ترین ضلع به ۱۲۰۰ پیکسل می‌رسد (برای دقت بهتر OCR).',
+        'تشخیص جعبه: سوبل + آستانه درصدی + اتساع + بزرگ‌ترین جزء همبند → برش خودکار.',
+        'OCR با چند نسخه تصویر (اصلی، تیزشده، دودویی) و دو حالت چیدمان (PSM 3 و 6) اجرا می‌شود.',
+        'خوانش‌های مشابه با «شباهت فازی ≥ ۰٫۸» ادغام می‌شوند (معادل difflib در پایتون).',
+        'اگر بازده خوانش کم بود، چرخش ۹۰ درجه ساعتگرد و پادساعتگرد هم به‌طور خودکار آزموده می‌شود.'
+      ],
+      tech: [
+        { t: 'Tesseract.js 6 (LSTM در WebAssembly)', r: 'موتور OCR اصلی — همان Tesseract دسکتاپ در مرورگر', c: 'engine' },
+        { t: 'user_defined_dpi + PSM 3/6/11', r: 'پارامترهای دقت و چیدمان متن', c: 'engine' },
+        { t: 'ادغام فازی (شباهت ترتیبی ≥ ۰٫۸)', r: 'حذف تکرارها و انتخاب بهترین خوانش', c: 'engine' },
+        { t: 'Web Worker', r: 'اجرای OCR در پس‌زمینه بدون فریز شدن رابط', c: 'api' }
+      ]
+    },
+
+    result: {
+      icon: '🗣️',
+      title: 'پاسخ فارسی و نگهبان ایمنی',
+      intro: 'پاسخ نهایی از قالب‌های فارسی و فقط از روی فیلدهای خوانده‌شده ساخته می‌شود؛ یک «نگهبان ایمنی» قبل از نمایش، پاسخ را بازبینی می‌کند.',
+      points: [
+        'هر عدد داخل پاسخ باید در شواهد OCR موجود باشد — عدد از خودِ مدل ساخته نمی‌شود.',
+        'واژه‌های ممنوع (مانند «دوز مصرف» به‌جای «قدرت درج‌شده») رد می‌شوند و جایگزین ایمن می‌گیرند.',
+        'نوع بسته (دارو / محصول عمومی) از الگوها تشخیص داده می‌شود و مقدمه پاسخ تغییر می‌کند.',
+        'ناخواناها و موارد نامطمئن به‌صورت شفاف اعلام می‌شوند؛ چیزی «حدس» زده نمی‌شود.'
+      ],
+      tech: [
+        { t: 'موتور قاعده‌محور (قوانین + قالب)', r: 'تولید پاسخ فارسی بدون مدل زبانی ابری', c: 'engine' },
+        { t: 'نگهبان ایمنی (Guard)', r: 'فیلتر واژه‌های ممنوع + نظارت بر اعداد خارج از شواهد', c: 'engine' },
+        { t: 'نرمال‌سازی نویسه (ي→ی، ك→ک، ارقام)', r: 'یکنواخت‌سازی متن فارسی/عربی پیش از قواعد', c: 'engine' },
+        { t: 'Regex چندزبانه', r: 'الگوهای قدرت، تاریخ انقضا، شماره سری و سازنده', c: 'engine' }
+      ]
+    },
+
+    fields: {
+      icon: '📋',
+      title: 'فیلدهای ساختاریافته و شواهد',
+      intro: 'هر فیلد (نام، قدرت درج‌شده، شکل دارویی، حجم، تاریخ، سری، سازنده) به قطعه‌های متنی که از OCR آمده گره خورده است؛ می‌توانید مقدار اشتباه را ویرایش کنید.',
+      points: [
+        'وضعیت‌ها: خوانده‌شده، نامطمئن، متناقض، ناموجود و اصلاح‌شده توسط شما.',
+        'با لمس شاهد (مثل P3)، سطر مربوطه در فهرست شواهد برجسته می‌شود.',
+        'اصلاح دستی تاریخچه مقادیر قبلی را نگه می‌دارد (منشأ هر عدد حفظ می‌شود).'
+      ],
+      tech: [
+        { t: 'مدل فیلد با ردیابی منشأ', r: 'معادل مدل‌های Pydantic نسخه دسکتاپ در جاوااسکریپت', c: 'engine' },
+        { t: 'تشخیص تناقض', r: 'مقایسه خوانش‌های مختلف همان فیلد (مثلاً دو قدرت متفاوت)', c: 'engine' }
+      ]
+    },
+
+    tts: {
+      icon: '🔊',
+      title: 'پخش صوتی پاسخ',
+      intro: 'پاسخ فارسی با صدای خود دستگاه خوانده می‌شود؛ چون از Web Speech API استفاده می‌کنیم، هیچ متنی به هیچ سروری فرستاده نمی‌شود.',
+      points: [
+        'اگر دستگاه شما صدای فارسی نصب‌شده داشته باشد همان صدا استفاده می‌شود.',
+        'در غیر این صورت صدای پیش‌فرض تلاش می‌شود؛ برای کیفیت بهتر، بسته صدای فارسی سیستم را نصب کنید.',
+        'سرعت خوانش کمی آرام‌تر (۰٫۹۵) تنظیم شده تا اعداد واضح‌تر شنیده شوند.'
+      ],
+      tech: [
+        { t: 'Web Speech API (speechSynthesis)', r: 'استاندارد W3C برای متن‌به‌گفتار روی دستگاه', c: 'api' },
+        { t: 'SpeechSynthesisUtterance', r: 'تنظیم صدا، زبان fa-IR و سرعت', c: 'api' }
+      ]
+    },
+
+    json: {
+      icon: '🧾',
+      title: 'خروجی JSON',
+      intro: 'خروجی کامل دقیقاً همان ساختار نسخه دسکتاپ است: قطعه‌های OCR، سطرهای خام، فیلدها با شواهد، مشکلات کیفیت و فراداده پردازش.',
+      points: [
+        'قابل استفاده در گزارش‌گیری، آزمون رگرسیون یا پیوست پرونده.',
+        'فایل فقط با کلیک شما و محض شما ساخته و دانلود می‌شود.'
+      ],
+      tech: [
+        { t: 'JSON.stringify + Blob + URL.createObjectURL', r: 'ساخت و دانلود فایل روی دستگاه', c: 'api' }
+      ]
+    },
+
+    docs: {
+      icon: '📚',
+      title: 'مستندات فنی کامل',
+      intro: 'سند معماری کامل پروژه — شامل معماری سامانه، نحوه کارکرد، تک‌تک فایل‌ها، کتابخانه‌ها و فناوری‌ها — به‌صورت یک صفحه تعاملی زیبا.',
+      points: [
+        'نسخه HTML: فایل documentation.html در همین برنامه (و روی GitHub Pages).',
+        'نسخه PDF: پیوست Release در GitHub.',
+        'هر دو به‌صورت رسپانسیو و به‌روز با نسخه برنامه.'
+      ],
+      tech: [
+        { t: 'HTML5 تک‌فایلی + CSS Animation', r: 'مستندات تعاملی بدون وابستگی خارجی', c: 'std' }
+      ]
+    }
+  };
+
+  var modal = null;
+
+  function chip(item) {
+    var chipEl = document.createElement('span');
+    chipEl.className = 'tech-chip tech-' + (item.c || 'std');
+    var dot = document.createElement('i');
+    chipEl.appendChild(dot);
+    var name = document.createElement('b');
+    name.textContent = item.t;
+    chipEl.appendChild(name);
+    if (item.r) {
+      var role = document.createElement('small');
+      role.textContent = item.r;
+      chipEl.appendChild(role);
+    }
+    return chipEl;
+  }
+
+  function ensureModal() {
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.className = 'help-overlay hidden';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.innerHTML =
+      '<div class="help-modal" dir="rtl">' +
+      '  <div class="help-modal-head">' +
+      '    <span class="help-modal-icon" aria-hidden="true"></span>' +
+      '    <h3 class="help-modal-title"></h3>' +
+      '    <button type="button" class="help-close" aria-label="بستن راهنما">✕</button>' +
+      '  </div>' +
+      '  <div class="help-modal-body">' +
+      '    <p class="help-intro"></p>' +
+      '    <div class="help-points-wrap"><p class="help-sec-title">این بخش چه می‌کند؟</p>' +
+      '      <ul class="help-points"></ul></div>' +
+      '    <div class="help-tech-wrap"><p class="help-sec-title">فناوری‌ها، ابزارها و کتابخانه‌های این بخش</p>' +
+      '      <div class="help-tech"></div>' +
+      '      <p class="help-cat-note"></p></div>' +
+      '    <p class="help-foot">هیچ داده‌ای از این برنامه به هیچ سروری ارسال نمی‌شود.</p>' +
+      '  </div>' +
+      '</div>';
+
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) close();
+    });
+    modal.querySelector('.help-close').addEventListener('click', close);
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  function open(id) {
+    var data = HELP[id];
+    if (!data) return;
+    var m = ensureModal();
+    m.querySelector('.help-modal-icon').textContent = data.icon;
+    m.querySelector('.help-modal-title').textContent = data.title;
+    m.querySelector('.help-intro').textContent = data.intro;
+
+    var ul = m.querySelector('.help-points');
+    ul.innerHTML = '';
+    (data.points || []).forEach(function (p) {
+      var li = document.createElement('li');
+      li.textContent = p;
+      ul.appendChild(li);
+    });
+    m.querySelector('.help-points-wrap').style.display =
+      (data.points && data.points.length) ? '' : 'none';
+
+    var tech = m.querySelector('.help-tech');
+    tech.innerHTML = '';
+    var cats = {};
+    (data.tech || []).forEach(function (item) {
+      tech.appendChild(chip(item));
+      cats[item.c || 'std'] = true;
+    });
+    var catNames = Object.keys(cats).map(function (c) { return CAT_FA[c] || c; });
+    m.querySelector('.help-cat-note').textContent =
+      'دسته‌ها: ' + catNames.join('، ') + '.';
+
+    m.classList.remove('hidden');
+    document.body.classList.add('help-open');
+    var body = m.querySelector('.help-modal-body');
+    if (body) body.scrollTop = 0;
+    var closeBtn = m.querySelector('.help-close');
+    if (closeBtn) closeBtn.focus();
+  }
+
+  function close() {
+    if (!modal) return;
+    modal.classList.add('hidden');
+    document.body.classList.remove('help-open');
+  }
+
+  // دکمه‌های راهنما: هر عنصر با data-help
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('[data-help]') : null;
+    if (btn) {
+      e.preventDefault();
+      e.stopPropagation();
+      open(btn.getAttribute('data-help'));
+    }
+  }, true);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.keyCode === 27) close();
+  });
+
+  window.LBR = window.LBR || {};
+  window.LBR.help = { open: open, close: close };
+})();
