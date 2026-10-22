@@ -90,7 +90,9 @@
   function recognizeWords(worker, canvas, variant, psm) {
     return worker.setParameters({
       tessedit_pageseg_mode: String(psm),
-      preserve_interword_spaces: '1'
+      preserve_interword_spaces: '1',
+      // بدون این پارامتر، تسراکت برای تصاویر بدون DPI یکنواخت عمل می‌کند
+      user_defined_dpi: '300'
     }).then(function () {
       // در tesseract.js v6 آرایه words پیش‌فرض حذف شده است؛
       // سلسله‌مراتب blocks → paragraphs → lines → words را صریح درخواست می‌کنیم.
@@ -173,6 +175,15 @@
         var mean = confs.reduce(function (s, c) { return s + c; }, 0) / confs.length;
         if (mean >= 0.8) return null;
         return recognizeWords(worker, canvases.binarized, 'binarized', psms[0])
+          .then(function (words) { rawPieces = rawPieces.concat(words); });
+      });
+      // گذر پراکنده (PSM 11): روی بسته‌ها متن‌ها پراکنده‌اند؛ وقتی خوانش
+      // خط‌محور کم‌بازده است، این گذر کلمه‌های جاافتاده را برمی‌گرداند
+      chain = chain.then(function () {
+        if (!settings.use_sparse_psm || rawPieces.length >= 25) return null;
+        var canvas = canvases.gray_clahe || canvases.original;
+        if (!canvas) return null;
+        return recognizeWords(worker, canvas, 'sparse11', 11)
           .then(function (words) { rawPieces = rawPieces.concat(words); });
       });
       return chain.then(function () {

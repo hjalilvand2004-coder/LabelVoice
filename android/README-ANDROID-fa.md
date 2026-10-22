@@ -7,7 +7,14 @@
 1. فایل **`LabelVoice-Android-<نسخه>.apk`** را از [صفحه Releases مخزن](https://github.com/hjalilvand2004-coder/LabelVoice/releases) دانلود کنید (یا به گوشی منتقل کنید).
 2. هنگام باز کردن فایل، اندروید می‌پرسد «اجازه نصب از این منبع» → برای مرورگر یا فایل‌منیجرِ خود **مجوز نصب بدهید** (تنظیمات → نصب برنامه‌های ناشناس).
 3. نصب را تأیید کنید. آیکون «برچسب‌خوان LabelVoice» روی صفحه اصلی می‌نشیند.
-4. اجرا: همه‌چیز محلی است؛ دکمه «انتخاب تصویر» گالری/فایل‌ها را باز می‌کند.
+4. اجرا: همه‌چیز محلی است.
+
+## تازه‌های v1.2.0 — دوربین زنده داخل اپ
+
+- دکمه جدید **«دوربین زنده و خواندن جعبه»**: پیش‌نمایش زنده دوربین گوشی با کادر راهنما؛ جعبه دارو را داخل کادر بگیرید و دکمه سفید را بزنید — عکس گرفته، جعبه شناسایی و متن آن خوانده می‌شود.
+- برای این کار مجوز `CAMERA` به اپ اضافه شده و `WebChromeClient.onPermissionRequest` پیاده‌سازی شده است؛ بار اول، اندروید اجازه دوربین می‌پرسد → **Allow** بزنید.
+- فلاش و زوم (در صورت پشتیبانی دستگاه) داخل دوربین زنده در دسترس است.
+- از هر عکس ۳ فریم گرفته می‌شود و تیزترین فریم خوانده می‌شود (خنثی‌کردن لرزش دست).
 
 > **iPhone/iOS؟** iOS اجازه نصب APK نمی‌دهد؛ برای آیفون از نسخه PWA استفاده کنید: https://hjalilvand2004-coder.github.io/LabelVoice/ → Share → Add to Home Screen.
 
@@ -28,6 +35,7 @@
 
 - **AssetLoader داخلی بدون وابستگی:** به‌جای کتابخانه androidx.webkit، نگاشت `https://appassets.local/*` به `assets/` با `shouldInterceptRequest` انجام می‌شود تا صفحه در **context امن (https)** اجرا شود — شرط لازم برای WASM/SIMD و `fetch` روی فایل‌های محلی.
 - **انتخاب تصویر:** `onShowFileChooser` پیاده‌سازی شده تا دکمه بارگذاری وب‌اپ در WebView کار کند.
+- **دوربین زنده (v1.2.0):** مجوز `CAMERA` + `onPermissionRequest` (grant/deny با درخواست مجوز سیستم) + `setMediaPlaybackRequiresUserGesture(false)` برای پیش‌نمایش روان.
 - **Service Worker در APK غیرفعال است** (گارد `*.local` در `js/app.js`) چون همه اجزا از خود assets خوانده می‌شود و کش دوگانه بی‌معناست.
 - لینک‌های بیرونی به مرورگر گوشی سپرده می‌شوند؛ دکمه Back داخل تاریخچه WebView عمل می‌کند.
 
@@ -41,7 +49,7 @@ export BUILD_TOOLS=/path/to/build-tools/34.0.0
 export ANDROID_JAR=/path/to/platforms/android-34/android.jar
 export R8_JAR=/path/to/r8-8.5.35.jar   # از dl.google.com/android/maven2/com/android/tools/r8/
 bash build_apk.sh
-# خروجی: android/build/LabelVoice-Android-1.0.2.apk
+# خروجی: android/build/LabelVoice-Android-1.2.0.apk
 ```
 
 کلید امضا در `keystore/labelvoice.keystore` (در گیت نیست) ساخته می‌شود؛ برای به‌روزرسانی‌های بعدی **همان کلید را نگه دارید** وگرنه کاربر باید اپ را حذف و دوباره نصب کند. رمز فعلی: `labelvoice-sign`.

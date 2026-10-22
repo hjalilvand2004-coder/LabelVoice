@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.labelvoice.app"
-    android:versionCode="3"
-    android:versionName="1.0.2">
+    android:versionCode="4"
+    android:versionName="1.2.0">
 
     <uses-sdk
         android:minSdkVersion="24"
@@ -10,6 +10,11 @@
 
     <!-- فقط برای fallback احتمالی CDN؛ اجرای اصلی کاملاً آفلاین از assets خود APK است -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- v1.2.0: دوربین زنده (getUserMedia) برای عکس گرفتن مستقیم از جعبه دارو -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
 
     <application
         android:label="برچسب‌خوان LabelVoice"

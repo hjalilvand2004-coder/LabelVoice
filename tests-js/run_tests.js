@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const APP = path.join(__dirname, '..', 'mobile-app');
-['textnorm', 'patterns', 'guard', 'extractor', 'responder', 'pipeline'].forEach((f) => {
+['textnorm', 'patterns', 'guard', 'extractor', 'responder', 'pipeline', 'boxdetect'].forEach((f) => {
   // بارگذاری ماژول‌های IIFE در همین فرایند (به globalThis وصل می‌شوند)
   eval(fs.readFileSync(path.join(APP, 'js', f + '.js'), 'utf8'));
 });
@@ -257,7 +257,9 @@ test('جمله دقیق نمونه مشخصات', () => {
   assert(response.includes('نام درج‌شده روی بسته: Paracetamol.'), response);
   assert(response.includes('قدرت درج‌شده: \u06f5\u06f0\u06f0 \u0645\u06cc\u0644\u06cc\u200c\u06af\u0631\u0645.'), response);
   assert(response.includes('تعداد درج‌شده: \u06f2\u06f0 \u0642\u0631\u0635.'), response);
-  assert(response.includes('توصیه پزشکی') && response.includes('مقدار مصرف نیستند'), response);
+  // v1.2.0: مقدمه نوع محصول + شمارش فیلدها + سلب مسئولیت جدید
+  assert(response.includes('این محصول بسته\u200cبندی\u200cشده است و \u06f4 فیلد'), response);
+  assert(response.includes('توصیه پزشکی') && response.includes('مقدار مصرف نیست'), response);
   assert(!response.includes('دوز'), 'مرز کلیدی: قدرت هرگز دوز نامیده نمی‌شود | ' + response);
 });
 test('هیچ کاربرد درمانی اضافه نمی‌شود', () => {
@@ -399,6 +401,76 @@ test('کیفیت تصویر: تاری شدید تشخیص داده می‌شود
   const gray = new Uint8ClampedArray(w * h).fill(128);
   const q = pipe.assessQuality(gray, w, h, SETTINGS);
   assert(q.issues.some((i) => i.code === 'blurry' && i.severity === 'severe'), JSON.stringify(q.issues));
+});
+
+// ---------------- v1.2.0: تشخیص بسته، امتیاز جهت، تیزکردن ----------------
+console.log('— boxdetect & scoreOcrYield —');
+
+// ساخت تصویر مصنوعی: پس‌زمینه یکدست + بلوک مستطیلی «جعبه» پر از متن
+function makeBoxScene(w, h, bx, by, bw, bh) {
+  const gray = new Uint8ClampedArray(w * h).fill(230); // پس‌زمینه روشن یکدست
+  for (let y = by; y < by + bh; y++) {
+    for (let x = bx; x < bx + bw; x++) {
+      // لبه‌های جعبه + خطوط متنی داخل آن (نوارهای افقی تیره)
+      const onBorder = (x === bx || x === bx + bw - 1 || y === by || y === by + bh - 1);
+      const isTextBar = (y > by + 4 && y < by + bh - 4 && (y % 6 < 2) && (x % 3 !== 0));
+      gray[y * w + x] = (onBorder || isTextBar) ? 30 : 235;
+    }
+  }
+  return gray;
+}
+
+test('boxdetect: جعبه وسط قاب پیدا و برش درست است', () => {
+  const w = 400, h = 300;
+  const gray = makeBoxScene(w, h, 80, 60, 240, 180);
+  const det = LBR.boxdetect.detectLabelRegion(gray, w, h);
+  assert(det.found, JSON.stringify(det));
+  // برش باید نزدیک مرزهای واقعی جعبه (با حاشیه) باشد
+  const b = det.box;
+  assert(b.x <= 80 && b.y <= 60, JSON.stringify(b));
+  assert(b.x + b.w >= 320 && b.y + b.h >= 240, JSON.stringify(b));
+  // برش نباید کل قاب را بپوشاند
+  assert(b.w < w * 0.95 || b.h < h * 0.95, JSON.stringify(b));
+});
+
+test('boxdetect: قاب کاملاً پر از متن → برش نکن', () => {
+  const w = 300, h = 300;
+  const gray = makeBoxScene(w, h, 0, 0, w, h);
+  const det = LBR.boxdetect.detectLabelRegion(gray, w, h);
+  assert(!det.found, 'fills_whole_frame باید رد شود: ' + JSON.stringify(det));
+  assertEq(det.reason, 'fills_whole_frame');
+});
+
+test('boxdetect: پس‌زمینه خالی بدون محتوا → برش نکن', () => {
+  const w = 300, h = 300;
+  const gray = new Uint8ClampedArray(w * h).fill(200);
+  const det = LBR.boxdetect.detectLabelRegion(gray, w, h);
+  assert(!det.found, JSON.stringify(det));
+});
+
+test('boxdetect: تصویر خیلی کوچک → رد', () => {
+  const gray = new Uint8ClampedArray(30 * 30).fill(128);
+  const det = LBR.boxdetect.detectLabelRegion(gray, 30, 30);
+  assertEq(det.reason, 'image_too_small');
+});
+
+test('scoreOcrYield: خوانش پرمحتوا نمره بالاتر از خوانش تهی دارد', () => {
+  const rich = [mkPiece(1, 'Paracetamol', 90), mkPiece(2, '500', 95),
+    mkPiece(3, 'mg', 95, 120), mkPiece(4, '20', 90), mkPiece(5, 'Tablets', 92, 120),
+    mkPiece(6, 'Exp', 90), mkPiece(7, '2027/06', 88)];
+  const empty = [mkPiece(1, 'x', 10)];
+  const yr = pipe.scoreOcrYield(rich);
+  const ye = pipe.scoreOcrYield(empty);
+  assert(yr.score > ye.score, JSON.stringify({ rich: yr, empty: ye }));
+  assert(yr.score > 60, JSON.stringify(yr)); // جایزه الگوها اعمال شده
+  assertEq(yr.pieces, 7);
+});
+
+test('scoreOcrYield: متن چرخیده (بی‌معنا) نمره الگو نمی‌گیرد', () => {
+  const rotated = [mkPiece(1, 'lawomraparatec', 80), mkPiece(2, '059', 80),
+    mkPiece(3, 'gm', 80, 100)];
+  const y = pipe.scoreOcrYield(rotated);
+  assert(y.score < 60, JSON.stringify(y));
 });
 
 console.log('\nنتیجه: ' + passed + ' پاس، ' + failed + ' شکست');

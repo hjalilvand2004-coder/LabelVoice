@@ -287,6 +287,38 @@
     return lines;
   }
 
+  // ---------- امتیازدهی بازده OCR برای انتخاب بهترین جهت/برش ----------
+  // نمره = تعداد قطعه + میانگین اطمینان × ۵۰ + جایزه الگوهای فیلد (قدرت/تعداد/سری)
+  function scoreOcrYield(rawPieces) {
+    var n = rawPieces.length;
+    var confSum = 0, confN = 0, chars = 0;
+    var texts = [];
+    rawPieces.forEach(function (p) {
+      if (p.confidence !== null && p.confidence !== undefined) {
+        confSum += p.confidence; confN++;
+      }
+      chars += (p.text || '').length;
+      texts.push(p.text || '');
+    });
+    var meanConf = confN ? confSum / confN : 0;
+    var score = n + meanConf * 50 + chars * 0.02;
+    var norm = texts.join(' ');
+    if (tn.normalizeForMatching) norm = tn.normalizeForMatching(norm);
+    if (LBR.patterns) {
+      if (LBR.patterns.RE_STRENGTH.test(norm)) score += 15;
+      if (LBR.patterns.RE_COUNT.test(norm) || LBR.patterns.RE_COUNT_REV.test(norm)) score += 6;
+      if (LBR.patterns.RE_BATCH_LABEL.test(norm)) score += 3;
+      if (LBR.patterns.RE_EXPIRY_LABEL.test(norm)) score += 4;
+      if (LBR.patterns.RE_DOSAGE_FORM.test(norm)) score += 2;
+    }
+    return {
+      pieces: n,
+      mean_conf: Math.round(meanConf * 1000) / 1000,
+      chars: chars,
+      score: Math.round(score * 100) / 100
+    };
+  }
+
   // ---------- ساخت نتیجه کامل از قطعات خام (پس از OCR) ----------
   function buildResultFromPieces(rawPieces, settings, imageW, imageH, durations, extra) {
     extra = extra || {};
@@ -294,7 +326,7 @@
     var rawLines = buildLines(pieces);
     var cls = extractor.classifyProductType(rawLines.map(function (l) { return l.normalized_text; }));
     var ex = extractor.extractFields(rawLines, cls.type, settings, imageH);
-    var responseFa = responder.buildResponse(ex.fields, extra.qualityIssues || [], ex.warnings, pieces.length);
+    var responseFa = responder.buildResponse(ex.fields, extra.qualityIssues || [], ex.warnings, pieces.length, cls.type);
     var selfCheck = guard.validateText(responseFa);
     if (!selfCheck.ok) {
       // حکمتی برای خطای سازنده؛ پاسخ امن حداقلی جایگزین می‌شود
@@ -326,11 +358,17 @@
         image_height: imageH,
         deskew_applied: !!extra.deskewApplied,
         deskew_angle_deg: extra.deskewAngle !== undefined ? extra.deskewAngle : null,
+        crop_applied: !!extra.cropApplied,
+        crop_box: extra.cropBox || null,
+        crop_note_fa: extra.cropApplied ?
+          'جعبه/ناحیه اصلی به‌طور خودکار شناسایی و پس‌زمینه حذف شد.' : null,
+        orientation_attempts: extra.orientationAttempts || 1,
+        orientation_note_fa: extra.orientationNoteFa || null,
         durations_ms: durations || {},
         warnings_fa: extra.warningsFa || [],
         notes_fa: notes,
         timestamp_utc: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
-        app_version: '1.1.0-mobile'
+        app_version: '1.2.0-mobile'
       }
     };
   }
@@ -371,6 +409,7 @@
     assignIds: assignIds,
     dedupeSimilarPieces: dedupeSimilarPieces,
     buildLines: buildLines,
+    scoreOcrYield: scoreOcrYield,
     buildResultFromPieces: buildResultFromPieces,
     applyUserCorrections: applyUserCorrections
   };

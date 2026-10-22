@@ -246,3 +246,79 @@ summary { cursor: pointer; font-size: .9rem; color: var(--text-soft); font-weigh
 
 /* دسترس‌پذیری: حلقه تمرکز واضح */
 :focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+/* ---------- دوربین زنده (v1.2.0) ---------- */
+.pipeline-note {
+  background: var(--teal-light); color: var(--teal-dark, #0a5c5f);
+  border-radius: 10px; padding: .5rem .8rem; font-size: .85rem; margin: 0 0 .7rem;
+}
+
+.camera-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: #000; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.camera-overlay #camera-video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; background: #000;
+}
+
+/* کادر راهنما: گوشه‌های چهارگانه وسط صفحه */
+.camera-guide {
+  position: absolute; left: 50%; top: 44%;
+  width: min(86vw, 560px); height: min(52vh, 380px);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.cg-corner {
+  position: absolute; width: 34px; height: 34px;
+  border: 4px solid #ffffffcc; border-radius: 6px;
+}
+.cg-tl { top: 0; right: auto; left: 0; border-right: none; border-bottom: none; }
+.cg-tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+.cg-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+.cg-br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+.camera-hint {
+  position: absolute; left: 50%; bottom: calc(max(18px, env(safe-area-inset-bottom)) + 110px);
+  transform: translateX(-50%);
+  max-width: 88vw; margin: 0;
+  background: #000000b3; color: #fff; font-size: .85rem; line-height: 1.7;
+  padding: .55rem .9rem; border-radius: 12px; text-align: center;
+}
+.camera-hint.camera-hint-error { background: #b3261ecc; }
+
+.camera-controls {
+  position: absolute; bottom: max(18px, env(safe-area-inset-bottom));
+  left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-around;
+}
+.cam-btn {
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 2px solid #ffffffcc; background: #00000080; color: #fff;
+  font-size: 1.35rem; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.cam-btn:active { transform: scale(.94); }
+.cam-btn.torch-on { background: #ffd54f; color: #000; border-color: #ffd54f; }
+.cam-shutter {
+  width: 76px; height: 76px; background: #fff; border: 6px solid #ffffffb0;
+}
+.cam-shutter:disabled { opacity: .5; }
+.cam-side-btns { display: flex; flex-direction: column; gap: 12px; }
+
+.zoom-row {
+  position: absolute; bottom: calc(max(18px, env(safe-area-inset-bottom)) + 96px);
+  left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px; color: #fff;
+  background: #00000080; border-radius: 20px; padding: 6px 14px;
+}
+.zoom-row input[type="range"] { width: min(52vw, 260px); accent-color: var(--teal); }
+
+.camera-fallback {
+  position: absolute; bottom: calc(max(18px, env(safe-area-inset-bottom)) + 195px);
+  left: 50%; transform: translateX(-50%);
+  background: #000000cc; color: #fff; border-radius: 14px;
+  padding: .8rem 1rem; text-align: center; font-size: .9rem;
+}
+.camera-fallback p { margin: 0 0 .5rem; }

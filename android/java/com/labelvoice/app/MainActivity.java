@@ -3,8 +3,10 @@ package com.labelvoice.app;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -26,15 +28,21 @@ import java.util.Map;
  * shouldInterceptRequest, so the web app runs in a secure context with
  * everything local: Tesseract.js (WASM) + Persian/English language data.
  * No Python, no server, no internet required.
+ *
+ * v1.2.0: پشتیبانی دوربین زنده (getUserMedia) — مجوز CAMERA در مانیفست +
+ * پیاده‌سازی onPermissionRequest تا WebView اجازه video capture بدهد.
  */
 public class MainActivity extends Activity {
 
     private static final String HOST = "appassets.local";
     private static final String START_URL = "https://appassets.local/index.html";
     private static final int FILE_CHOOSER_CODE = 1001;
+    private static final int CAMERA_PERMISSION_CODE = 2001;
 
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
+    /** درخواست دوربین WebView که منتظر تأیید کاربر است. */
+    private PermissionRequest pendingCameraRequest;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -49,6 +57,8 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(false);
+        // پخش زنده پیش‌نمایش دوربین بدون نیاز به حرکت کاربر
+        s.setMediaPlaybackRequiresUserGesture(false);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -71,6 +81,32 @@ public class MainActivity extends Activity {
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                // دوربین زنده (getUserMedia): اگر مجوز CAMERA داده شده، ببخش؛
+                // وگرنه درخواست مجوز سیستم را شروع کن و منتظر نتیجه بمان.
+                boolean needsCamera = false;
+                for (String res : request.getResources()) {
+                    if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(res)) {
+                        needsCamera = true;
+                        break;
+                    }
+                }
+                if (!needsCamera) {
+                    request.deny();
+                    return;
+                }
+                if (checkSelfPermission(android.Manifest.permission.CAMERA)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    request.grant(request.getResources());
+                } else {
+                    pendingCameraRequest = request;
+                    requestPermissions(
+                            new String[]{android.Manifest.permission.CAMERA},
+                            CAMERA_PERMISSION_CODE);
+                }
+            }
+
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
                                              FileChooserParams params) {
@@ -139,6 +175,24 @@ public class MainActivity extends Activity {
         if (low.endsWith(".woff")) return "font/woff";
         if (low.endsWith(".woff2")) return "font/woff2";
         return "application/octet-stream";
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        if (requestCode == CAMERA_PERMISSION_CODE) {
+            PermissionRequest pending = pendingCameraRequest;
+            pendingCameraRequest = null;
+            if (pending == null) return;
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                pending.grant(pending.getResources());
+            } else {
+                pending.deny();
+            }
+            return;
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override

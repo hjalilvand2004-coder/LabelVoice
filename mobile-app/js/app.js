@@ -12,12 +12,15 @@
     tesseract_psm: 3,
     tesseract_extra_psm: 6,
     low_confidence_threshold: 0.55,
-    target_min_side: 1000,
+    target_min_side: 1200,
     max_side_px: 2600,
     clahe_clip_limit: 2.0,
     clahe_tile_size: 8,
     deskew_max_angle_deg: 15,
     use_binarized_variant: true,
+    use_sharpened_variant: true,
+    use_sparse_psm: true,
+    auto_orientation_retry: true,
     max_file_mb: 10,
     max_pixels: 30000000,
     min_dimension_px: 300,
@@ -131,6 +134,39 @@
       .catch(function (e) { setError(e.message || 'بارگذاری نمونه ناموفق بود.'); });
   }
 
+  // ---------- دوربین زنده ----------
+  function openLiveCamera() {
+    setError('');
+    if (!LBR.camera.isSupported()) {
+      // جایگزین: ورودی فایل با capture=environment (دوربین سیستم)
+      setError('این مرورگر دوربین زنده ندارد؛ دوربین سیستم باز می‌شود.');
+      $('file-camera').click();
+      return;
+    }
+    LBR.camera.open({
+      facing: 'environment',
+      onCapture: function (canvas, flags) {
+        LBR.camera.close();
+        applyCapturedCanvas(canvas, flags);
+      },
+      onClose: function () { /* هیچ */ }
+    }).catch(function () {
+      // پیام خطا داخل اورلی نمایش داده شده است؛ کاربر می‌تواند فایل انتخاب کند
+    });
+  }
+
+  function applyCapturedCanvas(canvas, flags) {
+    state.imageSource = canvas;
+    state.imageW = canvas.width;
+    state.imageH = canvas.height;
+    drawPreview();
+    assessAndShowQuality();
+    $('btn-analyze').disabled = false;
+    hide($('result-section'));
+    // عکس گرفته شد → پردازش خودکار (تجربه «نشانه بگیر و بخوان»)
+    analyze();
+  }
+
   function drawPreview() {
     var canvas = $('preview-canvas');
     var maxSide = 900;
@@ -183,6 +219,20 @@
     setProgress(pct, fa);
   }
 
+  // اجرای یک گذر کامل OCR روی یک بوم (نسخه‌ها + دو PSM + گذرهای کمکی)
+  // توجه: buildVariants همگام است و شیء ساده برمی‌گرداند؛ فقط OCR وعده‌دار است.
+  function runPass(baseCanvas, settings, langQuality) {
+    var built = LBR.preprocess.buildVariants(
+      baseCanvas, baseCanvas.width, baseCanvas.height, settings);
+    return LBR.ocr.runOcr(built.variants, settings, langQuality, ocrProgress)
+      .then(function (r) { return { pieces: r.rawPieces, built: built }; });
+  }
+
+  // خوانش کم‌بازده؟ (اندک، کم‌اطمینان، یا بدون هیچ فیلد شناخته‌شده)
+  function isWeakYield(yieldScore) {
+    return yieldScore.pieces < 12 || yieldScore.mean_conf < 0.5;
+  }
+
   function analyze() {
     if (state.busy || !state.imageSource) return;
     state.busy = true;
@@ -199,16 +249,13 @@
 
     var qualityIssues = [], qualityMetrics = null;
     var deskewApplied = false, deskewAngle = 0.0;
+    var cropApplied = false, cropBox = null;
 
     Promise.resolve()
       .then(function () {
-        // ۱) کیفیت (روی تصویر مقیاس‌شده اولیه، پیش از صاف‌سازی)
+        // ۱) ارزیابی اولیه و صاف‌کردن چرخش کم‌زاویه
         setProgress(2, 'ارزیابی کیفیت تصویر…');
         var pre = LBR.preprocess.drawScaled(state.imageSource, state.imageW, state.imageH, settings);
-        var q = LBR.pipeline.assessQuality(pre.grayData, pre.w, pre.h, settings);
-        qualityIssues = q.issues;
-        qualityMetrics = q.metrics;
-        // ۲) صاف‌کردن چرخش کم‌زاویه (اختیاری)
         if (settings.deskew_max_angle_deg > 0) {
           setProgress(4, 'بررسی چرخش تصویر…');
           var dk = LBR.preprocess.autoDeskew(pre.canvas, settings);
@@ -219,33 +266,91 @@
         return pre.canvas;
       })
       .then(function (baseCanvas) {
-        // ۳) نسخه‌های پردازشی
-        setProgress(6, 'ساخت نسخه‌های پردازشی…');
-        return LBR.preprocess.buildVariants(baseCanvas,
-          baseCanvas.width, baseCanvas.height, settings);
+        // ۲) تشخیص بسته/جعبه و برش پس‌زمینه (کاهش نویز OCR)
+        setProgress(6, 'تشخیص ناحیه بسته…');
+        var w = baseCanvas.width, h = baseCanvas.height;
+        var bctx = baseCanvas.getContext('2d', { willReadFrequently: true });
+        var gray = LBR.preprocess.toGrayData(bctx, w, h);
+        var det = LBR.boxdetect.detectLabelRegion(gray, w, h);
+        if (det.found) {
+          baseCanvas = LBR.preprocess.cropCanvas(baseCanvas, det.box);
+          cropApplied = true;
+          cropBox = det.box;
+        }
+        return baseCanvas;
       })
-      .then(function (built) {
+      .then(function (baseCanvas) {
+        // ۳) کیفیت روی همان تصویری که OCR می‌شود (پس از برش)
+        setProgress(8, 'ارزیابی کیفیت تصویر…');
+        var w = baseCanvas.width, h = baseCanvas.height;
+        var bctx = baseCanvas.getContext('2d', { willReadFrequently: true });
+        var gray = LBR.preprocess.toGrayData(bctx, w, h);
+        var q = LBR.pipeline.assessQuality(gray, w, h, settings);
+        qualityIssues = q.issues;
+        qualityMetrics = q.metrics;
+        return baseCanvas;
+      })
+      .then(function (baseCanvas) {
+        // ۴) گذر اصلی OCR
+        setProgress(10, 'خواندن متن…');
         durations.preprocess_ms = Math.round(performance.now() - t0);
-        // ۴) OCR روی نسخه‌ها (دو PSM)
-        return LBR.ocr.runOcr(built.variants, settings, langQuality, ocrProgress)
-          .then(function (ocrRes) {
-            durations.ocr_ms = Math.round(performance.now() - t0) - (durations.preprocess_ms || 0);
-            // ۵) استخراج + پاسخ
-            setProgress(96, 'استخراج فیلدها و تولید پاسخ…');
-            var result = LBR.pipeline.buildResultFromPieces(
-              ocrRes.rawPieces, settings, built.width, built.height, durations, {
-                qualityIssues: qualityIssues,
-                qualityMetrics: qualityMetrics,
-                languages: settings.ocr_languages,
-                variantsUsed: Object.keys(built.variants),
-                deskewApplied: deskewApplied,
-                deskewAngle: deskewAngle
-              });
-            durations.total_ms = Math.round(performance.now() - t0);
-            state.result = result;
-            setProgress(100, 'انجام شد.');
-            renderResult();
+        return runPass(baseCanvas, settings, langQuality)
+          .then(function (pass1) {
+            var y1 = LBR.pipeline.scoreOcrYield(pass1.pieces);
+            if (!settings.auto_orientation_retry || !isWeakYield(y1)) {
+              return { pieces: pass1.pieces, built: pass1.built, attempts: 1, note: null };
+            }
+            // ۵) خوانش ضعیف → آزمون چرخش ۹۰ درجه (بسته‌های عکاسی‌شده از پهلو)
+            setProgress(40, 'خوانش کم‌بازده بود؛ آزمایش جهت‌های دیگر…');
+            var cw = LBR.preprocess.rotate90(baseCanvas, 1);
+            return runPass(cw, settings, langQuality).then(function (pass2) {
+              var y2 = LBR.pipeline.scoreOcrYield(pass2.pieces);
+              if (y2.score <= y1.score + 8) {
+                // چرخش ساعتگرد بهتر نشد؛ پادساعتگرد را هم امتحان کن
+                setProgress(60, 'آزمایش جهت مخالف…');
+                var ccw = LBR.preprocess.rotate90(baseCanvas, -1);
+                return runPass(ccw, settings, langQuality).then(function (pass3) {
+                  var y3 = LBR.pipeline.scoreOcrYield(pass3.pieces);
+                  var best = y1; var pick = 1; var pieces = pass1.pieces;
+                  if (y2.score > best.score) { best = y2; pick = 2; pieces = pass2.pieces; }
+                  if (y3.score > best.score) { best = y3; pick = 3; pieces = pass3.pieces; }
+                  return {
+                    pieces: pieces, built: pass1.built, attempts: 3,
+                    note: 'تصویر در ' + (pick === 1 ? 'جهت اصلی' :
+                      (pick === 2 ? 'چرخش ۹۰ درجه ساعتگرد' : 'چرخش ۹۰ درجه پادساعتگرد')) +
+                      ' بهتر خوانده شد (امتیاز ' + best.score + ' در برابر ' + y1.score + ').'
+                  };
+                });
+              }
+              return {
+                pieces: pass2.pieces, built: pass1.built, attempts: 2,
+                note: 'تصویر در چرخش ۹۰ درجه ساعتگرد بهتر خوانده شد ' +
+                  '(امتیاز ' + y2.score + ' در برابر ' + y1.score + ').'
+              };
+            });
           });
+      })
+      .then(function (winner) {
+        durations.ocr_ms = Math.round(performance.now() - t0) - (durations.preprocess_ms || 0);
+        // ۶) استخراج + پاسخ از بهترین خوانش
+        setProgress(96, 'استخراج فیلدها و تولید پاسخ…');
+        var result = LBR.pipeline.buildResultFromPieces(
+          winner.pieces, settings, winner.built.width, winner.built.height, durations, {
+            qualityIssues: qualityIssues,
+            qualityMetrics: qualityMetrics,
+            languages: settings.ocr_languages,
+            variantsUsed: Object.keys(winner.built.variants),
+            deskewApplied: deskewApplied,
+            deskewAngle: deskewAngle,
+            cropApplied: cropApplied,
+            cropBox: cropBox,
+            orientationAttempts: winner.attempts,
+            orientationNoteFa: winner.note
+          });
+        durations.total_ms = Math.round(performance.now() - t0);
+        state.result = result;
+        setProgress(100, 'انجام شد.');
+        renderResult();
       })
       .catch(function (e) {
         console.error(e);
@@ -277,6 +382,15 @@
 
     // پاسخ
     $('response-text').textContent = result.response_fa;
+
+    // یادداشت خط لوله (برش خودکار / جهت خوانش)
+    var meta = result.metadata || {};
+    var noteBits = [];
+    if (meta.crop_applied) noteBits.push('جعبه شناسایی شد و پس‌زمینه حذف شد.');
+    if (meta.orientation_note_fa) noteBits.push(meta.orientation_note_fa);
+    var noteEl = $('pipeline-note');
+    if (noteBits.length) { noteEl.textContent = noteBits.join(' '); show(noteEl); }
+    else hide(noteEl);
 
     // فیلدها
     var list = $('fields-list');
@@ -508,7 +622,7 @@
   // ---------- راه‌اندازی ----------
   function init() {
     // ثبت Service Worker فقط در حالت http(s) (در file:// بی‌معناست)
-    if ('serviceWorker' in navigator && location.protocol !== 'file:' && !/\.local$/.test(location.hostname)) {
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('./sw.js').catch(function () { /* نادیده */ });
     }
 
@@ -534,6 +648,7 @@
     });
 
     // رویدادها
+    $('btn-camera-live').addEventListener('click', openLiveCamera);
     $('file-camera').addEventListener('change', function (e) {
       handleFile(e.target.files && e.target.files[0]);
     });
@@ -560,6 +675,12 @@
       if (state.busy) return;
       LBR.ocr.getWorker(DEFAULT_SETTINGS, 'integer').catch(function () { /* نادیده */ });
     }, 2500);
+
+    // آزادسازی دوربین هنگام ترک صفحه
+    window.addEventListener('pagehide', function () { LBR.camera.close(); });
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') LBR.camera.close();
+    });
   }
 
   if (document.readyState === 'loading') {

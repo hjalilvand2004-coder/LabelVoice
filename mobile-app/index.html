@@ -34,16 +34,19 @@
   <section class="card" id="input-section" aria-labelledby="input-title">
     <h2 id="input-title">۱. تصویر برچسب را وارد کنید</h2>
     <div class="input-buttons">
-      <label class="btn btn-primary" for="file-camera">
+      <button type="button" class="btn btn-primary btn-big" id="btn-camera-live">
         <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><path d="M4 7h3l2-2h6l2 2h3v12H4V7z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-        عکس با دوربین
-      </label>
-      <input type="file" id="file-camera" accept="image/*" capture="environment" hidden>
+        دوربین زنده و خواندن جعبه
+      </button>
       <label class="btn btn-secondary" for="file-picker">
         <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-inline"><path d="M4 5h16v14H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 15l4-4 3 3 4-5 5 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
         انتخاب از گالری
       </label>
       <input type="file" id="file-picker" accept="image/*" hidden>
+      <label class="btn btn-ghost btn-small" for="file-camera" id="file-camera-label">
+        عکس با دوربین سیستم (در صورت کار نکردن دوربین زنده)
+      </label>
+      <input type="file" id="file-camera" accept="image/*" capture="environment" hidden>
     </div>
     <details class="samples-box" id="samples-box" open>
       <summary>نمونه‌های آماده برای آزمایش</summary>
@@ -89,6 +92,7 @@
   <!-- گام ۲: نتیجه -->
   <section class="card hidden" id="result-section" aria-labelledby="result-title">
     <h2 id="result-title">۲. پاسخ (فقط بر اساس متن روی بسته)</h2>
+    <p id="pipeline-note" class="pipeline-note hidden"></p>
     <div class="response-box">
       <p id="response-text" dir="auto"></p>
       <div class="response-actions">
@@ -122,9 +126,38 @@
 </main>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۱.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۲.۰</p>
   <p>همه پردازش‌ها (OCR، استخراج، صوت) روی همین دستگاه انجام می‌شود. این ابزار تأیید هویت یا اصالت محصول نیست.</p>
 </footer>
+
+<!-- اورلی دوربین زنده (تمام‌صفحه) -->
+<div id="camera-overlay" class="camera-overlay hidden" role="dialog" aria-label="دوربین زنده">
+  <video id="camera-video" autoplay playsinline muted></video>
+  <div class="camera-guide" aria-hidden="true">
+    <span class="cg-corner cg-tl"></span>
+    <span class="cg-corner cg-tr"></span>
+    <span class="cg-corner cg-bl"></span>
+    <span class="cg-corner cg-br"></span>
+  </div>
+  <p id="camera-hint" class="camera-hint hidden"></p>
+  <div class="camera-controls">
+    <button type="button" class="cam-btn" id="btn-camera-close" aria-label="بستن دوربین">✕</button>
+    <button type="button" class="cam-btn cam-shutter" id="btn-shutter" aria-label="گرفتن عکس"></button>
+    <div class="cam-side-btns">
+      <button type="button" class="cam-btn hidden" id="btn-torch" aria-label="فلاش">⚡</button>
+      <button type="button" class="cam-btn" id="btn-flip" aria-label="تغییر دوربین">⟳</button>
+    </div>
+  </div>
+  <div class="zoom-row hidden" id="zoom-row">
+    <span aria-hidden="true">－</span>
+    <input type="range" id="camera-zoom" aria-label="بزرگ‌نمایی">
+    <span aria-hidden="true">＋</span>
+  </div>
+  <div id="camera-fallback" class="camera-fallback hidden">
+    <p>اگر دوربین زنده باز نشد:</p>
+    <label class="btn btn-secondary" for="file-camera">عکس با دوربین سیستم</label>
+  </div>
+</div>
 
 <noscript>
   <div style="padding:1rem;text-align:center">این برنامه به جاوااسکریپت نیاز دارد. لطفاً جاوااسکریپت مرورگر را فعال کنید.</div>
@@ -137,9 +170,11 @@
 <script src="js/responder.js"></script>
 <script src="js/pipeline.js"></script>
 <script src="js/preprocess.js"></script>
+<script src="js/boxdetect.js"></script>
 <script src="js/samples-data.js"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
 <script src="js/ocr.js"></script>
+<script src="js/camera.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

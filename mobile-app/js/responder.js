@@ -13,12 +13,18 @@
 
   var NO_TEXT_RESPONSE_FA =
     'هیچ متن قابل خواندنی در این تصویر شناسایی نشد. ' +
-    'لطفاً دوربین را ثابت نگه دارید، متن بسته را کامل در کادر قرار دهید، ' +
-    'نور را بهتر کنید و از انعکاس نور جلوگیری کنید؛ سپس دوباره تلاش کنید.';
+    'دوربین را به فاصله ۱۵ تا ۲۵ سانتی‌متری بسته ببرید، کل متن داخل کادر باشد، ' +
+    'دوربین را ثابت نگه دارید، در محیط روشن (در صورت نیاز با فلاش) و بدون انعکاس نور عکس بگیرید؛ سپس دوباره تلاش کنید.';
+
+  var PRODUCT_TYPE_FA = {
+    medicine: 'محصول دارویی',
+    general_product: 'محصول بسته‌بندی‌شده عمومی',
+    unknown: 'محصول بسته‌بندی‌شده'
+  };
 
   var DISCLAIMER_FA =
-    'این اطلاعات از متن قابل خواندن بسته استخراج شده‌اند و توصیه پزشکی ' +
-    'یا تعیین مقدار مصرف نیستند.';
+    'این اطلاعات فقط بازخوانی متن قابل خواندنِ روی بسته است؛ توصیه پزشکی ' +
+    'یا تعیین مقدار مصرف نیست و تأیید هویت یا اصالت محصول هم محسوب نمی‌شود.';
 
   var UNIT_FA = {
     'mg': 'میلی‌گرم', 'mcg': 'میکروگرم', 'g': 'گرم', 'mL': 'میلی‌لیتر',
@@ -111,17 +117,25 @@
     return 'هشدار کیفیت تصویر: ' + msgs;
   }
 
-  // پاسخ فارسی قالبی وفادار به شواهد
-  function buildResponse(fields, qualityIssues, extractionWarnings, ocrPieceCount) {
+  // پاسخ فارسی قالبی وفادار به شواهد — با مقدمه نوع محصول و شمارش فیلدها
+  function buildResponse(fields, qualityIssues, extractionWarnings, ocrPieceCount,
+    productType) {
     if (ocrPieceCount === 0) return NO_TEXT_RESPONSE_FA;
 
     var fieldList = Object.keys(fields).map(function (k) { return fields[k]; });
     var presentAny = fieldList.some(isPresent);
     if (!presentAny) {
-      return NO_TEXT_RESPONSE_FA.split('، سپس')[0] + '. ' + DISCLAIMER_FA;
+      return 'متن بسته خوانده شد اما هیچ فیلد شناخته‌شده‌ای (نام، قدرت درج‌شده، تاریخ و مانند آن) ' +
+        'در آن پیدا نشد. ' + NO_TEXT_RESPONSE_FA.split('؛ سپس')[0].split('. ')[1] + '. ' + DISCLAIMER_FA;
     }
 
     var sentences = [];
+    // مقدمه: نوع محصول فقط از واژه‌های خود برچسب تشخیص داده شده است
+    var typeFa = PRODUCT_TYPE_FA[productType] || PRODUCT_TYPE_FA.unknown;
+    var presentCount = fieldList.filter(isPresent).length;
+    sentences.push('بر اساس متن قابل خواندن روی بسته، این ' + typeFa + ' است و ' +
+      tn.digitsToPersian(String(presentCount)) + ' فیلد از برچسب خوانده شد:');
+
     var q = qualitySentence(qualityIssues);
     if (q) sentences.push(q);
 
@@ -151,7 +165,8 @@
     });
     if (missingKeysNote.length && ocrPieceCount > 0) {
       sentences.push('برای ' + missingKeysNote.join(' و ') +
-        ' مقدار واضحی روی برچسب خوانده نشد؛ مقدار غایب از هیچ منبع دیگری تکمیل نمی‌شود.');
+        ' مقدار واضحی روی برچسب خوانده نشد؛ مقدار غایب از هیچ منبع دیگری تکمیل نمی‌شود. ' +
+        'برای خواندن بهتر، از دوربین زنده استفاده کنید و متن مربوطه را داخل کادر بیندازید.');
     }
 
     sentences.push(DISCLAIMER_FA);
@@ -161,6 +176,7 @@
   LBR.responder = {
     NO_TEXT_RESPONSE_FA: NO_TEXT_RESPONSE_FA,
     DISCLAIMER_FA: DISCLAIMER_FA,
+    PRODUCT_TYPE_FA: PRODUCT_TYPE_FA,
     isPresent: isPresent,
     formatStrength: formatStrength,
     formatCount: formatCount,

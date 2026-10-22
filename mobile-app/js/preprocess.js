@@ -11,6 +11,7 @@
   var VARIANT_ORIGINAL = 'original';
   var VARIANT_GRAY_CLAHE = 'gray_clahe';
   var VARIANT_BINARIZED = 'binarized';
+  var VARIANT_SHARPENED = 'sharpened';
 
   // ---------- بارگذاری و مقیاس ----------
   // بارگذاری تصویر با توجه به جهت EXIF (عکس‌های موبایل)
@@ -139,6 +140,56 @@
     return out;
   }
 
+  // ---------- تیزکردن (Unsharp Mask) — بازیابی لبه‌های نرم‌شده با فوکوس ----------
+  // ماسک تیزکننده: gray + amount*(gray − blur(gray)) با blur جعبه‌ای ۳×۳
+  function sharpenGray(gray, w, h, amount) {
+    var a = (amount === undefined) ? 1.1 : amount;
+    var blur = new Float32Array(gray.length);
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        var i = y * w + x;
+        var s = gray[i], n = 1;
+        if (x > 0) { s += gray[i - 1]; n++; }
+        if (x < w - 1) { s += gray[i + 1]; n++; }
+        if (y > 0) { s += gray[i - w]; n++; }
+        if (y < h - 1) { s += gray[i + w]; n++; }
+        blur[i] = s / n;
+      }
+    }
+    var out = new Uint8ClampedArray(gray.length);
+    for (var j = 0; j < gray.length; j++) {
+      out[j] = gray[j] + a * (gray[j] - blur[j]);
+    }
+    return out;
+  }
+
+  // ---------- برش ناحیه بسته (خروجی boxdetect) ----------
+  function cropCanvas(sourceCanvas, box) {
+    var c = newCanvas(box.w, box.h);
+    var ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(sourceCanvas,
+      box.x, box.y, box.w, box.h,
+      0, 0, box.w, box.h);
+    return c;
+  }
+
+  // ---------- چرخش ۹۰ درجه (برای تلاش جهت‌های دیگر OCR) ----------
+  function rotate90(sourceCanvas, direction) {
+    // direction: 1 = ساعتگرد، -1 = پادساعتگرد
+    var w = sourceCanvas.width, h = sourceCanvas.height;
+    var out = newCanvas(h, w);
+    var ctx = out.getContext('2d', { willReadFrequently: true });
+    if (direction === 1) {
+      ctx.translate(h, 0);
+      ctx.rotate(Math.PI / 2);
+    } else {
+      ctx.translate(0, w);
+      ctx.rotate(-Math.PI / 2);
+    }
+    ctx.drawImage(sourceCanvas, 0, 0);
+    return out;
+  }
+
   // ---------- آستانه‌گذاری تطبیقی (معادل adaptiveThreshold گاوسی) ----------
   function binarize(gray, w, h, windowSize, c) {
     // میانگین با تصویر انتگرالی (تقریب کارآمد پنجره گاوسی)
@@ -248,6 +299,11 @@
     var claheGray = clahe(gray, scaled.w, scaled.h,
       settings.clahe_clip_limit, settings.clahe_tile_size);
     variants[VARIANT_GRAY_CLAHE] = grayToCanvas(claheGray, scaled.w, scaled.h);
+    // نسخه تیزشده: برای عکس‌های کمی نرم دوربین موبایل مؤثر است
+    if (settings.use_sharpened_variant) {
+      var sharp = sharpenGray(claheGray, scaled.w, scaled.h, 1.1);
+      variants[VARIANT_SHARPENED] = grayToCanvas(sharp, scaled.w, scaled.h);
+    }
     if (settings.use_binarized_variant) {
       var bw = binarize(gray, scaled.w, scaled.h, 31, 15);
       variants[VARIANT_BINARIZED] = grayToCanvas(bw, scaled.w, scaled.h);
@@ -265,11 +321,15 @@
     VARIANT_ORIGINAL: VARIANT_ORIGINAL,
     VARIANT_GRAY_CLAHE: VARIANT_GRAY_CLAHE,
     VARIANT_BINARIZED: VARIANT_BINARIZED,
+    VARIANT_SHARPENED: VARIANT_SHARPENED,
     loadImage: loadImage,
     drawScaled: drawScaled,
     toGrayData: toGrayData,
     clahe: clahe,
     binarize: binarize,
+    sharpenGray: sharpenGray,
+    cropCanvas: cropCanvas,
+    rotate90: rotate90,
     autoDeskew: autoDeskew,
     buildVariants: buildVariants
   };
