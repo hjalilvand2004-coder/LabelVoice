@@ -23,3 +23,4 @@ tmp/
 # خروجی و کلید build اندروید
 android/build/
 android/keystore/
+android/fakejdk/
