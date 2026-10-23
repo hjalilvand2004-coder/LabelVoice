@@ -16,6 +16,7 @@ VARIANT_ORIGINAL = "original"
 VARIANT_GRAY_CLAHE = "gray_clahe"
 VARIANT_BINARIZED = "binarized"
 VARIANT_WHITE_ON_DARK = "white_on_dark"
+VARIANT_INK_ISOLATED = "ink_isolated"
 
 
 def upscale_if_needed(bgr: np.ndarray, target_min_side: int) -> np.ndarray:
@@ -69,6 +70,22 @@ def white_on_dark(bgr: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(cv2.bitwise_not(bw), cv2.COLOR_GRAY2BGR)
 
 
+def ink_isolated(bgr: np.ndarray) -> np.ndarray:
+    """جداسازی جوهر رنگی روی زمینه روشن (v1.8.0).
+
+    متن رنگی (آبی/بنفش/قرمز/سبز) روی جعبه سفید در کانال خاکستری کم‌کنتراست
+    می‌شود و تسراکت آن را یا نمی‌بیند یا خراب می‌خواند. با 255 - max(B,G,R)
+    هر جوهری (هرچه رنگی‌تر باشد کانالی بالاتر دارد) به جوهر تیره روی زمینه
+    روشن تبدیل می‌شود؛ سفیدی زمینه در هر سه کانال بالاست و روشن می‌ماند.
+    آزمایش روی جعبه لانزول: «کپسول انتریک کوتد» بنفش فقط با همین واریانت
+    + PSM 11 خوانا شد؛ کانال آبی معکوس هم «کیسول انتریک کوند» داد.
+    """
+    max_ch = cv2.max(cv2.max(bgr[:, :, 0], bgr[:, :, 1]), bgr[:, :, 2])
+    ink = 255 - max_ch
+    ink = cv2.GaussianBlur(ink, (3, 3), 0)
+    return cv2.cvtColor(ink, cv2.COLOR_GRAY2BGR)
+
+
 def estimate_skew_angle(bgr: np.ndarray) -> float:
     """برآورد زاویه چرخش سطرهای متن (درجه). مثبت = نیاز به چرخش پادساعتگرد."""
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
@@ -120,9 +137,8 @@ def crop_fraction(bgr: np.ndarray, box: tuple[float, float, float, float]) -> np
 def build_variants(bgr: np.ndarray, settings: Settings) -> dict[str, np.ndarray]:
     """ساخت نسخه‌های پردازشی؛ تصویر اصلی حفظ و بازگردانده می‌شود.
 
-    واریانت white_on_dark برای متن روشن روی جعبه‌های تیره اضافه شد (v1.7.0)؛
-    در تصویر نمونه جعبه کمک‌دستی، «MEDICINE/BOX» سفید روی سبز-آبی فقط با این
-    واریانت یا CLAHE خوانا می‌شود.
+    واریانت white_on_dark برای متن روشن روی جعبه‌های تیره (v1.7.0) و
+    ink_isolated برای جوهر رنگی روی زمینه روشن (v1.8.0) اضافه شده‌اند.
     """
     base = upscale_if_needed(bgr, settings.target_min_side)
     variants: dict[str, np.ndarray] = {VARIANT_ORIGINAL: base}
@@ -130,4 +146,6 @@ def build_variants(bgr: np.ndarray, settings: Settings) -> dict[str, np.ndarray]
     if settings.use_binarized_variant:
         variants[VARIANT_BINARIZED] = binarize(base)
     variants[VARIANT_WHITE_ON_DARK] = white_on_dark(base)
+    if getattr(settings, "use_ink_isolated_variant", True):
+        variants[VARIANT_INK_ISOLATED] = ink_isolated(base)
     return variants

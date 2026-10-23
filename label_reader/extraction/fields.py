@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 
-from ..models import FieldRecord, FieldStatus, RawLine
+from ..models import FieldRecord, FieldStatus, OcrPiece, RawLine
 from ..textnorm import cleaned_display_text
 from ..config import Settings
 from .conflicts import Candidate, resolve_candidates
@@ -59,8 +59,20 @@ def _has_alpha(text: str) -> bool:
     return sum(1 for ch in text if ch.isalpha()) >= _ALPHA_MIN
 
 
+# واژه‌های ساختاری که به‌تنهایی «نام محصول» نیستند (v1.8.0): اگر کل سطر
+# کاندیدِ نام فقط از این واژه‌ها + ارقام ساخته شده باشد، نام نیست (شکل دارویی
+# یا بسته‌بندی است) و اعلامش به‌عنوان نام گمراه‌کننده است.
+_STRUCTURAL_ONLY_RE = re.compile(
+    r"^(?:[\d\s۰-۹/.,\-–—]|کپسول|انتریک|کوتد|قرص|شربت|آمپول|سوسپانسیون|قطره|"
+    r"پماد|ژل|کرم|اسپری|شیاف|دستورالعمل|بسته|عدد|حاوی|میلی|گرم|لیتر|"
+    r"تأسیس|تاسیس|شرکت|کارخانه|کد|سری|ساخت|انقضا|تولید|"
+    r"mg|ml|g|tablet|capsule|syrup|caps|tab)+$",
+    re.IGNORECASE,
+)
+
+
 def _plausible_name(text: str) -> bool:
-    """آیا این سطر می‌تواند نام محصول باشد؟ (v1.7.0 — دروازه ضدزباله)
+    """آیا این سطر می‌تواند نام محصول باشد؟ (v1.7.0/1.8.0 — دروازه ضدزباله)
 
     معیارها:
     - دست‌کم سه نویسه حرفی؛
@@ -69,7 +81,8 @@ def _plausible_name(text: str) -> bool:
     - ترکیب حرف لاتین + رقم فارسی/عربی در یک سطر رد می‌شود (برچسب واقعی
       در نام فقط از یک خط نوشتار استفاده می‌کند؛ این ترکیب فقط در خوانش خراب
       دیده می‌شود)؛
-    - بیشینه یک فاصله‌داشتنی پیوسته نماد غیرمجاز نیست… (با الگوی بالا پوشش داده می‌شود).
+    - v1.8.0: سطری که فقط از واژه‌های ساختاری (شکل دارویی/واحد) + عدد ساخته
+      شده نام نیست — «کپسول انتریک کوتد» شکل دارویی است نه نام محصول.
     """
     if not _has_alpha(text):
         return False
@@ -83,6 +96,8 @@ def _plausible_name(text: str) -> bool:
     fa_digit = sum(1 for ch in text if ch in "\u06f0\u06f1\u06f2\u06f3\u06f4\u06f5\u06f6\u06f7\u06f8\u06f9"
                    "\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669")
     if latin > 0 and fa_digit > 0:
+        return False
+    if _STRUCTURAL_ONLY_RE.match(text.replace("\u200c", " ").strip()):
         return False
     return True
 
@@ -203,13 +218,25 @@ def _free_text_field(key: str, lines: list[RawLine], keyword_re,
 
 
 def _name_candidates(consumed: set[int], lines: list[RawLine],
-                     settings: Settings) -> list[int]:
-    """کاندیدهای نام — فقط سطرهای «باورپذیر» (v1.7.0 دروازه ضدزباله).
+                     settings: Settings,
+                     pieces_by_id: dict[str, "OcrPiece"] | None = None
+                     ) -> list[int]:
+    """کاندیدهای نام — فقط سطرهای «باورپذیر» (v1.7.0/1.8.0 دروازه ضدزباله).
 
     سطرهای آشغال OCR (مثل «RIE [SE ۱ ES {= ray WE») دیگر نام نمی‌شوند؛
     سطرهای با اطمینان زیر name_min_confidence هم کاندید نمی‌شوند تا زبالهٔ
     کم‌اطمینان بالای تصویر، نام واقعیِ پراطمینان (مثل MEDICINE) را نپوشاند.
     در نبود کاندید معتبر، نام صادقانه MISSING اعلام می‌شود.
+
+    v1.8.0: سطر «بریده» هم نام نمی‌شود — اگر محتوای حرفیِ سطر، زیرمجموعهٔ
+    محتوای حرفیِ سطر بلندتری باشد (مثل «پرازول» داخل «لانسوپرازول ۳۰
+    میلی‌گرم»)، آن سطر قطعه‌ی خوانش جدا شده است، نه نام مستقل.
+
+    v1.8.0-و (قانون اعتبارسنجی چندموتوره): نام فیلدِ حساس است؛ سطر نام باید
+    (الف) همه‌ی قطعه‌هایش اطمینان ≥ ۰٫۵ داشته باشند و (ب) دست‌کم یک قطعه با
+    رأی تکرارشده (support ≥ ۲ از تسراکت، یا support ≥ ۳ از هر موتوری)
+    داشته باشد. به این ترتیب خوانش‌های تک‌منبع (امضای دست‌نویس، خوش‌نویسی
+    تزئینی، خوانش اشتباه با اطمینان کاذب) نام نمی‌شوند.
     """
     out = []
     for idx, line in enumerate(lines):
@@ -220,8 +247,159 @@ def _name_candidates(consumed: set[int], lines: list[RawLine],
             continue
         if len(line.normalized_text) > 80:
             continue
+        if _is_fragment_of_other_line(idx, lines):
+            continue
+        if _is_repeated_word_line(idx, lines):
+            continue
+        # v1.8.0: نام تک‌واژه با اطمینان متوسط/پایین قابل اعتماد نیست
+        conf = line.confidence_mean if line.confidence_mean is not None else 0.5
+        if " " not in line.normalized_text.strip() and conf < 0.75:
+            continue
+        # v1.8.0-و: قانون چندموتوره/تکرارشده
+        if pieces_by_id is not None and not _line_has_corroboration(
+                line, pieces_by_id):
+            continue
         out.append(idx)
     return out
+
+
+def _line_has_corroboration(line: RawLine,
+                            pieces_by_id: dict[str, "OcrPiece"]) -> bool:
+    """آیا سطر نام، شاهد تکرارشده دارد؟ (v1.8.0-و)
+
+    پذیرفته می‌شود اگر:
+    - همه‌ی قطعه‌های شاهد اطمینان ≥ ۰٫۵ داشته باشند (None = ۰٫۵)، و
+    - دست‌کم یک قطعه با support ≥ ۲ از موتور تسراکت یا support ≥ ۳ از هر
+      موتوری وجود باشد (خوانش تکرارشده در چند واریانت/PSM/موتور).
+    """
+    pieces = [pieces_by_id[sid] for sid in line.source_ids
+              if sid in pieces_by_id]
+    if not pieces:
+        # بدون اطلاعات قطعه (مثل آزمون‌های قدیمی) سخت‌گیری اضافه نمی‌شود
+        return True
+    for p in pieces:
+        conf = p.confidence if p.confidence is not None else 0.5
+        if conf < 0.5:
+            return False
+    for p in pieces:
+        support = int(getattr(p, "support", 1) or 1)
+        if support >= 3:
+            return True
+        if support >= 2 and str(p.engine).startswith("tesseract"):
+            return True
+    return False
+
+
+def _letters_of(text: str) -> str:
+    """فقط حروف الفبا (بدون ارقام/فاصله/نماد) برای مقایسه‌ی بریدگی."""
+    return "".join(ch for ch in text if ch.isalpha())
+
+
+def _is_fragment_of_other_line(idx: int, lines: list[RawLine]) -> bool:
+    """آیا سطر idx بریده‌ی یک سطر بلندتر است؟ (v1.8.0)
+
+    اگر رشته‌ی حروف سطر، زیررشته‌ی رشته‌ی حروف سطر دیگری با اختلاف طول ≥ ۲
+    باشد، سطر یک قطعه‌ی جداشده از همان واژه است (خوانش دو تکه‌ی یک کلمه).
+    """
+    own = _letters_of(lines[idx].normalized_text)
+    if len(own) < 4:
+        return False
+    for j, other in enumerate(lines):
+        if j == idx:
+            continue
+        other_letters = _letters_of(other.normalized_text)
+        if len(other_letters) <= len(own) + 1:
+            continue
+        if own in other_letters:
+            return True
+    return False
+
+
+def _is_repeated_word_line(idx: int, lines: list[RawLine]) -> bool:
+    """سطری که همه‌ی واژه‌های حرفی‌اش در سطر دیگری هم هست، نام نیست (v1.8.0).
+
+    ماده‌ی مؤثره معمولاً دو بار روی بسته چاپ می‌شود (زیر برند + در ترکیبات)؛
+    برند فقط یک بار. اگر همه‌ی واژه‌های حرفی (طول ≥ ۴) سطر کاندید در سطر
+    دیگری هم بیابد، آن سطر «تکرار ماده/متن» است نه نام مستقل.
+    """
+    import difflib
+
+    own_words = [w for w in lines[idx].normalized_text.split(" ")
+                 if len(w) >= 4 and any(ch.isalpha() for ch in w)]
+    if not own_words:
+        return False
+    for j, other in enumerate(lines):
+        if j == idx:
+            continue
+        other_words = other.normalized_text.split(" ")
+        hits = 0
+        for w in own_words:
+            for ow in other_words:
+                if w == ow or difflib.SequenceMatcher(None, w, ow).ratio() >= 0.85:
+                    hits += 1
+                    break
+        if own_words and hits == len(own_words):
+            return True
+    return False
+
+
+def _clean_ingredient_tokens(val: str) -> str:
+    """حذف نخاله‌های پیرامون از مقدار مادهٔ مؤثره (v1.8.0).
+
+    توکن‌های خالصاً عددی، تک‌حرفی/دوحرفی، و ترکیب‌خطی حذف می‌شوند تا از
+    سطرهای آلوده (مثل «وی ۹ 6 لانسوپرازول ۳۰ میلی‌گرم») فقط واژه‌های
+    معنادار (لانسوپرازول) بیرون بیاید.
+    """
+    keep: list[str] = []
+    for tok in val.split(" "):
+        core = tok.strip("،.:؛!؟()«»")
+        if not core:
+            continue
+        alnum = sum(1 for ch in core if ch.isalnum())
+        if alnum < 3:
+            continue
+        if all(ch.isdigit() for ch in core if ch.isalnum()) and \
+                any(ch.isdigit() for ch in core):
+            continue
+        if sum(1 for ch in core if "\u0600" <= ch <= "\u06ff") > 0 and \
+                sum(1 for ch in core if ch.isascii() and ch.isalpha()) > 0:
+            continue
+        keep.append(tok)
+    return " ".join(keep)
+
+
+def _ingredient_from_next_line(idx: int, lines: list[RawLine]) -> tuple[str, RawLine] | None:
+    """«حاوی:» در انتهای سطر و مقدار در سطر بعدی (چیدمان دو سطری) — v1.8.0.
+
+    روی جعبه‌های واقعی (مثل لانزول) سطر اول با «حاوی:» تمام می‌شود و سطر
+    بعدی «لانسوپرازول ۳۰ میلی‌گرم» است. مقدار فقط وقتی پذیرفته می‌شود که:
+    - سطر بعدی بلافاصله زیر سطر فعلی باشد (فاصله ≤ ۲٫۲ برابر ارتفاع)؛
+    - بازهٔ x آن‌ها هم‌پوشانی معنادار داشته باشد (ستون واحد)؛
+    - شامل الگوی قدرت (عدد + واحد) باشد — سطر ترکیب دارویی تقریباً همیشه
+      دوز دارد؛ این شرط جلوی گرفتن سطرهای نامرتبط مثل «موارد مصرف» را می‌گیرد.
+    بازگشت: (مقدار بدون الگوی قدرت، سطر شاهد) یا None.
+    """
+    if idx + 1 >= len(lines):
+        return None
+    cur, nxt = lines[idx], lines[idx + 1]
+    cur_h = max(1, cur.bbox.h)
+    if nxt.bbox.y - cur.bbox.y > 2.2 * cur_h:
+        return None
+    # هم‌پوشانی ستونی
+    ix = max(0, min(cur.bbox.x2, nxt.bbox.x2) - max(cur.bbox.x, nxt.bbox.x))
+    min_w = max(1, min(cur.bbox.w, nxt.bbox.w))
+    if ix / min_w < 0.25:
+        return None
+    text = nxt.normalized_text
+    if not RE_STRENGTH.search(text):
+        return None
+    val = RE_STRENGTH.sub(" ", text)
+    val = cleaned_display_text(val.strip(" :=-،,"))
+    val = _clean_ingredient_tokens(val)
+    if not val or not _has_alpha(val) or \
+            _STRUCTURAL_ONLY_RE.match(val.replace("\u200c", " ").strip()):
+        return None
+    return val, nxt
 
 
 def extract_fields(
@@ -229,10 +407,16 @@ def extract_fields(
     product_type: str,
     settings: Settings,
     image_height: int | None = None,
+    pieces: list["OcrPiece"] | None = None,
 ) -> tuple[dict[str, FieldRecord], list[str]]:
-    """استخراج همه فیلدها. بازگشت: (فیلدها، هشدارهای استخراج)."""
+    """استخراج همه فیلدها. بازگشت: (فیلدها، هشدارهای استخراج).
+
+    pieces (اختیاری، v1.8.0): قطعه‌های OCR برای اعتبارسنجی چندموتورهٔ نام.
+    """
     extraction_warnings: list[str] = []
     consumed: set[int] = set()
+    pieces_by_id: dict[str, OcrPiece] = {
+        p.id: p for p in (pieces or []) if p.id}
 
     strength_cands: list[Candidate] = []
     count_cands: list[Candidate] = []
@@ -369,22 +553,34 @@ def extract_fields(
             continue
         after = line.normalized_text[m.end():]
         st = RE_STRENGTH.search(after)
+        src_line = line
         if st is not None:
             cand = _text_candidate_from_strength(st, line, idx)
             val = cleaned_display_text(
                 after[: st.start()].strip(" :=-،,") or st.group(0))
         else:
-            val = cleaned_display_text(line.text)
+            # v1.8.0: مقدار = فقط متنِ «بعد از» واژهٔ کلیدی؛ کل سطر (شامل خودِ
+            # برچسب مثل «کپسول حاوی:») هرگز مادهٔ مؤثره اعلام نمی‌شود.
+            val = _clean_ingredient_tokens(
+                cleaned_display_text(after.strip(" :=-،,")))
+        if not val or _STRUCTURAL_ONLY_RE.match(
+                val.replace("\u200c", " ").strip()) or not _has_alpha(val):
+            # v1.8.0: «حاوی:» در انتهای سطر؛ مقدار احتمالاً در سطر بعدی است
+            nxt = _ingredient_from_next_line(idx, lines)
+            if nxt is None:
+                # بعد از واژه کلیدی چیزی خوانا نیست؛ از این سطر ماده مؤثره نمی‌سازیم
+                continue
+            val, src_line = nxt
             cand = None
-        conf = _conf_of(line)
+        conf = _conf_of(src_line)
         fields["active_ingredient"] = _mk_record(
             "active_ingredient",
             FieldStatus.EXTRACTED if conf >= settings.low_confidence_threshold
             else FieldStatus.UNCERTAIN,
             value=val or None, unit=(cand.unit if cand else None),
-            raw_text=line.text, source_ids=list(line.source_ids),
+            raw_text=src_line.text, source_ids=list(src_line.source_ids),
             confidence=round(conf, 2))
-        consumed.add(idx)
+        consumed.add(idx if src_line is line else lines.index(src_line))
         break
 
     # شکل دارویی
@@ -458,7 +654,8 @@ def extract_fields(
                     confidence=round(conf, 2))
                 consumed.add(top)
                 name_set = True
-    name_idx_list = [] if name_set else _name_candidates(consumed, lines, settings)
+    name_idx_list = [] if name_set else _name_candidates(
+        consumed, lines, settings, pieces_by_id)
     if name_idx_list:
         # v1.7.0: انتخاب «بالاترین سطرِ باورپذیر» با شرط نزدیکی اطمینان —
         # نام محصول معمولاً بالای بسته است؛ اما اگر سطر بالایی زبالهٔ

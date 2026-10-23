@@ -18,7 +18,7 @@ html = (ROOT / 'index.html').read_text(encoding='utf-8')
 # حذف لینک manifest و SW ثبت‌شونده در تک‌فایل بی‌معناست؛ فقط استایل‌شیت را inline کن
 html = html.replace('<link rel="manifest" href="manifest.webmanifest">\n', '')
 html = re.sub(
-    r'<link rel="stylesheet" href="css/style.css">',
+    r'<link rel="stylesheet" href="css/style\.css(?:\?v=[^"]*)?">',
     '<style>\n' + (ROOT / 'css/style.css').read_text(encoding='utf-8') + '\n</style>',
     html)
 
@@ -26,7 +26,7 @@ def inline_script(m: 're.Match') -> str:
     src = m.group(1)
     if src.startswith('http'):
         return m.group(0)  # CDN دست‌نخورده
-    path = ROOT / src
+    path = ROOT / src.split('?')[0]  # v1.8.0: پشتیبانی از کش-باست (?v=…)
     if not path.exists():
         raise SystemExit(f'فایل یافت نشد: {path}')
     code = path.read_text(encoding='utf-8')

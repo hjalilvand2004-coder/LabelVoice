@@ -21,10 +21,16 @@ from .ocr.base import OcrProvider, OcrUnavailableError
 from .ocr.easyocr_provider import EasyOcrProvider
 from .ocr.tesseract_provider import TesseractProvider
 from .preprocess import auto_deskew, build_variants, crop_fraction
-from .preprocess import VARIANT_BINARIZED, VARIANT_ORIGINAL
+from .preprocess import (
+    VARIANT_BINARIZED, VARIANT_GRAY_CLAHE, VARIANT_INK_ISOLATED, VARIANT_ORIGINAL,
+)
 from .quality import assess_quality
 from .stages import image_quality_metrics
-from .textnorm import normalize_for_matching, normalize_digits_ascii
+from .textnorm import (
+    fix_common_label_words,
+    normalize_for_matching,
+    normalize_digits_ascii,
+)
 from .validation import validate_and_load, pil_to_bgr
 from .extraction import classify_product_type, extract_fields
 from .response import build_response, validate_text
@@ -140,6 +146,33 @@ class LabelReaderPipeline:
                 provider.run(image, name),
                 image_area=int(variants[VARIANT_ORIGINAL].shape[0]) *
                 int(variants[VARIANT_ORIGINAL].shape[1]))
+
+        # ۵-ب) موتور دوم مکمل (v1.8.0): EasyOCR فقط نواحی‌ای را پر می‌کند که
+        # تسراکت ضعیف خوانده؛ در نبود کتابخانه/مدل، بی‌صدا رد می‌شود.
+        engines_used = [provider.name]
+        easy_used = False
+        if (self._injected_provider is None and
+                getattr(self.settings, "dual_engine", False) and
+                provider.name.startswith("tesseract")):
+            try:
+                easy = EasyOcrProvider(self.settings)
+                easy_ok, _ = easy.available()
+                if easy_ok:
+                    easy_names = [
+                        n.strip() for n in
+                        str(getattr(self.settings, "easyocr_variants",
+                                    "original,gray_clahe")).split(",")
+                        if n.strip() in variants]
+                    for name in easy_names:
+                        by_variant.setdefault(f"{name}", []).extend(
+                            self._filter_pieces(
+                                easy.run(variants[name], name),
+                                image_area=int(variants[VARIANT_ORIGINAL].shape[0]) *
+                                int(variants[VARIANT_ORIGINAL].shape[1])))
+                    engines_used.append("easyocr")
+                    easy_used = True
+            except Exception:  # noqa: BLE001 — موتور دوم هرگز پردازش را نمی‌شکند
+                pass
         durations["ocr_raw_ms"] = int((time.perf_counter() - t0) * 1000)
 
         variant_results = []
@@ -184,7 +217,8 @@ class LabelReaderPipeline:
         t0 = time.perf_counter()
         fields, extraction_warnings = extract_fields(
             raw_lines, product_type.value, self.settings,
-            image_height=variants[VARIANT_ORIGINAL].shape[0])
+            image_height=variants[VARIANT_ORIGINAL].shape[0],
+            pieces=pieces)
         durations["extraction_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # ---- مرحله ۳: پردازش متن و کنترل فیلدها (اعلام) ----
@@ -245,8 +279,9 @@ class LabelReaderPipeline:
         ]
 
         metadata = ProcessingMetadata(
-            engine=provider.name,
-            languages=self.settings.ocr_languages,
+            engine=" + ".join(engines_used) if easy_used else provider.name,
+            languages="+".join(getattr(provider, "last_langs_used", []) or
+                               [self.settings.ocr_languages]),
             variants_used=list(variants.keys()),
             image_width=orig_w,
             image_height=orig_h,
@@ -301,20 +336,49 @@ class LabelReaderPipeline:
         return result
 
     # ---------- ابزارهای داخلی ----------
+    _FA_LETTER = "\u0600-\u06ff\u0750-\u077f\ufb50-\ufdff\ufe70-\ufeff"
+    _LATIN_LETTER = "a-zA-Z\u00c0-\u024f"
+    _FA_DIGIT = "\u06f0-\u06f9\u0660-\u0669"
+    _LATIN_DIGIT = "0-9"
+
+    @classmethod
+    def _is_mixed_script_garbage(cls, text: str) -> bool:
+        """تشخیص زبالهٔ ترکیب‌خطی (v1.8.0) — ریشهٔ خروجی آشغالِ پیشین.
+
+        یک کلمه/قطعهٔ واقعی برچسب از «یک» خط نوشتاری می‌آید. حضور همزمان
+        حرف فارسی + حرف لاتین (مثل «کپسولSy») یا رقم فارسی + رقم لاتین
+        (مثل «44۵») در «یک قطعه» فقط محصول خوانش خراب است و حذف می‌شود.
+        ارقام لاتین با حروف فارسی (مثل «30 میلی‌گرم») مجاز است چون اغلب
+        موتورها ارقام را لاتین برمی‌گردانند.
+        """
+        import re
+        has_fa_letter = re.search(f"[{cls._FA_LETTER}]", text) is not None
+        has_lat_letter = re.search(f"[{cls._LATIN_LETTER}]", text) is not None
+        if has_fa_letter and has_lat_letter:
+            return True
+        has_fa_digit = re.search(f"[{cls._FA_DIGIT}]", text) is not None
+        has_lat_digit = re.search(f"[{cls._LATIN_DIGIT}]", text) is not None
+        if has_fa_digit and has_lat_digit:
+            return True
+        return False
+
     def _filter_pieces(self, raw: list, image_area: int | None = None) -> list:
-        """گیت کیفیت قطعه‌های OCR (v1.7.0) — حذف زباله قبل از هر ادغام.
+        """گیت کیفیت قطعه‌های OCR (v1.7.0 + v1.8.0) — حذف زباله قبل از هر ادغام.
 
         - نمادهای محض بدون هیچ حرف/رقم (@ ، » ، ° و…) حذف می‌شوند؛
         - کف مطلق اطمینان (settings.piece_conf_floor)؛
         - قطعه‌های خیلی کوتاه باید اطمینان بالاتری داشته باشند؛
         - قطعه‌ی کوتاه با کادر غول‌پیکر (نشان شکست تحلیل چیدمان، مثل یک «3»
-          با کادر ۴۳۱×۳۹۴ که کل پایین تصویر را می‌بلعید) حذف می‌شود.
+          با کادر ۴۳۱×۳۹۴ که کل پایین تصویر را می‌بلعید) حذف می‌شود؛
+        - v1.8.0: قطعهٔ ترکیب‌خطی (حرف فارسی + حرف لاتین همزمان) حذف می‌شود.
         این فیلتر جلوی تولید سطرهای فرانکشتاین را می‌گیرد.
         """
         out = []
         for p in raw:
             text = (p.text or "").strip()
             if not text:
+                continue
+            if self._is_mixed_script_garbage(text):
                 continue
             if p.confidence is not None and \
                     p.confidence < self.settings.piece_conf_floor:
@@ -350,41 +414,83 @@ class LabelReaderPipeline:
         return score
 
     def _merge_pieces_best_first(self, by_variant: dict[str, list]) -> list:
-        """ادغام بهترین-اول (v1.7.0) — جانشین ادغام کامل قبلی.
+        """ادغام بهترین-اول با رأی‌گیری اجماعی (v1.7.0 + v1.8.0).
 
         مشکل روش قبلی: ریختن همه قطعه‌های همه واریانت‌ها در یک سبد، سطرهای
         ترکیبی بی‌معنی می‌ساخت (هر واریانت همان کلمه را کمی جابه‌جا/متفاوت
         می‌خواند). اکنون: واریانت با بیشترین امتیاز مبناست؛ سایر واریانت‌ها فقط
         ناحیه‌هایی را پر می‌کنند که هنوز پوشش داده نشده (بدون همپوشانی کادر).
+
+        v1.8.0: هر بار که پیکربندی دیگری همان ناحیه را خواند، «support» قطعهٔ
+        نگه‌داشته‌شده یکی بالا می‌رود؛ بعد از ادغام، قطعه‌های «تک‌رأی» با
+        اطمینان پایین حذف می‌شوند (نویز تک‌پیکربندی مثل «سس»، «طح»).
         """
         order = sorted(
             by_variant.items(),
             key=lambda kv: self._score_variant(kv[1]), reverse=True)
+        # v1.8.0-ز: دو گذرِ ادغام — اول قطعه‌های «سالم» (جعبه‌ی درست)، بعد
+        # «فشرده‌ها» فقط برای پر کردن جای خالی. به این ترتیب جعبه‌ی فشرده‌ی
+        # EasyOCR نمی‌تواند زودتر از کلمات دقیق تسراکت جای آن‌ها را بگیرد و
+        # آن‌ها را بلعیده و واژه‌های تکراری/متناقض بسازد.
+        all_items = [(name, p) for name, vps in order for p in vps]
+        normal_items = []
+        squeezed_items = []
+        for name, rp in all_items:
+            norm = normalize_for_matching(rp.text)
+            n_words = len([w for w in norm.split(" ") if w])
+            # جعبهٔ فشرده: عرض به‌ازای هر واژه < ۱٫۶ برابر ارتفاع
+            is_squeezed = (n_words >= 2 and rp.h > 0 and
+                           rp.w < 1.6 * rp.h * n_words)
+            (squeezed_items if is_squeezed else normal_items).append((name, rp))
+
         kept: list[OcrPiece] = []
-        for _name, vps in order:
-            for rp in vps:
+        for pass_squeezed, items in ((False, normal_items),
+                                     (True, squeezed_items)):
+            for _name, rp in items:
                 bb = BoundingBox(x=rp.x, y=rp.y, w=rp.w, h=rp.h)
                 norm = normalize_for_matching(rp.text)
                 duplicated = False
                 for ex in kept:
                     # همان ناحیه فیزیکی: IoU بالا یا احتواء با قرینه متنی
-                    if self._same_region(ex.bbox, bb, ex.text, rp.text):
+                    if not self._same_region(ex.bbox, bb, ex.text, rp.text):
+                        continue
+                    # قطعهٔ فشرده در گذر دوم فقط رأی می‌دهد؛ ناحیهٔ پوشش‌داده
+                    # شده را پر نمی‌کند و جانشین نمی‌شود
+                    if not pass_squeezed:
                         ex_norm = normalize_for_matching(ex.text).lower()
-                        norm_l = norm.lower()  # مقایسه بدون حساسیت به بزرگی حروف
+                        norm_l = norm.lower()
                         conf_rp = rp.confidence or 0
                         conf_ex = ex.confidence or 0
                         if ex_norm != norm_l:
                             if norm_l in ex_norm or ex_norm in norm_l:
                                 # «احتوای متنی»: یکی زیررشتهٔ دیگری است
-                                # (خوانش جزئی همان کلمه). برنده: اطمینان بالاتر؛
-                                # مگر آنکه طول‌ها ≥۲ اختلاف داشته باشند و
-                                # خوانش بلندتر معتبر باشد (مثل BOX به‌جای O)
+                                # (خوانش جزئی همان کلمه/عبارت).
+                                # v1.8.0-ح: عبارت چندواژه‌ای حق ندارد جای
+                                # کلمهٔ دقیق را بگیرد مگر با اطمینان دست‌کم
+                                # برابر (جملهٔ شل ۰٫۵۱ نباید کلمهٔ ۰٫۹۰ را
+                                # له کند)؛ و برعکس، کلمهٔ دقیقِ بسیار
+                                # پراطمینان می‌تواند عبارت کم‌اطمینان را
+                                # جایگزین کند.
                                 len_gap = abs(len(norm_l) - len(ex_norm))
                                 longer_new = len(norm_l) > len(ex_norm)
-                                if len_gap >= 2 and \
-                                        ((longer_new and conf_rp >= 0.5) or
-                                         (not longer_new and conf_ex >= 0.5)):
-                                    winner_new = longer_new
+                                if len_gap >= 2:
+                                    multi_in = len(norm_l.split()) >= 2
+                                    multi_ex = len(ex_norm.split()) >= 2
+                                    if longer_new:
+                                        winner_new = (conf_rp >= conf_ex
+                                                      if multi_in
+                                                      else conf_rp >= 0.5)
+                                    else:
+                                        winner_new = (conf_rp >= conf_ex + 0.15
+                                                      if multi_ex
+                                                      else conf_ex < 0.5)
+                                elif len_gap == 1:
+                                    # خوانش جزئی با یک نویسه کمتر (مثل «۰»
+                                    # به‌جای «۳۰» یا BOX به‌جای BOXES):
+                                    # کامل‌ترِ هم‌اطمینان (اختلاف ≤ ۰٫۰۵) می‌برد
+                                    winner_new = (conf_rp >= conf_ex - 0.05
+                                                  if longer_new
+                                                  else conf_rp < conf_ex - 0.05)
                                 else:
                                     winner_new = conf_rp > conf_ex
                                 if winner_new:
@@ -405,15 +511,71 @@ class LabelReaderPipeline:
                                     ex.normalized_text = norm
                                     ex.confidence = rp.confidence
                                     ex.variant = rp.variant
-                        duplicated = True
-                        break
+                    # رأی اجماعی: پیکربندی دیگری هم این ناحیه را خواند
+                    ex.support = getattr(ex, "support", 1) + 1
+                    duplicated = True
+                    break
                 if duplicated:
                     continue
                 kept.append(OcrPiece(
                     id="", text=rp.text, normalized_text=norm, bbox=bb,
                     confidence=rp.confidence, variant=rp.variant,
-                    engine=rp.engine))
-        return kept
+                    engine=rp.engine, support=1))
+        # --- فیلتر اجماعی (v1.8.0): حذف نویز تک‌رأی کم‌اطمینان ---
+        return self._apply_consensus_filter(kept)
+
+    def _apply_consensus_filter(self, pieces: list[OcrPiece]) -> list[OcrPiece]:
+        """قطعه‌ای که فقط یک پیکربندی خوانده و اطمینانش پایین است حذف می‌شود.
+
+        کلمات واقعی برچسب معمولاً در چند واریانت/PSM/موتور تکرار خوانده می‌شوند
+        (support ≥ 2) یا اطمینان بالایی دارند؛ نویزِ منحصربه‌فردِ کم‌اطمینان
+        حذف‌شدنی است. برای تصاویر کم‌متن (زیر آستانهٔ قطعه) فیلتر اعمال
+        نمی‌شود تا خروجی خالی نماند.
+
+        v1.8.0-ب: آستانه‌های پله‌ای — قطعه‌های کوتاه (≤۲ نویسه) با تک‌رأی به
+        اطمینان بالاتری نیاز دارند، و کادرهای منحط (خیلی نازک/خیلی ریز،
+        نشانهٔ خوانش نقطه و خط) همیشه حذف می‌شوند.
+        """
+        min_n = int(getattr(self.settings, "min_pieces_for_consensus", 6))
+        lonely_conf = float(getattr(self.settings, "lonely_piece_conf", 0.55))
+        if len(pieces) < min_n:
+            kept = [p for p in pieces if not self._is_degenerate_box(p)]
+            return kept or pieces
+        out = []
+        for p in pieces:
+            if self._is_degenerate_box(p):
+                continue
+            support = getattr(p, "support", 1)
+            conf = p.confidence
+            if support <= 1:
+                alnum = sum(1 for ch in p.text if ch.isalnum())
+                floor = max(lonely_conf, 0.80) if alnum <= 2 else lonely_conf
+                if conf is None or conf < floor:
+                    continue
+            out.append(p)
+        # خروجی خالی نشود: اگر همه رفتند، نسخهٔ کامل برمی‌گردد
+        return out if out else pieces
+
+    @staticmethod
+    def _is_degenerate_box(p: OcrPiece) -> bool:
+        """کادر منحط: خیلی نازک (خط) یا خیلی ریز (نقطه) — همیشه نویز است.
+
+        v1.8.0-ج: نشان‌های گرد/لوگوی درشت با یک رقم/حرف هم فیلتر می‌شوند
+        (مثل «۲۸» داخل دایره‌ی بنفش که به‌صورت «۵» با کادر ۱۲۳×۱۳۰ خوانده
+        می‌شد و «۵ کپسول» می‌ساخت). متن واقعی تک‌نویسه هرگز این‌قدر درشت و
+        مربعی نیست.
+        """
+        w, h = p.bbox.w, p.bbox.h
+        if h < 12 or w < 3:
+            return True
+        if (w * h) < 60 and len(p.text.strip()) <= 2:
+            return True
+        alnum = sum(1 for ch in p.text if ch.isalnum())
+        if alnum <= 2 and (w * h) >= 8000:
+            long_side, short_side = max(w, h), min(w, h)
+            if short_side > 0 and long_side / short_side <= 1.6:
+                return True
+        return False
 
     @staticmethod
     def _same_region(a: BoundingBox, b: BoundingBox, text_a: str = "",
@@ -482,45 +644,121 @@ class LabelReaderPipeline:
             p.id = f"ocr_{i:03d}"
 
     def _build_lines(self, pieces: list[OcrPiece]) -> list[RawLine]:
+        """ساخت سطرهای منطقی (v1.8.0 — بازنویسی گروه‌بندی).
+
+        سه اصلاح کلیدی نسبت به نسخه قبل:
+        ۱. تلورانس Y نسبی: هر قطعه با «میانگین y-مرکز گروه» مقایسه می‌شود
+           (نه فقط قطعه قبلی) تا زنجیره‌سو خوردن سطرها در عرض جعبه از بین برود؛
+           تلورانس هم نسبت به ارتفاع خود قطعه‌هاست (متن درشت/ریز با هم قاطی نمی‌شود).
+        ۲. شکست ستونی: فاصلهٔ افقی بزرگ بین قطعه‌های هم‌سطر (بیش از ۳ برابر
+           ارتفاع) یعنی دو بلوک جدا (مثل «کپسول انتریک کوتد» راست و بقیه چپ).
+        ۳. حذف خوانش هم‌ستون: دو قطعه در یک سطر که بازهٔ x شان بیش از ۶۰٪ هم‌پوشانی
+           دارد، دو خوانش جایگزینِ یک جایگاه‌اند؛ فقط خوانش قوی‌تر می‌ماند.
+        """
+        import difflib
+
         if not pieces:
             return []
-        heights = sorted(p.bbox.h for p in pieces)
-        median_h = heights[len(heights) // 2]
-        tol = max(8, int(median_h * 0.7))
-        ordered = sorted(pieces, key=lambda p: (p.bbox.y + p.bbox.h // 2, p.bbox.x))
-        groups: list[list[OcrPiece]] = [[ordered[0]]]
-        for piece in ordered[1:]:
-            prev = groups[-1][-1]
-            if abs((piece.bbox.y + piece.bbox.h // 2) -
-                   (prev.bbox.y + prev.bbox.h // 2)) <= tol:
-                groups[-1].append(piece)
+        ordered = sorted(
+            pieces, key=lambda p: (p.bbox.y + p.bbox.h // 2, p.bbox.x))
+
+        # --- ۱) گروه‌بندی سطری با تلورانس نسبی ---
+        groups: list[list[OcrPiece]] = []
+        cur: list[OcrPiece] = []
+        cur_mean_yc: float = 0.0
+        for piece in ordered:
+            yc = piece.bbox.y + piece.bbox.h // 2
+            if not cur:
+                cur = [piece]
+                cur_mean_yc = float(yc)
+                continue
+            local_h = float(np.mean([p.bbox.h for p in cur]))
+            # v1.8.0-هـ: تلورانس متقارن — ارتفاع «قطعهٔ ورودی» هم لحاظ می‌شود
+            # تا قطعه‌های ریز (مثل خوانش‌های ۱۹ پیکسلی) به گروهِ درشت نچسبند.
+            tol = max(10.0, 0.55 * (local_h + piece.bbox.h) / 2.0)
+            if abs(yc - cur_mean_yc) <= tol:
+                cur.append(piece)
+                cur_mean_yc = (cur_mean_yc * (len(cur) - 1) + yc) / len(cur)
             else:
-                groups.append([piece])
+                groups.append(cur)
+                cur = [piece]
+                cur_mean_yc = float(yc)
+        if cur:
+            groups.append(cur)
+
         lines: list[RawLine] = []
         from .textnorm import is_mostly_persian
-        for gi, group in enumerate(groups, start=1):
-            group = self._dedupe_similar_pieces(group)
+        gi = 0
+        for group in groups:
+            # --- ۲) شکست ستونی داخل هر گروه ---
             group = sorted(group, key=lambda p: p.bbox.x)
-            # سطرهای فارسی (RTL) به ترتیب منطقی راست‌به‌چپ بازچینی می‌شوند
-            joined = " ".join(p.text for p in group)
-            if is_mostly_persian(joined):
-                group = list(reversed(group))
-            text = " ".join(p.text for p in group).strip()
-            norm = normalize_for_matching(text)
-            x0 = min(p.bbox.x for p in group)
-            y0 = min(p.bbox.y for p in group)
-            x1 = max(p.bbox.x2 for p in group)
-            y1 = max(p.bbox.y2 for p in group)
-            confs = [p.confidence for p in group if p.confidence is not None]
-            lines.append(RawLine(
-                id=f"line_{gi:03d}",
-                text=text,
-                normalized_text=norm,
-                source_ids=[p.id for p in group],
-                bbox=BoundingBox(x=x0, y=y0, w=max(1, x1 - x0), h=max(1, y1 - y0)),
-                confidence_mean=(round(sum(confs) / len(confs), 3) if confs else None),
-            ))
+            sub_groups: list[list[OcrPiece]] = [[group[0]]]
+            for piece in group[1:]:
+                prev = sub_groups[-1][-1]
+                gap = piece.bbox.x - prev.bbox.x2
+                if gap > 4.5 * max(piece.bbox.h, prev.bbox.h, 14):
+                    sub_groups.append([piece])
+                else:
+                    sub_groups[-1].append(piece)
+
+            for sub in sub_groups:
+                gi += 1
+                # --- ۳) حذف خوانش هم‌ستون (خوانش جایگزین همان جایگاه) ---
+                sub = self._dedupe_column_reads(sub)
+                sub = self._dedupe_similar_pieces(sub)
+                if not sub:
+                    continue
+                sub = sorted(sub, key=lambda p: p.bbox.x)
+                joined = " ".join(p.text for p in sub)
+                if is_mostly_persian(joined):
+                    sub = list(reversed(sub))
+                text = " ".join(p.text for p in sub).strip()
+                # v1.8.0: اصلاح محافظه‌کارانهٔ واژه‌های ساختاری پرتکرار برچسب
+                text, _fixes = fix_common_label_words(text)
+                norm = normalize_for_matching(text)
+                x0 = min(p.bbox.x for p in sub)
+                y0 = min(p.bbox.y for p in sub)
+                x1 = max(p.bbox.x2 for p in sub)
+                y1 = max(p.bbox.y2 for p in sub)
+                confs = [p.confidence for p in sub if p.confidence is not None]
+                lines.append(RawLine(
+                    id=f"line_{gi:03d}",
+                    text=text,
+                    normalized_text=norm,
+                    source_ids=[p.id for p in sub],
+                    bbox=BoundingBox(x=x0, y=y0, w=max(1, x1 - x0), h=max(1, y1 - y0)),
+                    confidence_mean=(round(sum(confs) / len(confs), 3) if confs else None),
+                ))
         return lines
+
+    @staticmethod
+    def _dedupe_column_reads(sub: list[OcrPiece]) -> list[OcrPiece]:
+        """حذف خوانش‌های جایگزینِ یک جایگاه در یک سطر (v1.8.0).
+
+        وقتی دو قطعه در بازهٔ x بیش از ۶۰٪ هم‌پوشانی دارند (مثل «کپسول» با
+        کادر بلند و «سد» خوانش غلطِ داخل همان کادر)، فقط خوانش قوی‌تر
+        (اطمینان × وزن پشتیبانی) نگه داشته می‌شود.
+        """
+        def strength(p: OcrPiece) -> float:
+            conf = p.confidence if p.confidence is not None else 0.4
+            return conf * (1.0 + 0.25 * (getattr(p, "support", 1) - 1))
+
+        out: list[OcrPiece] = []
+        for piece in sorted(sub, key=strength, reverse=True):
+            px0, px1 = piece.bbox.x, piece.bbox.x2
+            overlaps = False
+            for kept in out:
+                kx0, kx1 = kept.bbox.x, kept.bbox.x2
+                inter = max(0, min(px1, kx1) - max(px0, kx0))
+                if inter <= 0:
+                    continue
+                min_w = max(1, min(px1 - px0, kx1 - kx0))
+                if inter / min_w > 0.60:
+                    overlaps = True
+                    break
+            if not overlaps:
+                out.append(piece)
+        return out
 
     @staticmethod
     def _dedupe_similar_pieces(group: list[OcrPiece]) -> list[OcrPiece]:

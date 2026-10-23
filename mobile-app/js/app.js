@@ -21,6 +21,7 @@
     use_binarized_variant: true,
     use_sharpened_variant: true,
     use_white_on_dark_variant: true,
+    use_ink_isolated_variant: true,
     use_sparse_psm: true,
     auto_orientation_retry: true,
     max_file_mb: 10,
@@ -209,19 +210,24 @@
   // مطابق دسته ۲ ملزومات استاد (نمودار معماری): هر ۵ مرحله هنگام اجرا اعلام،
   // خروجی و معیارهای ارزیابی کیفیت همان مرحله با دکمه نمایش داده می‌شود.
   var STAGES_FA = [
-    { key: 'opencv', num: '۱', title: 'پیش‌پردازش OpenCV',
+    { key: 'opencv', num: '۱', color: '#2563eb', icon: '🖼️',
+      title: 'پیش‌پردازش OpenCV',
       req: 'OpenCV (تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح)',
       files: 'js/boxdetect.js + js/preprocess.js ⇄ desktop: label_reader/preprocess.py' },
-    { key: 'ocr', num: '۲', title: 'موتور OCR',
+    { key: 'ocr', num: '۲', color: '#7c3aed', icon: '🔤',
+      title: 'موتور OCR',
       req: 'OCR (استخراج نام، اعداد و متن بسته‌بندی)',
       files: 'js/ocr.js (Tesseract.js/WASM) ⇄ desktop: label_reader/ocr/*' },
-    { key: 'fields', num: '۳', title: 'پردازش متن و کنترل فیلدها',
+    { key: 'fields', num: '۳', color: '#ea580c', icon: '📋',
+      title: 'پردازش متن و کنترل فیلدها',
       req: 'پردازش متن و کنترل فیلدها (نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده)',
       files: 'js/textnorm.js + patterns.js + extractor.js ⇄ desktop: extraction/*' },
-    { key: 'response', num: '۴', title: 'تولید پاسخ فارسی',
+    { key: 'response', num: '۴', color: '#059669', icon: '💬',
+      title: 'تولید پاسخ فارسی',
       req: 'تولید پاسخ فارسی (منطق استخراج اطلاعات یا LLM برای بازنویسی وفادار به متن)',
       files: 'js/responder.js + js/guard.js ⇄ desktop: response/builder.py + guard.py' },
-    { key: 'tts', num: '۵', title: 'خوانش صوتی و نمایش (TTS + رابط)',
+    { key: 'tts', num: '۵', color: '#db2777', icon: '🔊',
+      title: 'خوانش صوتی و نمایش (TTS + رابط)',
       req: 'TTS + Streamlit (خواندن اطلاعات و نمایش متن استخراج‌شده)',
       files: 'js/app.js (speechSynthesis) ⇄ desktop: label_reader/tts/* + app.py' }
   ];
@@ -240,11 +246,12 @@
     STAGES_FA.forEach(function (s) {
       var row = document.createElement('div');
       row.className = 'stage-row st-pending';
+      row.style.setProperty('--stage-color', s.color || '#94a3b8');
       var head = document.createElement('div');
       head.className = 'stage-head';
       var icon = document.createElement('span');
       icon.className = 'stage-icon';
-      icon.textContent = STAGE_ICON.pending;
+      icon.textContent = s.icon || STAGE_ICON.pending;
       var title = document.createElement('span');
       title.className = 'stage-title';
       title.textContent = s.num + '. ' + s.title;
@@ -280,6 +287,13 @@
     if (!el) return;
     el.row.className = 'stage-row st-running';
     el.icon.textContent = STAGE_ICON.running;
+  }
+
+  function stagePending(key) {
+    var el = stageEls[key];
+    if (!el) return;
+    el.row.className = 'stage-row st-pending';
+    el.icon.textContent = STAGE_ICON.pending;
   }
 
   function stageDone(key, data) {
@@ -976,6 +990,101 @@
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'hidden') LBR.camera.close();
     });
+
+    // ---------- ناوبری تب‌بار (v1.8.0) ----------
+    var tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var pageId = btn.getAttribute('data-page');
+        document.querySelectorAll('.page').forEach(function (p) {
+          p.classList.toggle('hidden', p.id !== pageId);
+          p.classList.toggle('active', p.id === pageId);
+        });
+        tabBtns.forEach(function (b) {
+          b.classList.toggle('active', b === btn);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (pageId === 'page-reports') refreshReportsPage();
+      });
+    });
+  }
+
+  // ---------- صفحهٔ گزارش‌ها: ارزیابی آخرین پردازش (v1.8.0) ----------
+  function refreshReportsPage() {
+    var result = state.result;
+    var tiles = document.querySelectorAll('#report-tiles .report-tile .rt-v');
+    var empty = document.getElementById('reports-empty');
+    var detail = document.getElementById('reports-detail');
+    if (!result) {
+      tiles.forEach(function (t) { t.textContent = '—'; });
+      if (empty) empty.classList.remove('hidden');
+      if (detail) detail.classList.add('hidden');
+      return;
+    }
+    if (empty) empty.classList.add('hidden');
+    var total = result.metadata && result.metadata.durations_ms
+      ? result.metadata.durations_ms.total_ms : null;
+    var confs = (result.ocr_pieces || [])
+      .filter(function (p) { return p.confidence !== null && p.confidence !== undefined; })
+      .map(function (p) { return p.confidence; });
+    var meanConf = confs.length
+      ? Math.round(100 * confs.reduce(function (s, c) { return s + c; }, 0) / confs.length) : null;
+    var extracted = 0, withEv = 0;
+    Object.keys(result.fields || {}).forEach(function (k) {
+      var f = result.fields[k];
+      if (f.status === 'extracted' || f.status === 'user_corrected') {
+        extracted++;
+        if (f.source_ids && f.source_ids.length) withEv++;
+      }
+    });
+    var coverage = extracted ? Math.round(100 * withEv / extracted) : 100;
+    if (tiles[0]) tiles[0].textContent = total !== null ? (total.toLocaleString('fa-IR') + ' ms') : '—';
+    if (tiles[1]) tiles[1].textContent = meanConf !== null ? (meanConf.toLocaleString('fa-IR') + '٪') : '—';
+    if (tiles[2]) tiles[2].textContent = extracted.toLocaleString('fa-IR');
+    if (tiles[3]) tiles[3].textContent = coverage.toLocaleString('fa-IR') + '٪';
+    if (detail) {
+      detail.classList.remove('hidden');
+      var box = document.getElementById('reports-stages');
+      if (box) {
+        box.innerHTML = '';
+        var src = (typeof stageRecords !== 'undefined' && stageRecords.length)
+          ? stageRecords : null;
+        if (src) {
+          STAGES_FA.forEach(function (s) {
+            var rec = stageRecords.filter(function (r) { return r.key === s.key; })[0];
+            var row = document.createElement('div');
+            row.className = 'stage-row st-done';
+            row.style.setProperty('--stage-color', s.color);
+            var head = document.createElement('div');
+            head.className = 'stage-head';
+            var icon = document.createElement('span');
+            icon.className = 'stage-icon';
+            icon.textContent = s.icon;
+            var title = document.createElement('span');
+            title.className = 'stage-title';
+            title.textContent = s.num + '. ' + s.title;
+            head.appendChild(icon); head.appendChild(title);
+            if (rec && rec.duration_ms !== undefined && rec.duration_ms !== null) {
+              var time = document.createElement('span');
+              time.className = 'stage-time';
+              time.textContent = rec.duration_ms + ' ms';
+              head.appendChild(time);
+            }
+            var outs = document.createElement('div');
+            outs.className = 'stage-req';
+            (rec && rec.outputs_fa ? rec.outputs_fa : []).slice(0, 2).forEach(function (o) {
+              var p = document.createElement('div');
+              p.textContent = '▸ ' + o;
+              outs.appendChild(p);
+            });
+            row.appendChild(head); row.appendChild(outs);
+            box.appendChild(row);
+          });
+        } else {
+          box.innerHTML = '<p class="hint">جزئیات مرحله‌ای این اجرا در همین صفحهٔ «خواندن دارو» موجود است.</p>';
+        }
+      }
+    }
   }
 
   if (document.readyState === 'loading') {

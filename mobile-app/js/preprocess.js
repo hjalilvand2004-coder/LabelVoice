@@ -12,6 +12,10 @@
   var VARIANT_GRAY_CLAHE = 'gray_clahe';
   var VARIANT_BINARIZED = 'binarized';
   var VARIANT_SHARPENED = 'sharpened';
+  // v1.8.0: اعلان ثابت‌های گمشده (باگ پنهان v1.7.0 — خطای ReferenceError
+  // هنگام فعال‌بودن white_on_dark) + واریانت جدید جداسازی جوهر
+  var VARIANT_WHITE_ON_DARK = 'white_on_dark';
+  var VARIANT_INK_ISOLATED = 'ink_isolated';
 
   // ---------- بارگذاری و مقیاس ----------
   // بارگذاری تصویر با توجه به جهت EXIF (عکس‌های موبایل)
@@ -228,6 +232,22 @@
     return binarizeCore(gray, w, h, windowSize, c, false);
   }
 
+  // v1.8.0: جداسازی جوهر رنگی (معادل ink_isolated در preprocess.py):
+  // 255 − بیشینهٔ کانال (B,G,R) — هر جوهر رنگی به جوهر تیره روی زمینهٔ
+  // روشن تبدیل می‌شود؛ برای متن آبی/بنفش/قرمز روی جعبه سفید.
+  function inkIsolate(ctx, w, h) {
+    var img = ctx.getImageData(0, 0, w, h);
+    var d = img.data;
+    var out = new Uint8ClampedArray(w * h);
+    for (var i = 0, p = 0; i < d.length; i += 4, p++) {
+      var mx = d[i]; // B
+      if (d[i + 1] > mx) mx = d[i + 1]; // G
+      if (d[i + 2] > mx) mx = d[i + 2]; // R
+      out[p] = 255 - mx;
+    }
+    return out;
+  }
+
   // نسخه ویژه «متن روشن روی پس‌زمینه تیره/میانه» (v1.7.0 — معادل white_on_dark
   // در preprocess.py): desktop = bitwise_not(adaptiveThreshold(BINARY_INV,51,12))
   // که از نظر ریاضی ≡ adaptiveThreshold(BINARY, 51, 12) است؛ یعنی متن روشن
@@ -331,6 +351,12 @@
       var wod = whiteOnDark(gray, scaled.w, scaled.h, 51, 12);
       variants[VARIANT_WHITE_ON_DARK] = grayToCanvas(wod, scaled.w, scaled.h);
     }
+    // v1.8.0: جداسازی جوهر رنگی — 255 − بیشینهٔ کانال؛ متن رنگی (آبی/بنفش/
+    // قرمز) روی جعبه سفید به جوهر تیره روی زمینه روشن تبدیل می‌شود.
+    if (settings.use_ink_isolated_variant) {
+      var ink = inkIsolate(scaled.ctx, scaled.w, scaled.h);
+      variants[VARIANT_INK_ISOLATED] = grayToCanvas(ink, scaled.w, scaled.h);
+    }
     return {
       variants: variants,
       width: scaled.w,
@@ -346,12 +372,14 @@
     VARIANT_BINARIZED: VARIANT_BINARIZED,
     VARIANT_SHARPENED: VARIANT_SHARPENED,
     VARIANT_WHITE_ON_DARK: VARIANT_WHITE_ON_DARK,
+    VARIANT_INK_ISOLATED: VARIANT_INK_ISOLATED,
     loadImage: loadImage,
     drawScaled: drawScaled,
     toGrayData: toGrayData,
     clahe: clahe,
     binarize: binarize,
     whiteOnDark: whiteOnDark,
+    inkIsolate: inkIsolate,
     sharpenGray: sharpenGray,
     cropCanvas: cropCanvas,
     rotate90: rotate90,

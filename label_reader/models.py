@@ -60,7 +60,8 @@ class OcrPiece(BaseModel):
     bbox: BoundingBox
     confidence: Optional[float] = None   # 0..1؛ None یعنی موتور امتیاز نداد
     variant: str                   # نسخه پردازشی تصویر (original / gray_clahe / ...)
-    engine: str                    # tesseract / easyocr
+    engine: str                    # tesseract:fas / tesseract:eng / easyocr
+    support: int = 1               # v1.8.0: چند پیکربندی مستقل همین ناحیه را خواندند
 
 
 class RawLine(BaseModel):

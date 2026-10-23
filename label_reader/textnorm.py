@@ -106,3 +106,95 @@ def is_mostly_persian(text: str) -> bool:
         return False
     fa = sum(1 for ch in letters if "\u0600" <= ch <= "\u06ff")
     return fa / len(letters) > 0.5
+
+
+# ---------------------------------------------------------------------------
+# اصلاح محافظه‌کارانهٔ واژه‌های ساختاری برچسب (v1.8.0)
+# ---------------------------------------------------------------------------
+# فقط واژه‌های «ساختاری» پرتکرار برچسب (شکل دارویی، واحد، فعل بسته‌بندی) اصلاح
+# می‌شوند؛ نام دارو/برند/ماده مؤثره هرگز خودکار تصحیح نمی‌شود (خط قرمز ایمنی:
+# هویت دارو باید دقیقاً همان باشد که موتور OCR خوانده است).
+#
+# نگاشت: واژه استاندارد → فهرست خوانش‌های غلط رایج تسراکت فارسی.
+# منبع خوانش‌ها: آزمون واقعی روی جعبه لانزول و جعبه‌های نمونه پروژه.
+_LABEL_WORD_FIXES: dict[str, tuple[str, ...]] = {
+    "کپسول": ("کیسول", "کپسو", "کسول", "کیپسول", "کيسول", "سیسول"),
+    "انتریک": ("انتریگک", "انتريك", "انتیریک", "انتریکی", "انتریک"),
+    "کوتد": ("کوند", "کوتید", "کوتئد", "كوتد", "کوسد"),
+    "شربت": ("شربط", "شربت"),
+    "آمپول": ("امپول", "آمبول", "امبول"),
+    "سوسپانسیون": ("سوسپانشین", "سوسپانسيون"),
+    "قطره": ("قطه",),
+    "میلی‌گرم": ("میلی گرم", "میلیگرم", "میلی‌كرم", "میلی‌گیرم"),
+    "میلی‌لیتر": ("میلی لیتر", "میلیلیتر", "میلی‌لیتر"),
+    "میکروگرم": ("میکرو گرم", "میکروگرم"),
+    "حاوی": ("هاوی", "حاوي", "حاوی"),
+    "تأسیس": ("تاسیس", "تأسيس"),
+    "انقضا": ("انقضأ", "انقضاع"),
+    "نگهداری": ("نگهداري", "نگهداری"),
+}
+
+# حداقل شباهت فازی برای جانشینی (کلمهٔ خوانده‌شده باید به اندازهٔ کافی به
+# واژهٔ استاندارد نزدیک باشد؛ با این کار تصحیح تصادفی کلمات دیگر رخ نمی‌دهد)
+_LABEL_FIX_SIMILARITY = 0.80
+
+_PUNCT = "\u060c.:؛!؟()«»\u200f\u200e"
+
+
+def _split_token(tok: str) -> tuple[str, str, str]:
+    """تفکیک پیشوند/هسته/پسوند علائم نگارشی یک واژه."""
+    stripped_left = tok.lstrip(_PUNCT)
+    prefix = tok[:len(tok) - len(stripped_left)]
+    core = stripped_left.rstrip(_PUNCT)
+    suffix = stripped_left[len(core):]
+    return prefix, core, suffix
+
+
+def fix_common_label_words(text: str) -> tuple[str, list[str]]:
+    """اصلاح واژه‌های ساختاری برچسب با نگاشت محدود + شباهت فازی (v1.8.0).
+
+    قواعد:
+    - فقط واژه‌های تک‌خطی فارسی (بدون حرف لاتین) بررسی می‌شوند؛
+    - تطابق دقیق با خوانش‌های غلط شناخته‌شده (فهرست wrongs) با شباهت ≥ ۰٫۷۵؛
+    - یا نزدیک‌ترین واژهٔ استاندارد با شباهت ≥ ۰٫۸۰ (پوشش غلط‌های دیده‌نشده)؛
+    - نام دارو/برند در این واژه‌نامه نیست و هرگز تغییر نمی‌کند.
+    خروجی: (متن اصلاح‌شده، فهرست اصلاحات به شکل «غلط ← درست»)
+    """
+    if not text or " " not in text and len(text) < 3:
+        return text, []
+    import difflib
+
+    fixes: list[str] = []
+    out_tokens: list[str] = []
+    for tok in text.split(" "):
+        prefix, core, suffix = _split_token(tok)
+        if not core or len(core) < 3 or \
+                any("\u0000" <= ch <= "\u024f" for ch in core):
+            out_tokens.append(tok)
+            continue
+        core_norm = normalize_chars(core)
+        if not core_norm:
+            out_tokens.append(tok)
+            continue
+        best_canon, best_sim = None, 0.0
+        for canonical, wrongs in _LABEL_WORD_FIXES.items():
+            canon_norm = normalize_chars(canonical)
+            if core_norm == canon_norm:
+                best_canon, best_sim = None, 0.0
+                break  # خودِ واژهٔ درست است؛ هیچ تغییری لازم نیست
+            if core_norm in wrongs:
+                sim = difflib.SequenceMatcher(
+                    None, core_norm, canon_norm).ratio()
+                if sim >= 0.75 and sim > best_sim:
+                    best_canon, best_sim = canonical, sim
+            else:
+                sim = difflib.SequenceMatcher(
+                    None, core_norm, canon_norm).ratio()
+                if sim >= _LABEL_FIX_SIMILARITY and sim > best_sim:
+                    best_canon, best_sim = canonical, sim
+        if best_canon:
+            out_tokens.append(prefix + best_canon + suffix)
+            fixes.append(f"{core} ← {best_canon}")
+        else:
+            out_tokens.append(tok)
+    return " ".join(out_tokens), fixes

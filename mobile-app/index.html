@@ -12,7 +12,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل</title>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=1.8.2">
 </head>
 <body>
 <header class="app-header">
@@ -32,6 +32,8 @@
 </header>
 
 <main id="main">
+  <!-- ============ صفحه ۱: خواندن دارو ============ -->
+  <div id="page-read" class="page active">
   <!-- گام ۱: ورود تصویر -->
   <section class="card" id="input-section" aria-labelledby="input-title">
     <h2 id="input-title">۱. تصویر برچسب را وارد کنید
@@ -144,9 +146,64 @@
       <pre id="json-pre" dir="ltr"></pre>
     </details>
   </section>
+  </div><!-- /page-read -->
 
-  <!-- بخش ملزومات استاد (v1.5.0) -->
-  <section class="card" id="reqs-section" aria-labelledby="reqs-title">
+  <!-- ============ صفحه ۲: گزارش‌ها و ارزیابی (v1.8.0) ============ -->
+  <div id="page-reports" class="page hidden">
+    <section class="card" aria-labelledby="reports-title">
+      <h2 id="reports-title">📊 گزارش‌ها، تحلیل‌ها و ارزیابی</h2>
+      <p class="hint">دقت در سطح فیلد سنجیده می‌شود و غیبت/تعارض هم خطا شمرده می‌شود —
+      چون هر اشتباه در حوزه دارو می‌تواند آسیب‌زا باشد.</p>
+      <div class="report-tiles" id="report-tiles">
+        <div class="report-tile"><div class="rt-v">—</div><div class="rt-k">زمان کل پردازش</div></div>
+        <div class="report-tile"><div class="rt-v">—</div><div class="rt-k">میانگین اطمینان OCR</div></div>
+        <div class="report-tile"><div class="rt-v">—</div><div class="rt-k">فیلدهای استخراج‌شده</div></div>
+        <div class="report-tile"><div class="rt-v">—</div><div class="rt-k">پوشش شواهد</div></div>
+      </div>
+      <div id="reports-empty" class="hint">
+        هنوز پردازشی انجام نشده — از تب «خواندن دارو» یک برچسب بخوانید تا ارزیابی همین اجرا اینجا نمایش داده شود.
+      </div>
+      <div id="reports-detail" class="hidden">
+        <h3>ارزیابی مرحله‌ای آخرین پردازش</h3>
+        <div id="reports-stages"></div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-small" data-help="eval">روش و اصول ارزیابی مدل‌ها چگونه است؟</button>
+    </section>
+    <section class="card" aria-labelledby="eval-principles-title">
+      <h2 id="eval-principles-title">🔬 چرا این سخت‌گیری؟ خطر خطای دارویی</h2>
+      <p>خطای خواندن قدرت دارو (مثلاً ۵ به‌جای ۳۰ میلی‌گرم) یا تعداد (۲۸ به‌جای ۲۰)
+      می‌تواند به مصرف اشتباه بینجامد. به همین دلیل:</p>
+      <ul class="plain-list">
+        <li>مقدار «متناقض» هرگز به‌عنوان قطعی اعلام نمی‌شود؛</li>
+        <li>مقدار «غایب» از هیچ منبع دیگری (اینترنت/حافظه مدل) تکمیل نمی‌شود؛</li>
+        <li>هر عدد در پاسخ باید در شواهد OCR موجود باشد (نگهبان ایمنی)؛</li>
+        <li>«قدرت درج‌شده» هرگز «دوز مصرف» نامیده نمی‌شود.</li>
+      </ul>
+      <p class="hint">زمینه‌سنجی: ۱۴ تصویر نمونه با مقادیر واقعی در <code>sample_images/manifest.json</code> —
+      بازتولید اعداد: <code>python scripts/evaluate.py</code>؛ نتایج در <code>docs/evaluation/</code>.</p>
+    </section>
+  </div><!-- /page-reports -->
+
+  <!-- ============ صفحه ۳: راهنما و مستندات فنی ============ -->
+  <div id="page-docs" class="page hidden">
+    <section class="card" aria-labelledby="docs-title">
+      <h2 id="docs-title">📚 راهنما و مستندات فنی</h2>
+      <p class="hint">معماری سامانه، ملزومات استاد، نحوهٔ کار هر بخش و مستندات کامل.</p>
+      <div class="docs-links">
+        <button type="button" class="btn btn-secondary" data-help="architecture">🏗️ معماری سامانه و خط پردازش</button>
+        <button type="button" class="btn btn-secondary" data-help="reqs">📌 ملزومات استاد و جدول انطباق</button>
+        <button type="button" class="btn btn-secondary" data-help="stages">🧭 مراحل رنگی پردازش</button>
+        <button type="button" class="btn btn-secondary" data-help="engine">🔤 موتورهای OCR (v1.8.0)</button>
+        <button type="button" class="btn btn-secondary" data-help="preprocess">🖼️ پیش‌پردازش OpenCV</button>
+        <button type="button" class="btn btn-secondary" data-help="fields">📋 فیلدها و شواهد</button>
+        <button type="button" class="btn btn-secondary" data-help="response">💬 پاسخ و نگهبان ایمنی</button>
+        <button type="button" class="btn btn-secondary" data-help="tts">🔊 خوانش صوتی</button>
+        <button type="button" class="btn btn-secondary" data-help="eval">📊 ارزیابی مدل‌ها</button>
+      </div>
+      <a class="btn btn-primary docs-full-link" href="documentation.html">📖 مستندات فنی کامل (HTML مصور)</a>
+    </section>
+    <!-- بخش ملزومات استاد (از نسخه ۱.۵.۰) -->
+    <section class="card" id="reqs-section" aria-labelledby="reqs-title">
     <h2 id="reqs-title">📌 ملزومات طرح‌شده توسط استاد (استاد قربانی) و محل تحقق
       <button type="button" class="help-btn" data-help="reqs" aria-label="راهنمای ملزومات استاد و جدول انطباق">؟</button>
     </h2>
@@ -174,10 +231,58 @@
     </details>
     <p class="hint">جدول انطباق کامل (الزام ← تحقق ← فایل ← آزمون ← وضعیت): <a href="documentation.html#considerations">مستندات فنی، بخش «ملزومات استاد»</a></p>
   </section>
+  </div><!-- /page-docs -->
+
+  <!-- ============ صفحه ۴: دربارهٔ طراحان (v1.8.0) ============ -->
+  <div id="page-about" class="page hidden">
+    <section class="card about-card" aria-labelledby="about-title">
+      <h2 id="about-title">👥 دربارهٔ طراحان</h2>
+      <div class="author-grid">
+        <div class="author-card">
+          <div class="author-avatar">👨‍💻</div>
+          <h3>حمید جلیلوند</h3>
+          <div class="author-role">توسعه‌دهنده و طراح</div>
+          <p>معماری خط پردازش، موتور خوانش فارسی دوموتوره، رأی‌گیری اجماعی و رابط دسکتاپ.</p>
+        </div>
+        <div class="author-card">
+          <div class="author-avatar">👨‍💻</div>
+          <h3>نوید بدری</h3>
+          <div class="author-role">توسعه‌دهنده و طراح</div>
+          <p>نسخه موبایل (PWA)، دوربین زنده، تشخیص جعبه، و آزمون‌های پاریتی دو-سامانه.</p>
+        </div>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="story-title">
+      <h2 id="story-title">💡 داستان پروژه</h2>
+      <p>این پروژه با یک پرسش ساده شروع شد: «اگر نتوانید روی جعبه دارو را بخوانید چه؟»
+      کاربر ممکن است کم‌بینا باشد، دستش بلرزد، یا برچسب خراب باشد. برچسب‌خوان متنِ
+      «واقعاً قابل خواندن» روی بسته را استخراج می‌کند و دقیقاً همان را به فارسی
+      نمایش می‌دهد و می‌خواند — نه یک کلمه بیشتر.</p>
+      <p>خط قرمز پروژه شفافیت است: مقداری که خوانده نشد «غایب» اعلام می‌شود؛ مقداری
+      که بین دو خوانش مردد است «متناقض» اعلام می‌شود؛ و هیچ عددی از حافظه مدل یا
+      اینترنت تکمیل نمی‌شود. قدرت درج‌شده هرگز «دوز مصرف» نامیده نمی‌شود.</p>
+    </section>
+  </div><!-- /page-about -->
 </main>
 
+<!-- تب‌بار پایین (v1.8.0 — ناوبری چهاربخشی) -->
+<nav class="tab-bar" aria-label="ناوبری اصلی">
+  <button type="button" class="tab-btn active" data-page="page-read">
+    <span class="tab-icon">💊</span><span class="tab-label">خواندن دارو</span>
+  </button>
+  <button type="button" class="tab-btn" data-page="page-reports">
+    <span class="tab-icon">📊</span><span class="tab-label">گزارش‌ها</span>
+  </button>
+  <button type="button" class="tab-btn" data-page="page-docs">
+    <span class="tab-icon">📚</span><span class="tab-label">راهنما</span>
+  </button>
+  <button type="button" class="tab-btn" data-page="page-about">
+    <span class="tab-icon">👥</span><span class="tab-label">طراحان</span>
+  </button>
+</nav>
+
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۷.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۸.۰</p>
   <p>👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="stages">🧭 اعلام مراحل پردازش و ارزیابی مرحله‌ای</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">📌 ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
@@ -219,19 +324,19 @@
   <div style="padding:1rem;text-align:center">این برنامه به جاوااسکریپت نیاز دارد. لطفاً جاوااسکریپت مرورگر را فعال کنید.</div>
 </noscript>
 
-<script src="js/textnorm.js"></script>
-<script src="js/patterns.js"></script>
-<script src="js/guard.js"></script>
-<script src="js/extractor.js"></script>
-<script src="js/responder.js"></script>
-<script src="js/pipeline.js"></script>
-<script src="js/preprocess.js"></script>
-<script src="js/boxdetect.js"></script>
+<script src="js/textnorm.js?v=1.8.2"></script>
+<script src="js/patterns.js?v=1.8.2"></script>
+<script src="js/guard.js?v=1.8.2"></script>
+<script src="js/extractor.js?v=1.8.2"></script>
+<script src="js/responder.js?v=1.8.2"></script>
+<script src="js/pipeline.js?v=1.8.2"></script>
+<script src="js/preprocess.js?v=1.8.2"></script>
+<script src="js/boxdetect.js?v=1.8.2"></script>
 <script src="js/samples-data.js"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
-<script src="js/ocr.js"></script>
-<script src="js/camera.js"></script>
-<script src="js/help.js"></script>
-<script src="js/app.js"></script>
+<script src="js/ocr.js?v=1.8.2"></script>
+<script src="js/camera.js?v=1.8.2"></script>
+<script src="js/help.js?v=1.8.2"></script>
+<script src="js/app.js?v=1.8.2"></script>
 </body>
 </html>

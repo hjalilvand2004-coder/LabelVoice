@@ -187,11 +187,25 @@
   // ---------- گیت کیفیت قطعه‌ها (v1.7.0 — معادل _filter_pieces) ----------
   // نماد محض، اطمینان خیلی پایین، قطعه کوتاه کم‌اطمینان و قطعه کوتاهِ
   // کادر-غول‌پیکر (شکست تحلیل چیدمان) حذف می‌شوند.
+  // v1.8.0: تشخیص زبالهٔ ترکیب‌خطی — حرف فارسی + حرف لاتین در یک قطعه
+  // (یا رقم فارسی + رقم لاتین) فقط محصول خوانش خراب است.
+  function isMixedScriptGarbage(text) {
+    var t = text || '';
+    var faLetter = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(t);
+    var latLetter = /[a-zA-Z\u00C0-\u024F]/.test(t);
+    if (faLetter && latLetter) return true;
+    var faDigit = /[\u06F0-\u06F9\u0660-\u0669]/.test(t);
+    var latDigit = /[0-9]/.test(t);
+    if (faDigit && latDigit) return true;
+    return false;
+  }
+
   function filterPieces(raw, imageArea, settings) {
     var out = [];
     (raw || []).forEach(function (p) {
       var text = (p.text || '').trim();
       if (!text) return;
+      if (isMixedScriptGarbage(text)) return; // v1.8.0
       if (p.confidence !== null && p.confidence !== undefined &&
         p.confidence < 0.30) return; // piece_conf_floor
       var hasAlnum = /[\p{L}\p{N}]/u.test(text);
@@ -218,17 +232,65 @@
     return score;
   }
 
-  // ادغام بهترین-اول (v1.7.0 — معادل _merge_pieces_best_first):
+  // v1.8.0-د: کادر منحط — خیلی نازک/خیلی ریز (نقطه و خط) و نشان‌گردِ درشتِ
+  // تک‌نویسه (مثل «۲۸» داخل دایره که به‌صورت «۵» با کادر مربعی می‌آید).
+  function isDegenerateBox(p) {
+    var w = p.bbox.w, h = p.bbox.h;
+    if (h < 12 || w < 3) return true;
+    var t = (p.text || '').trim();
+    if ((w * h) < 60 && t.length <= 2) return true;
+    var alnumN = ((t.match(/[\p{L}\p{N}]/gu) || []).length);
+    if (alnumN <= 2 && (w * h) >= 8000) {
+      var longSide = Math.max(w, h), shortSide = Math.min(w, h);
+      if (shortSide > 0 && longSide / shortSide <= 1.6) return true;
+    }
+    return false;
+  }
+
+  // فیلتر اجماعی (v1.8.0 — معادل _apply_consensus_filter): قطعهٔ تک‌رأیِ
+  // کم‌اطمینان حذف می‌شود؛ کوتاه‌ها سخت‌گیری بیشتری دارند.
+  function applyConsensusFilter(pieces) {
+    var minN = 6, lonelyConf = 0.55;
+    if ((pieces || []).length < minN) {
+      var kept = pieces.filter(function (p) { return !isDegenerateBox(p); });
+      return kept.length ? kept : pieces;
+    }
+    var out = [];
+    pieces.forEach(function (p) {
+      if (isDegenerateBox(p)) return;
+      var support = p.support || 1;
+      var conf = p.confidence;
+      if (support <= 1) {
+        var alnum = ((p.text || '').match(/[\p{L}\p{N}]/gu) || []).length;
+        var floor = alnum <= 2 ? Math.max(lonelyConf, 0.80) : lonelyConf;
+        if (conf === null || conf === undefined || conf < floor) return;
+      }
+      out.push(p);
+    });
+    return out.length ? out : pieces;
+  }
+
+  // ادغام بهترین-اول (v1.7.0 + v1.8.0 — معادل _merge_pieces_best_first):
   // واریانت با بیشترین امتیاز مبناست؛ بقیه فقط نواحی پوشش‌نداده را پر می‌کنند.
-  // جانشینی محافظه‌کارانه: فقط خوانش «کامل‌ترِ معتبر» (احتوای متنی یا طولانی‌تر)
-  // جای خوانش موجود را می‌گیرد — نه صرفاً اطمینان بالاتر.
+  // v1.8.0: رأی اجماعی (support) + دو گذر (سالم‌ها اول، فشرده‌ها بعد) +
+  // قوانین جایگزینی محافظه‌کارانه برای عبارت چندواژه‌ای در برابر کلمهٔ دقیق.
   function mergePiecesBestFirst(byVariant) {
     var order = Object.keys(byVariant || {}).map(function (k) {
       return { name: k, pieces: byVariant[k] };
     }).sort(function (a, b) { return scoreVariant(b.pieces) - scoreVariant(a.pieces); });
-    var kept = [];
+    var normalItems = [], squeezedItems = [];
     order.forEach(function (v) {
       v.pieces.forEach(function (rp) {
+        var norm = tn.normalizeForMatching(rp.text);
+        var nWords = norm.split(/\s+/).filter(Boolean).length;
+        var isSqueezed = nWords >= 2 && rp.h > 0 && rp.w < 1.6 * rp.h * nWords;
+        (isSqueezed ? squeezedItems : normalItems).push(rp);
+      });
+    });
+    var kept = [];
+    [false, true].forEach(function (passSqueezed) {
+      var items = passSqueezed ? squeezedItems : normalItems;
+      items.forEach(function (rp) {
         var bb = { x: rp.x, y: rp.y, w: rp.w, h: rp.h };
         var norm = tn.normalizeForMatching(rp.text);
         var normL = norm.toLowerCase();
@@ -236,46 +298,58 @@
         for (var i = 0; i < kept.length; i++) {
           var ex = kept[i];
           if (!sameRegion(ex.bbox, bb, ex.text, rp.text)) continue;
-          var exNorm = ex.normalized_text.toLowerCase();
-          var confRp = rp.confidence || 0;
-          var confEx = ex.confidence || 0;
-          if (exNorm !== normL) {
-            if (normL.indexOf(exNorm) !== -1 || exNorm.indexOf(normL) !== -1) {
-              // احتوای متنی: خوانش جزئی همان کلمه
-              var lenGap = Math.abs(normL.length - exNorm.length);
-              var longerNew = normL.length > exNorm.length;
-              var winnerNew;
-              if (lenGap >= 2 && ((longerNew && confRp >= 0.5) ||
-                (!longerNew && confEx >= 0.5))) {
-                winnerNew = longerNew;
+          // قطعهٔ فشرده در گذر دوم فقط رأی می‌دهد
+          if (!passSqueezed) {
+            var exNorm = ex.normalized_text.toLowerCase();
+            var confRp = rp.confidence || 0;
+            var confEx = ex.confidence || 0;
+            if (exNorm !== normL) {
+              if (normL.indexOf(exNorm) !== -1 || exNorm.indexOf(normL) !== -1) {
+                var lenGap = Math.abs(normL.length - exNorm.length);
+                var longerNew = normL.length > exNorm.length;
+                var winnerNew;
+                if (lenGap >= 2) {
+                  var multiIn = normL.split(/\s+/).filter(Boolean).length >= 2;
+                  var multiEx = exNorm.split(/\s+/).filter(Boolean).length >= 2;
+                  if (longerNew) {
+                    winnerNew = multiIn ? (confRp >= confEx) : (confRp >= 0.5);
+                  } else {
+                    winnerNew = multiEx ? (confRp >= confEx + 0.15) : (confEx < 0.5);
+                  }
+                } else if (lenGap === 1) {
+                  winnerNew = longerNew ? (confRp >= confEx - 0.05)
+                    : (confRp < confEx - 0.05);
+                } else {
+                  winnerNew = confRp > confEx;
+                }
+                if (winnerNew) {
+                  ex.text = rp.text; ex.normalized_text = norm;
+                  ex.confidence = rp.confidence; ex.variant = rp.variant;
+                }
               } else {
-                winnerNew = confRp > confEx;
-              }
-              if (winnerNew) {
-                ex.text = rp.text; ex.normalized_text = norm;
-                ex.confidence = rp.confidence; ex.variant = rp.variant;
-              }
-            } else {
-              var longer = normL.length > exNorm.length;
-              var sameLenBetter = normL.length === exNorm.length && confRp > confEx;
-              if ((longer || sameLenBetter) && confRp >= confEx * 0.9) {
-                ex.text = rp.text; ex.normalized_text = norm;
-                ex.confidence = rp.confidence; ex.variant = rp.variant;
+                var longer = normL.length > exNorm.length;
+                var sameLenBetter = normL.length === exNorm.length && confRp > confEx;
+                if ((longer || sameLenBetter) && confRp >= confEx * 0.9) {
+                  ex.text = rp.text; ex.normalized_text = norm;
+                  ex.confidence = rp.confidence; ex.variant = rp.variant;
+                }
               }
             }
           }
+          ex.support = (ex.support || 1) + 1;
           duplicated = true;
           break;
         }
         if (!duplicated) {
           kept.push({
             id: '', text: rp.text, normalized_text: norm, bbox: bb,
-            confidence: rp.confidence, variant: rp.variant, engine: rp.engine
+            confidence: rp.confidence, variant: rp.variant, engine: rp.engine,
+            support: 1
           });
         }
       });
     });
-    return kept;
+    return applyConsensusFilter(kept);
   }
 
   // حذف قطعه‌های تکراری بین نسخه‌ها (IoU بالا + متن یکسان) — مسیر قدیمی (سازگاری آزمون‌ها)
@@ -358,52 +432,104 @@
     return out;
   }
 
-  // سطرهای منطقی ساخته‌شده از قطعات OCR
+  // حذف خوانش‌های جایگزینِ یک جایگاه در یک سطر (v1.8.0 — معادل _dedupe_column_reads)
+  function dedupeColumnReads(sub) {
+    function strength(p) {
+      var conf = (p.confidence === null || p.confidence === undefined) ? 0.4 : p.confidence;
+      return conf * (1.0 + 0.25 * ((p.support || 1) - 1));
+    }
+    var out = [];
+    sub.slice().sort(function (a, b) { return strength(b) - strength(a); })
+      .forEach(function (piece) {
+        var px0 = piece.bbox.x, px1 = piece.bbox.x + piece.bbox.w;
+        var overlaps = false;
+        for (var i = 0; i < out.length; i++) {
+          var kx0 = out[i].bbox.x, kx1 = out[i].bbox.x + out[i].bbox.w;
+          var inter = Math.min(px1, kx1) - Math.max(px0, kx0);
+          if (inter <= 0) continue;
+          var minW = Math.max(1, Math.min(px1 - px0, kx1 - kx0));
+          if (inter / minW > 0.60) { overlaps = true; break; }
+        }
+        if (!overlaps) out.push(piece);
+      });
+    return out;
+  }
+
+  // سطرهای منطقی ساخته‌شده از قطعات OCR — v1.8.0 (بازنویسی معادل پایتون):
+  // تلورانس Y نسبی (میانگین گروه + ارتفاع ورودی)، شکست ستونی با فاصلهٔ افقی
+  // بزرگ، و حذف خوانش هم‌ستون.
   function buildLines(pieces) {
     if (!pieces.length) return [];
-    var heights = pieces.map(function (p) { return p.bbox.h; }).sort(function (a, b) { return a - b; });
-    var medianH = heights[heights.length >> 1];
-    var tol = Math.max(8, Math.floor(medianH * 0.7));
     var ordered = pieces.slice().sort(function (a, b) {
       return ((a.bbox.y + (a.bbox.h >> 1)) - (b.bbox.y + (b.bbox.h >> 1))) ||
         (a.bbox.x - b.bbox.x);
     });
-    var groups = [[ordered[0]]];
-    for (var k = 1; k < ordered.length; k++) {
-      var piece = ordered[k];
-      var prev = groups[groups.length - 1][groups[groups.length - 1].length - 1];
-      if (Math.abs((piece.bbox.y + (piece.bbox.h >> 1)) -
-        (prev.bbox.y + (prev.bbox.h >> 1))) <= tol) {
-        groups[groups.length - 1].push(piece);
-      } else {
-        groups.push([piece]);
+    // --- گروه‌بندی سطری با تلورانس نسبی ---
+    var groups = [];
+    var cur = [], curMeanYc = 0;
+    ordered.forEach(function (piece) {
+      var yc = piece.bbox.y + (piece.bbox.h >> 1);
+      if (!cur.length) {
+        cur = [piece];
+        curMeanYc = yc;
+        return;
       }
-    }
+      var localH = cur.reduce(function (s, p) { return s + p.bbox.h; }, 0) / cur.length;
+      var tol = Math.max(10, 0.55 * (localH + piece.bbox.h) / 2);
+      if (Math.abs(yc - curMeanYc) <= tol) {
+        cur.push(piece);
+        curMeanYc = (curMeanYc * (cur.length - 1) + yc) / cur.length;
+      } else {
+        groups.push(cur);
+        cur = [piece];
+        curMeanYc = yc;
+      }
+    });
+    if (cur.length) groups.push(cur);
+
     var lines = [];
-    groups.forEach(function (group0, gi) {
-      var group = dedupeSimilarPieces(group0);
-      group.sort(function (a, b) { return a.bbox.x - b.bbox.x; });
-      // سطرهای فارسی (RTL) به ترتیب منطقی راست‌به‌چپ بازچینی می‌شوند
-      var joined = group.map(function (p) { return p.text; }).join(' ');
-      if (tn.isMostlyPersian(joined)) group = group.slice().reverse();
-      var text = group.map(function (p) { return p.text; }).join(' ').trim();
-      var norm = tn.normalizeForMatching(text);
-      var x0 = Math.min.apply(null, group.map(function (p) { return p.bbox.x; }));
-      var y0 = Math.min.apply(null, group.map(function (p) { return p.bbox.y; }));
-      var x1 = Math.max.apply(null, group.map(function (p) { return p.bbox.x + p.bbox.w; }));
-      var y1 = Math.max.apply(null, group.map(function (p) { return p.bbox.y + p.bbox.h; }));
-      var confs = group
-        .filter(function (p) { return p.confidence !== null && p.confidence !== undefined; })
-        .map(function (p) { return p.confidence; });
-      lines.push({
-        id: 'line_' + ('000' + (gi + 1)).slice(-3),
-        text: text,
-        normalized_text: norm,
-        source_ids: group.map(function (p) { return p.id; }),
-        bbox: { x: x0, y: y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) },
-        confidence_mean: confs.length
-          ? Math.round((confs.reduce(function (s, c) { return s + c; }, 0) / confs.length) * 1000) / 1000
-          : null
+    var gi = 0;
+    groups.forEach(function (group0) {
+      // --- شکست ستونی داخل هر گروه ---
+      group0.sort(function (a, b) { return a.bbox.x - b.bbox.x; });
+      var subGroups = [[group0[0]]];
+      for (var k = 1; k < group0.length; k++) {
+        var piece = group0[k];
+        var prev = subGroups[subGroups.length - 1][subGroups[subGroups.length - 1].length - 1];
+        var gap = piece.bbox.x - (prev.bbox.x + prev.bbox.w);
+        if (gap > 4.5 * Math.max(piece.bbox.h, prev.bbox.h, 14)) {
+          subGroups.push([piece]);
+        } else {
+          subGroups[subGroups.length - 1].push(piece);
+        }
+      }
+      subGroups.forEach(function (sub0) {
+        gi++;
+        var sub = dedupeColumnReads(sub0);
+        sub = dedupeSimilarPieces(sub);
+        if (!sub.length) return;
+        sub.sort(function (a, b) { return a.bbox.x - b.bbox.x; });
+        var joined = sub.map(function (p) { return p.text; }).join(' ');
+        if (tn.isMostlyPersian(joined)) sub = sub.slice().reverse();
+        var text = sub.map(function (p) { return p.text; }).join(' ').trim();
+        var norm = tn.normalizeForMatching(text);
+        var x0 = Math.min.apply(null, sub.map(function (p) { return p.bbox.x; }));
+        var y0 = Math.min.apply(null, sub.map(function (p) { return p.bbox.y; }));
+        var x1 = Math.max.apply(null, sub.map(function (p) { return p.bbox.x + p.bbox.w; }));
+        var y1 = Math.max.apply(null, sub.map(function (p) { return p.bbox.y + p.bbox.h; }));
+        var confs = sub
+          .filter(function (p) { return p.confidence !== null && p.confidence !== undefined; })
+          .map(function (p) { return p.confidence; });
+        lines.push({
+          id: 'line_' + ('000' + gi).slice(-3),
+          text: text,
+          normalized_text: norm,
+          source_ids: sub.map(function (p) { return p.id; }),
+          bbox: { x: x0, y: y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) },
+          confidence_mean: confs.length
+            ? Math.round((confs.reduce(function (s, c) { return s + c; }, 0) / confs.length) * 1000) / 1000
+            : null
+        });
       });
     });
     return lines;

@@ -511,6 +511,168 @@ body.help-open { overflow: hidden; }
   background: var(--teal-light); border-radius: 4px; padding: 0 .3rem;
 }
 
+/* ============================================================
+   LabelVoice v1.8.0 — لایهٔ طراحی جدید:
+   تب‌بار پایین، مراحل رنگی، کارت طراحان، کاشی‌های گزارش
+   ============================================================ */
+:root {
+  --lv-navy: #0f2b46;
+  --lv-navy2: #14496e;
+  --lv-accent: #0e7c8f;
+  --lv-accent2: #7c3aed;
+  --st-opencv: #2563eb;
+  --st-ocr: #7c3aed;
+  --st-fields: #ea580c;
+  --st-response: #059669;
+  --st-tts: #db2777;
+}
+
+/* ---------- هدر گرادیانی جدید ---------- */
+.app-header {
+  background: linear-gradient(135deg, var(--lv-navy) 0%, var(--lv-navy2) 45%, var(--lv-accent) 130%);
+  padding-bottom: 1.2rem;
+  box-shadow: 0 6px 22px rgba(15, 43, 70, .28);
+  position: relative; overflow: hidden;
+}
+.app-header::after {
+  content: '💊'; position: absolute; left: -8px; bottom: -30px;
+  font-size: 110px; opacity: .10; transform: rotate(-14deg); pointer-events: none;
+}
+.app-header h1 {
+  font-weight: 800; letter-spacing: -.2px;
+  background: linear-gradient(90deg, #fff, #c9f0f7);
+  -webkit-background-clip: text; background-clip: text;
+}
+.subtitle, .authors { color: #d7e9f4; }
+
+/* ---------- سیستم صفحات ---------- */
+.page { animation: lv-fadein .28s ease; }
+@keyframes lv-fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+main { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+
+/* ---------- تب‌بار پایین ---------- */
+.tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
+  display: flex; justify-content: space-around;
+  background: rgba(255, 255, 255, .96);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  box-shadow: 0 -6px 24px rgba(15, 43, 70, .12);
+}
+@media (prefers-color-scheme: dark) {
+  .tab-bar { background: rgba(24, 38, 39, .96); }
+}
+.tab-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: none; cursor: pointer; padding: 6px 2px;
+  border-radius: 12px; min-height: 52px;
+  color: var(--text-soft); font-family: inherit; transition: all .18s ease;
+}
+.tab-btn .tab-icon { font-size: 21px; line-height: 1; transition: transform .18s ease; }
+.tab-btn .tab-label { font-size: .68rem; font-weight: 700; }
+.tab-btn.active { color: var(--lv-accent); }
+.tab-btn.active .tab-icon { transform: scale(1.18); }
+.tab-btn.active .tab-label { color: var(--lv-accent); }
+.tab-btn:active .tab-icon { transform: scale(.92); }
+
+/* ---------- مراحل رنگی (v1.8.0) ---------- */
+.stages-box { border-inline-start: none; }
+.stage-row {
+  --stage-color: #94a3b8;
+  position: relative;
+  border: 1px solid var(--border);
+  border-inline-start: 4px solid var(--stage-color);
+  border-radius: 12px; padding: .6rem .7rem; margin: .55rem 0;
+  background: var(--card);
+  transition: border-color .3s ease, box-shadow .3s ease, opacity .3s ease;
+  opacity: .62;
+}
+.stage-row.st-running {
+  opacity: 1;
+  border-color: var(--stage-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--stage-color) 22%, transparent);
+  animation: lv-stpulse 1.15s infinite;
+}
+.stage-row.st-done, .stage-row.st-warn { opacity: 1; }
+.stage-row.st-fail { opacity: 1; border-color: var(--bad); --stage-color: var(--bad); }
+@keyframes lv-stpulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--stage-color) 30%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--stage-color) 0%, transparent); }
+}
+.stage-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 27px; border-radius: 50%;
+  background: color-mix(in srgb, var(--stage-color) 16%, transparent);
+  font-size: .85rem; margin-inline-end: .45rem;
+}
+.stage-row.st-running .stage-icon { background: var(--stage-color); }
+.stage-row.st-done .stage-icon { background: color-mix(in srgb, var(--stage-color) 26%, transparent); }
+.stage-title { font-weight: 800; font-size: .86rem; }
+.stage-req { font-size: .72rem; color: var(--text-soft); margin-top: .25rem; }
+.stages-title { font-size: .92rem; }
+
+/* ---------- کاشی‌های گزارش ---------- */
+.report-tiles {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem;
+  margin: .8rem 0;
+}
+.report-tile {
+  background: linear-gradient(160deg, #fff, #f2f8fa);
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: .8rem; text-align: center;
+  box-shadow: 0 2px 10px rgba(15, 43, 70, .06);
+}
+@media (prefers-color-scheme: dark) {
+  .report-tile { background: linear-gradient(160deg, #1d2f31, #182627); }
+}
+.report-tile .rt-v { font-size: 1.45rem; font-weight: 800; color: var(--lv-navy); }
+@media (prefers-color-scheme: dark) { .report-tile .rt-v { color: #c9f0f7; } }
+.report-tile .rt-k { font-size: .72rem; color: var(--text-soft); margin-top: .15rem; }
+
+/* ---------- کارت طراحان ---------- */
+.author-grid { display: grid; gap: .8rem; margin-top: .8rem; }
+@media (min-width: 560px) { .author-grid { grid-template-columns: 1fr 1fr; } }
+.author-card {
+  background: linear-gradient(160deg, #fff, #f4f9fc);
+  border: 1px solid var(--border); border-radius: 18px;
+  padding: 1.2rem; text-align: center;
+  box-shadow: 0 6px 18px rgba(15, 43, 70, .07);
+}
+@media (prefers-color-scheme: dark) {
+  .author-card { background: linear-gradient(160deg, #1d2f31, #182627); }
+}
+.author-avatar {
+  width: 74px; height: 74px; border-radius: 50%; margin: 0 auto .6rem;
+  display: flex; align-items: center; justify-content: center; font-size: 34px;
+  background: linear-gradient(135deg, var(--lv-accent), var(--lv-accent2));
+  box-shadow: 0 6px 16px rgba(14, 124, 143, .35);
+}
+.author-card h3 { margin: 0; font-weight: 800; }
+.author-role { color: var(--text-soft); font-size: .78rem; margin: .2rem 0 .5rem; }
+.author-card p { font-size: .8rem; color: var(--text-soft); margin: 0; line-height: 1.9; }
+
+/* ---------- لینک‌های راهنما ---------- */
+.docs-links { display: grid; gap: .5rem; margin: .7rem 0; }
+.docs-full-link { margin-top: .4rem; width: 100%; }
+.plain-list { padding-inline-start: 1.2rem; }
+.plain-list li { margin: .3rem 0; font-size: .88rem; }
+#page-docs .btn-secondary { justify-content: flex-start; text-align: right; }
+
+/* v1.8.0-ب: بازنویسی صریح قواعد قدیمی st-* تا رنگ مرحله حاکم شود */
+.stage-row.st-running,
+.stage-row.st-done,
+.stage-row.st-warn { border-inline-start-color: var(--stage-color); }
+.stage-row.st-running .stage-icon {
+  background: var(--stage-color); animation: lv-stpulse 1.15s infinite;
+}
+.stage-row.st-done .stage-icon,
+.stage-row.st-warn .stage-icon {
+  background: color-mix(in srgb, var(--stage-color) 26%, transparent);
+}
+.stage-row.st-fail { --stage-color: var(--bad); }
+
 </style>
 </head>
 <body>
@@ -531,6 +693,8 @@ body.help-open { overflow: hidden; }
 </header>
 
 <main id="main">
+  <!-- ============ صفحه ۱: خواندن دارو ============ -->
+  <div id="page-read" class="page active">
   <!-- گام ۱: ورود تصویر -->
   <section class="card" id="input-section" aria-labelledby="input-title">
     <h2 id="input-title">۱. تصویر برچسب را وارد کنید
@@ -643,9 +807,64 @@ body.help-open { overflow: hidden; }
       <pre id="json-pre" dir="ltr"></pre>
     </details>
   </section>
+  </div><!-- /page-read -->
 
-  <!-- بخش ملزومات استاد (v1.5.0) -->
-  <section class="card" id="reqs-section" aria-labelledby="reqs-title">
+  <!-- ============ صفحه ۲: گزارش‌ها و ارزیابی (v1.8.0) ============ -->
+  <div id="page-reports" class="page hidden">
+    <section class="card" aria-labelledby="reports-title">
+      <h2 id="reports-title">📊 گزارش‌ها، تحلیل‌ها و ارزیابی</h2>
+      <p class="hint">دقت در سطح فیلد سنجیده می‌شود و غیبت/تعارض هم خطا شمرده می‌شود —
+      چون هر اشتباه در حوزه دارو می‌تواند آسیب‌زا باشد.</p>
+      <div class="report-tiles" id="report-tiles">
+        <div class="report-tile"><div class="rt-v">—</div><div class="rt-k">زمان کل پردازش</div></div>
+        <div class="report-tile"><div class="rt-v">—</div><div class="rt-k">میانگین اطمینان OCR</div></div>
+        <div class="report-tile"><div class="rt-v">—</div><div class="rt-k">فیلدهای استخراج‌شده</div></div>
+        <div class="report-tile"><div class="rt-v">—</div><div class="rt-k">پوشش شواهد</div></div>
+      </div>
+      <div id="reports-empty" class="hint">
+        هنوز پردازشی انجام نشده — از تب «خواندن دارو» یک برچسب بخوانید تا ارزیابی همین اجرا اینجا نمایش داده شود.
+      </div>
+      <div id="reports-detail" class="hidden">
+        <h3>ارزیابی مرحله‌ای آخرین پردازش</h3>
+        <div id="reports-stages"></div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-small" data-help="eval">روش و اصول ارزیابی مدل‌ها چگونه است؟</button>
+    </section>
+    <section class="card" aria-labelledby="eval-principles-title">
+      <h2 id="eval-principles-title">🔬 چرا این سخت‌گیری؟ خطر خطای دارویی</h2>
+      <p>خطای خواندن قدرت دارو (مثلاً ۵ به‌جای ۳۰ میلی‌گرم) یا تعداد (۲۸ به‌جای ۲۰)
+      می‌تواند به مصرف اشتباه بینجامد. به همین دلیل:</p>
+      <ul class="plain-list">
+        <li>مقدار «متناقض» هرگز به‌عنوان قطعی اعلام نمی‌شود؛</li>
+        <li>مقدار «غایب» از هیچ منبع دیگری (اینترنت/حافظه مدل) تکمیل نمی‌شود؛</li>
+        <li>هر عدد در پاسخ باید در شواهد OCR موجود باشد (نگهبان ایمنی)؛</li>
+        <li>«قدرت درج‌شده» هرگز «دوز مصرف» نامیده نمی‌شود.</li>
+      </ul>
+      <p class="hint">زمینه‌سنجی: ۱۴ تصویر نمونه با مقادیر واقعی در <code>sample_images/manifest.json</code> —
+      بازتولید اعداد: <code>python scripts/evaluate.py</code>؛ نتایج در <code>docs/evaluation/</code>.</p>
+    </section>
+  </div><!-- /page-reports -->
+
+  <!-- ============ صفحه ۳: راهنما و مستندات فنی ============ -->
+  <div id="page-docs" class="page hidden">
+    <section class="card" aria-labelledby="docs-title">
+      <h2 id="docs-title">📚 راهنما و مستندات فنی</h2>
+      <p class="hint">معماری سامانه، ملزومات استاد، نحوهٔ کار هر بخش و مستندات کامل.</p>
+      <div class="docs-links">
+        <button type="button" class="btn btn-secondary" data-help="architecture">🏗️ معماری سامانه و خط پردازش</button>
+        <button type="button" class="btn btn-secondary" data-help="reqs">📌 ملزومات استاد و جدول انطباق</button>
+        <button type="button" class="btn btn-secondary" data-help="stages">🧭 مراحل رنگی پردازش</button>
+        <button type="button" class="btn btn-secondary" data-help="engine">🔤 موتورهای OCR (v1.8.0)</button>
+        <button type="button" class="btn btn-secondary" data-help="preprocess">🖼️ پیش‌پردازش OpenCV</button>
+        <button type="button" class="btn btn-secondary" data-help="fields">📋 فیلدها و شواهد</button>
+        <button type="button" class="btn btn-secondary" data-help="response">💬 پاسخ و نگهبان ایمنی</button>
+        <button type="button" class="btn btn-secondary" data-help="tts">🔊 خوانش صوتی</button>
+        <button type="button" class="btn btn-secondary" data-help="eval">📊 ارزیابی مدل‌ها</button>
+      </div>
+      <a class="btn btn-primary docs-full-link" href="documentation.html">📖 مستندات فنی کامل (HTML مصور)</a>
+    </section>
+    <!-- بخش ملزومات استاد (از نسخه ۱.۵.۰) -->
+    <section class="card" id="reqs-section" aria-labelledby="reqs-title">
     <h2 id="reqs-title">📌 ملزومات طرح‌شده توسط استاد (استاد قربانی) و محل تحقق
       <button type="button" class="help-btn" data-help="reqs" aria-label="راهنمای ملزومات استاد و جدول انطباق">؟</button>
     </h2>
@@ -673,10 +892,58 @@ body.help-open { overflow: hidden; }
     </details>
     <p class="hint">جدول انطباق کامل (الزام ← تحقق ← فایل ← آزمون ← وضعیت): <a href="documentation.html#considerations">مستندات فنی، بخش «ملزومات استاد»</a></p>
   </section>
+  </div><!-- /page-docs -->
+
+  <!-- ============ صفحه ۴: دربارهٔ طراحان (v1.8.0) ============ -->
+  <div id="page-about" class="page hidden">
+    <section class="card about-card" aria-labelledby="about-title">
+      <h2 id="about-title">👥 دربارهٔ طراحان</h2>
+      <div class="author-grid">
+        <div class="author-card">
+          <div class="author-avatar">👨‍💻</div>
+          <h3>حمید جلیلوند</h3>
+          <div class="author-role">توسعه‌دهنده و طراح</div>
+          <p>معماری خط پردازش، موتور خوانش فارسی دوموتوره، رأی‌گیری اجماعی و رابط دسکتاپ.</p>
+        </div>
+        <div class="author-card">
+          <div class="author-avatar">👨‍💻</div>
+          <h3>نوید بدری</h3>
+          <div class="author-role">توسعه‌دهنده و طراح</div>
+          <p>نسخه موبایل (PWA)، دوربین زنده، تشخیص جعبه، و آزمون‌های پاریتی دو-سامانه.</p>
+        </div>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="story-title">
+      <h2 id="story-title">💡 داستان پروژه</h2>
+      <p>این پروژه با یک پرسش ساده شروع شد: «اگر نتوانید روی جعبه دارو را بخوانید چه؟»
+      کاربر ممکن است کم‌بینا باشد، دستش بلرزد، یا برچسب خراب باشد. برچسب‌خوان متنِ
+      «واقعاً قابل خواندن» روی بسته را استخراج می‌کند و دقیقاً همان را به فارسی
+      نمایش می‌دهد و می‌خواند — نه یک کلمه بیشتر.</p>
+      <p>خط قرمز پروژه شفافیت است: مقداری که خوانده نشد «غایب» اعلام می‌شود؛ مقداری
+      که بین دو خوانش مردد است «متناقض» اعلام می‌شود؛ و هیچ عددی از حافظه مدل یا
+      اینترنت تکمیل نمی‌شود. قدرت درج‌شده هرگز «دوز مصرف» نامیده نمی‌شود.</p>
+    </section>
+  </div><!-- /page-about -->
 </main>
 
+<!-- تب‌بار پایین (v1.8.0 — ناوبری چهاربخشی) -->
+<nav class="tab-bar" aria-label="ناوبری اصلی">
+  <button type="button" class="tab-btn active" data-page="page-read">
+    <span class="tab-icon">💊</span><span class="tab-label">خواندن دارو</span>
+  </button>
+  <button type="button" class="tab-btn" data-page="page-reports">
+    <span class="tab-icon">📊</span><span class="tab-label">گزارش‌ها</span>
+  </button>
+  <button type="button" class="tab-btn" data-page="page-docs">
+    <span class="tab-icon">📚</span><span class="tab-label">راهنما</span>
+  </button>
+  <button type="button" class="tab-btn" data-page="page-about">
+    <span class="tab-icon">👥</span><span class="tab-label">طراحان</span>
+  </button>
+</nav>
+
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۷.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۸.۰</p>
   <p>👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="stages">🧭 اعلام مراحل پردازش و ارزیابی مرحله‌ای</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">📌 ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
@@ -2208,11 +2475,25 @@ body.help-open { overflow: hidden; }
   // ---------- گیت کیفیت قطعه‌ها (v1.7.0 — معادل _filter_pieces) ----------
   // نماد محض، اطمینان خیلی پایین، قطعه کوتاه کم‌اطمینان و قطعه کوتاهِ
   // کادر-غول‌پیکر (شکست تحلیل چیدمان) حذف می‌شوند.
+  // v1.8.0: تشخیص زبالهٔ ترکیب‌خطی — حرف فارسی + حرف لاتین در یک قطعه
+  // (یا رقم فارسی + رقم لاتین) فقط محصول خوانش خراب است.
+  function isMixedScriptGarbage(text) {
+    var t = text || '';
+    var faLetter = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(t);
+    var latLetter = /[a-zA-Z\u00C0-\u024F]/.test(t);
+    if (faLetter && latLetter) return true;
+    var faDigit = /[\u06F0-\u06F9\u0660-\u0669]/.test(t);
+    var latDigit = /[0-9]/.test(t);
+    if (faDigit && latDigit) return true;
+    return false;
+  }
+
   function filterPieces(raw, imageArea, settings) {
     var out = [];
     (raw || []).forEach(function (p) {
       var text = (p.text || '').trim();
       if (!text) return;
+      if (isMixedScriptGarbage(text)) return; // v1.8.0
       if (p.confidence !== null && p.confidence !== undefined &&
         p.confidence < 0.30) return; // piece_conf_floor
       var hasAlnum = /[\p{L}\p{N}]/u.test(text);
@@ -2239,17 +2520,65 @@ body.help-open { overflow: hidden; }
     return score;
   }
 
-  // ادغام بهترین-اول (v1.7.0 — معادل _merge_pieces_best_first):
+  // v1.8.0-د: کادر منحط — خیلی نازک/خیلی ریز (نقطه و خط) و نشان‌گردِ درشتِ
+  // تک‌نویسه (مثل «۲۸» داخل دایره که به‌صورت «۵» با کادر مربعی می‌آید).
+  function isDegenerateBox(p) {
+    var w = p.bbox.w, h = p.bbox.h;
+    if (h < 12 || w < 3) return true;
+    var t = (p.text || '').trim();
+    if ((w * h) < 60 && t.length <= 2) return true;
+    var alnumN = ((t.match(/[\p{L}\p{N}]/gu) || []).length);
+    if (alnumN <= 2 && (w * h) >= 8000) {
+      var longSide = Math.max(w, h), shortSide = Math.min(w, h);
+      if (shortSide > 0 && longSide / shortSide <= 1.6) return true;
+    }
+    return false;
+  }
+
+  // فیلتر اجماعی (v1.8.0 — معادل _apply_consensus_filter): قطعهٔ تک‌رأیِ
+  // کم‌اطمینان حذف می‌شود؛ کوتاه‌ها سخت‌گیری بیشتری دارند.
+  function applyConsensusFilter(pieces) {
+    var minN = 6, lonelyConf = 0.55;
+    if ((pieces || []).length < minN) {
+      var kept = pieces.filter(function (p) { return !isDegenerateBox(p); });
+      return kept.length ? kept : pieces;
+    }
+    var out = [];
+    pieces.forEach(function (p) {
+      if (isDegenerateBox(p)) return;
+      var support = p.support || 1;
+      var conf = p.confidence;
+      if (support <= 1) {
+        var alnum = ((p.text || '').match(/[\p{L}\p{N}]/gu) || []).length;
+        var floor = alnum <= 2 ? Math.max(lonelyConf, 0.80) : lonelyConf;
+        if (conf === null || conf === undefined || conf < floor) return;
+      }
+      out.push(p);
+    });
+    return out.length ? out : pieces;
+  }
+
+  // ادغام بهترین-اول (v1.7.0 + v1.8.0 — معادل _merge_pieces_best_first):
   // واریانت با بیشترین امتیاز مبناست؛ بقیه فقط نواحی پوشش‌نداده را پر می‌کنند.
-  // جانشینی محافظه‌کارانه: فقط خوانش «کامل‌ترِ معتبر» (احتوای متنی یا طولانی‌تر)
-  // جای خوانش موجود را می‌گیرد — نه صرفاً اطمینان بالاتر.
+  // v1.8.0: رأی اجماعی (support) + دو گذر (سالم‌ها اول، فشرده‌ها بعد) +
+  // قوانین جایگزینی محافظه‌کارانه برای عبارت چندواژه‌ای در برابر کلمهٔ دقیق.
   function mergePiecesBestFirst(byVariant) {
     var order = Object.keys(byVariant || {}).map(function (k) {
       return { name: k, pieces: byVariant[k] };
     }).sort(function (a, b) { return scoreVariant(b.pieces) - scoreVariant(a.pieces); });
-    var kept = [];
+    var normalItems = [], squeezedItems = [];
     order.forEach(function (v) {
       v.pieces.forEach(function (rp) {
+        var norm = tn.normalizeForMatching(rp.text);
+        var nWords = norm.split(/\s+/).filter(Boolean).length;
+        var isSqueezed = nWords >= 2 && rp.h > 0 && rp.w < 1.6 * rp.h * nWords;
+        (isSqueezed ? squeezedItems : normalItems).push(rp);
+      });
+    });
+    var kept = [];
+    [false, true].forEach(function (passSqueezed) {
+      var items = passSqueezed ? squeezedItems : normalItems;
+      items.forEach(function (rp) {
         var bb = { x: rp.x, y: rp.y, w: rp.w, h: rp.h };
         var norm = tn.normalizeForMatching(rp.text);
         var normL = norm.toLowerCase();
@@ -2257,46 +2586,58 @@ body.help-open { overflow: hidden; }
         for (var i = 0; i < kept.length; i++) {
           var ex = kept[i];
           if (!sameRegion(ex.bbox, bb, ex.text, rp.text)) continue;
-          var exNorm = ex.normalized_text.toLowerCase();
-          var confRp = rp.confidence || 0;
-          var confEx = ex.confidence || 0;
-          if (exNorm !== normL) {
-            if (normL.indexOf(exNorm) !== -1 || exNorm.indexOf(normL) !== -1) {
-              // احتوای متنی: خوانش جزئی همان کلمه
-              var lenGap = Math.abs(normL.length - exNorm.length);
-              var longerNew = normL.length > exNorm.length;
-              var winnerNew;
-              if (lenGap >= 2 && ((longerNew && confRp >= 0.5) ||
-                (!longerNew && confEx >= 0.5))) {
-                winnerNew = longerNew;
+          // قطعهٔ فشرده در گذر دوم فقط رأی می‌دهد
+          if (!passSqueezed) {
+            var exNorm = ex.normalized_text.toLowerCase();
+            var confRp = rp.confidence || 0;
+            var confEx = ex.confidence || 0;
+            if (exNorm !== normL) {
+              if (normL.indexOf(exNorm) !== -1 || exNorm.indexOf(normL) !== -1) {
+                var lenGap = Math.abs(normL.length - exNorm.length);
+                var longerNew = normL.length > exNorm.length;
+                var winnerNew;
+                if (lenGap >= 2) {
+                  var multiIn = normL.split(/\s+/).filter(Boolean).length >= 2;
+                  var multiEx = exNorm.split(/\s+/).filter(Boolean).length >= 2;
+                  if (longerNew) {
+                    winnerNew = multiIn ? (confRp >= confEx) : (confRp >= 0.5);
+                  } else {
+                    winnerNew = multiEx ? (confRp >= confEx + 0.15) : (confEx < 0.5);
+                  }
+                } else if (lenGap === 1) {
+                  winnerNew = longerNew ? (confRp >= confEx - 0.05)
+                    : (confRp < confEx - 0.05);
+                } else {
+                  winnerNew = confRp > confEx;
+                }
+                if (winnerNew) {
+                  ex.text = rp.text; ex.normalized_text = norm;
+                  ex.confidence = rp.confidence; ex.variant = rp.variant;
+                }
               } else {
-                winnerNew = confRp > confEx;
-              }
-              if (winnerNew) {
-                ex.text = rp.text; ex.normalized_text = norm;
-                ex.confidence = rp.confidence; ex.variant = rp.variant;
-              }
-            } else {
-              var longer = normL.length > exNorm.length;
-              var sameLenBetter = normL.length === exNorm.length && confRp > confEx;
-              if ((longer || sameLenBetter) && confRp >= confEx * 0.9) {
-                ex.text = rp.text; ex.normalized_text = norm;
-                ex.confidence = rp.confidence; ex.variant = rp.variant;
+                var longer = normL.length > exNorm.length;
+                var sameLenBetter = normL.length === exNorm.length && confRp > confEx;
+                if ((longer || sameLenBetter) && confRp >= confEx * 0.9) {
+                  ex.text = rp.text; ex.normalized_text = norm;
+                  ex.confidence = rp.confidence; ex.variant = rp.variant;
+                }
               }
             }
           }
+          ex.support = (ex.support || 1) + 1;
           duplicated = true;
           break;
         }
         if (!duplicated) {
           kept.push({
             id: '', text: rp.text, normalized_text: norm, bbox: bb,
-            confidence: rp.confidence, variant: rp.variant, engine: rp.engine
+            confidence: rp.confidence, variant: rp.variant, engine: rp.engine,
+            support: 1
           });
         }
       });
     });
-    return kept;
+    return applyConsensusFilter(kept);
   }
 
   // حذف قطعه‌های تکراری بین نسخه‌ها (IoU بالا + متن یکسان) — مسیر قدیمی (سازگاری آزمون‌ها)
@@ -2379,52 +2720,104 @@ body.help-open { overflow: hidden; }
     return out;
   }
 
-  // سطرهای منطقی ساخته‌شده از قطعات OCR
+  // حذف خوانش‌های جایگزینِ یک جایگاه در یک سطر (v1.8.0 — معادل _dedupe_column_reads)
+  function dedupeColumnReads(sub) {
+    function strength(p) {
+      var conf = (p.confidence === null || p.confidence === undefined) ? 0.4 : p.confidence;
+      return conf * (1.0 + 0.25 * ((p.support || 1) - 1));
+    }
+    var out = [];
+    sub.slice().sort(function (a, b) { return strength(b) - strength(a); })
+      .forEach(function (piece) {
+        var px0 = piece.bbox.x, px1 = piece.bbox.x + piece.bbox.w;
+        var overlaps = false;
+        for (var i = 0; i < out.length; i++) {
+          var kx0 = out[i].bbox.x, kx1 = out[i].bbox.x + out[i].bbox.w;
+          var inter = Math.min(px1, kx1) - Math.max(px0, kx0);
+          if (inter <= 0) continue;
+          var minW = Math.max(1, Math.min(px1 - px0, kx1 - kx0));
+          if (inter / minW > 0.60) { overlaps = true; break; }
+        }
+        if (!overlaps) out.push(piece);
+      });
+    return out;
+  }
+
+  // سطرهای منطقی ساخته‌شده از قطعات OCR — v1.8.0 (بازنویسی معادل پایتون):
+  // تلورانس Y نسبی (میانگین گروه + ارتفاع ورودی)، شکست ستونی با فاصلهٔ افقی
+  // بزرگ، و حذف خوانش هم‌ستون.
   function buildLines(pieces) {
     if (!pieces.length) return [];
-    var heights = pieces.map(function (p) { return p.bbox.h; }).sort(function (a, b) { return a - b; });
-    var medianH = heights[heights.length >> 1];
-    var tol = Math.max(8, Math.floor(medianH * 0.7));
     var ordered = pieces.slice().sort(function (a, b) {
       return ((a.bbox.y + (a.bbox.h >> 1)) - (b.bbox.y + (b.bbox.h >> 1))) ||
         (a.bbox.x - b.bbox.x);
     });
-    var groups = [[ordered[0]]];
-    for (var k = 1; k < ordered.length; k++) {
-      var piece = ordered[k];
-      var prev = groups[groups.length - 1][groups[groups.length - 1].length - 1];
-      if (Math.abs((piece.bbox.y + (piece.bbox.h >> 1)) -
-        (prev.bbox.y + (prev.bbox.h >> 1))) <= tol) {
-        groups[groups.length - 1].push(piece);
-      } else {
-        groups.push([piece]);
+    // --- گروه‌بندی سطری با تلورانس نسبی ---
+    var groups = [];
+    var cur = [], curMeanYc = 0;
+    ordered.forEach(function (piece) {
+      var yc = piece.bbox.y + (piece.bbox.h >> 1);
+      if (!cur.length) {
+        cur = [piece];
+        curMeanYc = yc;
+        return;
       }
-    }
+      var localH = cur.reduce(function (s, p) { return s + p.bbox.h; }, 0) / cur.length;
+      var tol = Math.max(10, 0.55 * (localH + piece.bbox.h) / 2);
+      if (Math.abs(yc - curMeanYc) <= tol) {
+        cur.push(piece);
+        curMeanYc = (curMeanYc * (cur.length - 1) + yc) / cur.length;
+      } else {
+        groups.push(cur);
+        cur = [piece];
+        curMeanYc = yc;
+      }
+    });
+    if (cur.length) groups.push(cur);
+
     var lines = [];
-    groups.forEach(function (group0, gi) {
-      var group = dedupeSimilarPieces(group0);
-      group.sort(function (a, b) { return a.bbox.x - b.bbox.x; });
-      // سطرهای فارسی (RTL) به ترتیب منطقی راست‌به‌چپ بازچینی می‌شوند
-      var joined = group.map(function (p) { return p.text; }).join(' ');
-      if (tn.isMostlyPersian(joined)) group = group.slice().reverse();
-      var text = group.map(function (p) { return p.text; }).join(' ').trim();
-      var norm = tn.normalizeForMatching(text);
-      var x0 = Math.min.apply(null, group.map(function (p) { return p.bbox.x; }));
-      var y0 = Math.min.apply(null, group.map(function (p) { return p.bbox.y; }));
-      var x1 = Math.max.apply(null, group.map(function (p) { return p.bbox.x + p.bbox.w; }));
-      var y1 = Math.max.apply(null, group.map(function (p) { return p.bbox.y + p.bbox.h; }));
-      var confs = group
-        .filter(function (p) { return p.confidence !== null && p.confidence !== undefined; })
-        .map(function (p) { return p.confidence; });
-      lines.push({
-        id: 'line_' + ('000' + (gi + 1)).slice(-3),
-        text: text,
-        normalized_text: norm,
-        source_ids: group.map(function (p) { return p.id; }),
-        bbox: { x: x0, y: y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) },
-        confidence_mean: confs.length
-          ? Math.round((confs.reduce(function (s, c) { return s + c; }, 0) / confs.length) * 1000) / 1000
-          : null
+    var gi = 0;
+    groups.forEach(function (group0) {
+      // --- شکست ستونی داخل هر گروه ---
+      group0.sort(function (a, b) { return a.bbox.x - b.bbox.x; });
+      var subGroups = [[group0[0]]];
+      for (var k = 1; k < group0.length; k++) {
+        var piece = group0[k];
+        var prev = subGroups[subGroups.length - 1][subGroups[subGroups.length - 1].length - 1];
+        var gap = piece.bbox.x - (prev.bbox.x + prev.bbox.w);
+        if (gap > 4.5 * Math.max(piece.bbox.h, prev.bbox.h, 14)) {
+          subGroups.push([piece]);
+        } else {
+          subGroups[subGroups.length - 1].push(piece);
+        }
+      }
+      subGroups.forEach(function (sub0) {
+        gi++;
+        var sub = dedupeColumnReads(sub0);
+        sub = dedupeSimilarPieces(sub);
+        if (!sub.length) return;
+        sub.sort(function (a, b) { return a.bbox.x - b.bbox.x; });
+        var joined = sub.map(function (p) { return p.text; }).join(' ');
+        if (tn.isMostlyPersian(joined)) sub = sub.slice().reverse();
+        var text = sub.map(function (p) { return p.text; }).join(' ').trim();
+        var norm = tn.normalizeForMatching(text);
+        var x0 = Math.min.apply(null, sub.map(function (p) { return p.bbox.x; }));
+        var y0 = Math.min.apply(null, sub.map(function (p) { return p.bbox.y; }));
+        var x1 = Math.max.apply(null, sub.map(function (p) { return p.bbox.x + p.bbox.w; }));
+        var y1 = Math.max.apply(null, sub.map(function (p) { return p.bbox.y + p.bbox.h; }));
+        var confs = sub
+          .filter(function (p) { return p.confidence !== null && p.confidence !== undefined; })
+          .map(function (p) { return p.confidence; });
+        lines.push({
+          id: 'line_' + ('000' + gi).slice(-3),
+          text: text,
+          normalized_text: norm,
+          source_ids: sub.map(function (p) { return p.id; }),
+          bbox: { x: x0, y: y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) },
+          confidence_mean: confs.length
+            ? Math.round((confs.reduce(function (s, c) { return s + c; }, 0) / confs.length) * 1000) / 1000
+            : null
+        });
       });
     });
     return lines;
@@ -2627,6 +3020,10 @@ body.help-open { overflow: hidden; }
   var VARIANT_GRAY_CLAHE = 'gray_clahe';
   var VARIANT_BINARIZED = 'binarized';
   var VARIANT_SHARPENED = 'sharpened';
+  // v1.8.0: اعلان ثابت‌های گمشده (باگ پنهان v1.7.0 — خطای ReferenceError
+  // هنگام فعال‌بودن white_on_dark) + واریانت جدید جداسازی جوهر
+  var VARIANT_WHITE_ON_DARK = 'white_on_dark';
+  var VARIANT_INK_ISOLATED = 'ink_isolated';
 
   // ---------- بارگذاری و مقیاس ----------
   // بارگذاری تصویر با توجه به جهت EXIF (عکس‌های موبایل)
@@ -2843,6 +3240,22 @@ body.help-open { overflow: hidden; }
     return binarizeCore(gray, w, h, windowSize, c, false);
   }
 
+  // v1.8.0: جداسازی جوهر رنگی (معادل ink_isolated در preprocess.py):
+  // 255 − بیشینهٔ کانال (B,G,R) — هر جوهر رنگی به جوهر تیره روی زمینهٔ
+  // روشن تبدیل می‌شود؛ برای متن آبی/بنفش/قرمز روی جعبه سفید.
+  function inkIsolate(ctx, w, h) {
+    var img = ctx.getImageData(0, 0, w, h);
+    var d = img.data;
+    var out = new Uint8ClampedArray(w * h);
+    for (var i = 0, p = 0; i < d.length; i += 4, p++) {
+      var mx = d[i]; // B
+      if (d[i + 1] > mx) mx = d[i + 1]; // G
+      if (d[i + 2] > mx) mx = d[i + 2]; // R
+      out[p] = 255 - mx;
+    }
+    return out;
+  }
+
   // نسخه ویژه «متن روشن روی پس‌زمینه تیره/میانه» (v1.7.0 — معادل white_on_dark
   // در preprocess.py): desktop = bitwise_not(adaptiveThreshold(BINARY_INV,51,12))
   // که از نظر ریاضی ≡ adaptiveThreshold(BINARY, 51, 12) است؛ یعنی متن روشن
@@ -2946,6 +3359,12 @@ body.help-open { overflow: hidden; }
       var wod = whiteOnDark(gray, scaled.w, scaled.h, 51, 12);
       variants[VARIANT_WHITE_ON_DARK] = grayToCanvas(wod, scaled.w, scaled.h);
     }
+    // v1.8.0: جداسازی جوهر رنگی — 255 − بیشینهٔ کانال؛ متن رنگی (آبی/بنفش/
+    // قرمز) روی جعبه سفید به جوهر تیره روی زمینه روشن تبدیل می‌شود.
+    if (settings.use_ink_isolated_variant) {
+      var ink = inkIsolate(scaled.ctx, scaled.w, scaled.h);
+      variants[VARIANT_INK_ISOLATED] = grayToCanvas(ink, scaled.w, scaled.h);
+    }
     return {
       variants: variants,
       width: scaled.w,
@@ -2961,12 +3380,14 @@ body.help-open { overflow: hidden; }
     VARIANT_BINARIZED: VARIANT_BINARIZED,
     VARIANT_SHARPENED: VARIANT_SHARPENED,
     VARIANT_WHITE_ON_DARK: VARIANT_WHITE_ON_DARK,
+    VARIANT_INK_ISOLATED: VARIANT_INK_ISOLATED,
     loadImage: loadImage,
     drawScaled: drawScaled,
     toGrayData: toGrayData,
     clahe: clahe,
     binarize: binarize,
     whiteOnDark: whiteOnDark,
+    inkIsolate: inkIsolate,
     sharpenGray: sharpenGray,
     cropCanvas: cropCanvas,
     rotate90: rotate90,
@@ -4162,6 +4583,7 @@ window.LBR_SAMPLES = [
     use_binarized_variant: true,
     use_sharpened_variant: true,
     use_white_on_dark_variant: true,
+    use_ink_isolated_variant: true,
     use_sparse_psm: true,
     auto_orientation_retry: true,
     max_file_mb: 10,
@@ -4350,19 +4772,24 @@ window.LBR_SAMPLES = [
   // مطابق دسته ۲ ملزومات استاد (نمودار معماری): هر ۵ مرحله هنگام اجرا اعلام،
   // خروجی و معیارهای ارزیابی کیفیت همان مرحله با دکمه نمایش داده می‌شود.
   var STAGES_FA = [
-    { key: 'opencv', num: '۱', title: 'پیش‌پردازش OpenCV',
+    { key: 'opencv', num: '۱', color: '#2563eb', icon: '🖼️',
+      title: 'پیش‌پردازش OpenCV',
       req: 'OpenCV (تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح)',
       files: 'js/boxdetect.js + js/preprocess.js ⇄ desktop: label_reader/preprocess.py' },
-    { key: 'ocr', num: '۲', title: 'موتور OCR',
+    { key: 'ocr', num: '۲', color: '#7c3aed', icon: '🔤',
+      title: 'موتور OCR',
       req: 'OCR (استخراج نام، اعداد و متن بسته‌بندی)',
       files: 'js/ocr.js (Tesseract.js/WASM) ⇄ desktop: label_reader/ocr/*' },
-    { key: 'fields', num: '۳', title: 'پردازش متن و کنترل فیلدها',
+    { key: 'fields', num: '۳', color: '#ea580c', icon: '📋',
+      title: 'پردازش متن و کنترل فیلدها',
       req: 'پردازش متن و کنترل فیلدها (نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده)',
       files: 'js/textnorm.js + patterns.js + extractor.js ⇄ desktop: extraction/*' },
-    { key: 'response', num: '۴', title: 'تولید پاسخ فارسی',
+    { key: 'response', num: '۴', color: '#059669', icon: '💬',
+      title: 'تولید پاسخ فارسی',
       req: 'تولید پاسخ فارسی (منطق استخراج اطلاعات یا LLM برای بازنویسی وفادار به متن)',
       files: 'js/responder.js + js/guard.js ⇄ desktop: response/builder.py + guard.py' },
-    { key: 'tts', num: '۵', title: 'خوانش صوتی و نمایش (TTS + رابط)',
+    { key: 'tts', num: '۵', color: '#db2777', icon: '🔊',
+      title: 'خوانش صوتی و نمایش (TTS + رابط)',
       req: 'TTS + Streamlit (خواندن اطلاعات و نمایش متن استخراج‌شده)',
       files: 'js/app.js (speechSynthesis) ⇄ desktop: label_reader/tts/* + app.py' }
   ];
@@ -4381,11 +4808,12 @@ window.LBR_SAMPLES = [
     STAGES_FA.forEach(function (s) {
       var row = document.createElement('div');
       row.className = 'stage-row st-pending';
+      row.style.setProperty('--stage-color', s.color || '#94a3b8');
       var head = document.createElement('div');
       head.className = 'stage-head';
       var icon = document.createElement('span');
       icon.className = 'stage-icon';
-      icon.textContent = STAGE_ICON.pending;
+      icon.textContent = s.icon || STAGE_ICON.pending;
       var title = document.createElement('span');
       title.className = 'stage-title';
       title.textContent = s.num + '. ' + s.title;
@@ -4421,6 +4849,13 @@ window.LBR_SAMPLES = [
     if (!el) return;
     el.row.className = 'stage-row st-running';
     el.icon.textContent = STAGE_ICON.running;
+  }
+
+  function stagePending(key) {
+    var el = stageEls[key];
+    if (!el) return;
+    el.row.className = 'stage-row st-pending';
+    el.icon.textContent = STAGE_ICON.pending;
   }
 
   function stageDone(key, data) {
@@ -5117,6 +5552,101 @@ window.LBR_SAMPLES = [
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'hidden') LBR.camera.close();
     });
+
+    // ---------- ناوبری تب‌بار (v1.8.0) ----------
+    var tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var pageId = btn.getAttribute('data-page');
+        document.querySelectorAll('.page').forEach(function (p) {
+          p.classList.toggle('hidden', p.id !== pageId);
+          p.classList.toggle('active', p.id === pageId);
+        });
+        tabBtns.forEach(function (b) {
+          b.classList.toggle('active', b === btn);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (pageId === 'page-reports') refreshReportsPage();
+      });
+    });
+  }
+
+  // ---------- صفحهٔ گزارش‌ها: ارزیابی آخرین پردازش (v1.8.0) ----------
+  function refreshReportsPage() {
+    var result = state.result;
+    var tiles = document.querySelectorAll('#report-tiles .report-tile .rt-v');
+    var empty = document.getElementById('reports-empty');
+    var detail = document.getElementById('reports-detail');
+    if (!result) {
+      tiles.forEach(function (t) { t.textContent = '—'; });
+      if (empty) empty.classList.remove('hidden');
+      if (detail) detail.classList.add('hidden');
+      return;
+    }
+    if (empty) empty.classList.add('hidden');
+    var total = result.metadata && result.metadata.durations_ms
+      ? result.metadata.durations_ms.total_ms : null;
+    var confs = (result.ocr_pieces || [])
+      .filter(function (p) { return p.confidence !== null && p.confidence !== undefined; })
+      .map(function (p) { return p.confidence; });
+    var meanConf = confs.length
+      ? Math.round(100 * confs.reduce(function (s, c) { return s + c; }, 0) / confs.length) : null;
+    var extracted = 0, withEv = 0;
+    Object.keys(result.fields || {}).forEach(function (k) {
+      var f = result.fields[k];
+      if (f.status === 'extracted' || f.status === 'user_corrected') {
+        extracted++;
+        if (f.source_ids && f.source_ids.length) withEv++;
+      }
+    });
+    var coverage = extracted ? Math.round(100 * withEv / extracted) : 100;
+    if (tiles[0]) tiles[0].textContent = total !== null ? (total.toLocaleString('fa-IR') + ' ms') : '—';
+    if (tiles[1]) tiles[1].textContent = meanConf !== null ? (meanConf.toLocaleString('fa-IR') + '٪') : '—';
+    if (tiles[2]) tiles[2].textContent = extracted.toLocaleString('fa-IR');
+    if (tiles[3]) tiles[3].textContent = coverage.toLocaleString('fa-IR') + '٪';
+    if (detail) {
+      detail.classList.remove('hidden');
+      var box = document.getElementById('reports-stages');
+      if (box) {
+        box.innerHTML = '';
+        var src = (typeof stageRecords !== 'undefined' && stageRecords.length)
+          ? stageRecords : null;
+        if (src) {
+          STAGES_FA.forEach(function (s) {
+            var rec = stageRecords.filter(function (r) { return r.key === s.key; })[0];
+            var row = document.createElement('div');
+            row.className = 'stage-row st-done';
+            row.style.setProperty('--stage-color', s.color);
+            var head = document.createElement('div');
+            head.className = 'stage-head';
+            var icon = document.createElement('span');
+            icon.className = 'stage-icon';
+            icon.textContent = s.icon;
+            var title = document.createElement('span');
+            title.className = 'stage-title';
+            title.textContent = s.num + '. ' + s.title;
+            head.appendChild(icon); head.appendChild(title);
+            if (rec && rec.duration_ms !== undefined && rec.duration_ms !== null) {
+              var time = document.createElement('span');
+              time.className = 'stage-time';
+              time.textContent = rec.duration_ms + ' ms';
+              head.appendChild(time);
+            }
+            var outs = document.createElement('div');
+            outs.className = 'stage-req';
+            (rec && rec.outputs_fa ? rec.outputs_fa : []).slice(0, 2).forEach(function (o) {
+              var p = document.createElement('div');
+              p.textContent = '▸ ' + o;
+              outs.appendChild(p);
+            });
+            row.appendChild(head); row.appendChild(outs);
+            box.appendChild(row);
+          });
+        } else {
+          box.innerHTML = '<p class="hint">جزئیات مرحله‌ای این اجرا در همین صفحهٔ «خواندن دارو» موجود است.</p>';
+        }
+      }
+    }
   }
 
   if (document.readyState === 'loading') {

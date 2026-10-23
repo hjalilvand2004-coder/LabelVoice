@@ -496,3 +496,165 @@ body.help-open { overflow: hidden; }
   font-size: .74rem; direction: ltr; unicode-bidi: embed;
   background: var(--teal-light); border-radius: 4px; padding: 0 .3rem;
 }
+
+/* ============================================================
+   LabelVoice v1.8.0 — لایهٔ طراحی جدید:
+   تب‌بار پایین، مراحل رنگی، کارت طراحان، کاشی‌های گزارش
+   ============================================================ */
+:root {
+  --lv-navy: #0f2b46;
+  --lv-navy2: #14496e;
+  --lv-accent: #0e7c8f;
+  --lv-accent2: #7c3aed;
+  --st-opencv: #2563eb;
+  --st-ocr: #7c3aed;
+  --st-fields: #ea580c;
+  --st-response: #059669;
+  --st-tts: #db2777;
+}
+
+/* ---------- هدر گرادیانی جدید ---------- */
+.app-header {
+  background: linear-gradient(135deg, var(--lv-navy) 0%, var(--lv-navy2) 45%, var(--lv-accent) 130%);
+  padding-bottom: 1.2rem;
+  box-shadow: 0 6px 22px rgba(15, 43, 70, .28);
+  position: relative; overflow: hidden;
+}
+.app-header::after {
+  content: '💊'; position: absolute; left: -8px; bottom: -30px;
+  font-size: 110px; opacity: .10; transform: rotate(-14deg); pointer-events: none;
+}
+.app-header h1 {
+  font-weight: 800; letter-spacing: -.2px;
+  background: linear-gradient(90deg, #fff, #c9f0f7);
+  -webkit-background-clip: text; background-clip: text;
+}
+.subtitle, .authors { color: #d7e9f4; }
+
+/* ---------- سیستم صفحات ---------- */
+.page { animation: lv-fadein .28s ease; }
+@keyframes lv-fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+main { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+
+/* ---------- تب‌بار پایین ---------- */
+.tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
+  display: flex; justify-content: space-around;
+  background: rgba(255, 255, 255, .96);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  box-shadow: 0 -6px 24px rgba(15, 43, 70, .12);
+}
+@media (prefers-color-scheme: dark) {
+  .tab-bar { background: rgba(24, 38, 39, .96); }
+}
+.tab-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: none; cursor: pointer; padding: 6px 2px;
+  border-radius: 12px; min-height: 52px;
+  color: var(--text-soft); font-family: inherit; transition: all .18s ease;
+}
+.tab-btn .tab-icon { font-size: 21px; line-height: 1; transition: transform .18s ease; }
+.tab-btn .tab-label { font-size: .68rem; font-weight: 700; }
+.tab-btn.active { color: var(--lv-accent); }
+.tab-btn.active .tab-icon { transform: scale(1.18); }
+.tab-btn.active .tab-label { color: var(--lv-accent); }
+.tab-btn:active .tab-icon { transform: scale(.92); }
+
+/* ---------- مراحل رنگی (v1.8.0) ---------- */
+.stages-box { border-inline-start: none; }
+.stage-row {
+  --stage-color: #94a3b8;
+  position: relative;
+  border: 1px solid var(--border);
+  border-inline-start: 4px solid var(--stage-color);
+  border-radius: 12px; padding: .6rem .7rem; margin: .55rem 0;
+  background: var(--card);
+  transition: border-color .3s ease, box-shadow .3s ease, opacity .3s ease;
+  opacity: .62;
+}
+.stage-row.st-running {
+  opacity: 1;
+  border-color: var(--stage-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--stage-color) 22%, transparent);
+  animation: lv-stpulse 1.15s infinite;
+}
+.stage-row.st-done, .stage-row.st-warn { opacity: 1; }
+.stage-row.st-fail { opacity: 1; border-color: var(--bad); --stage-color: var(--bad); }
+@keyframes lv-stpulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--stage-color) 30%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--stage-color) 0%, transparent); }
+}
+.stage-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 27px; border-radius: 50%;
+  background: color-mix(in srgb, var(--stage-color) 16%, transparent);
+  font-size: .85rem; margin-inline-end: .45rem;
+}
+.stage-row.st-running .stage-icon { background: var(--stage-color); }
+.stage-row.st-done .stage-icon { background: color-mix(in srgb, var(--stage-color) 26%, transparent); }
+.stage-title { font-weight: 800; font-size: .86rem; }
+.stage-req { font-size: .72rem; color: var(--text-soft); margin-top: .25rem; }
+.stages-title { font-size: .92rem; }
+
+/* ---------- کاشی‌های گزارش ---------- */
+.report-tiles {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem;
+  margin: .8rem 0;
+}
+.report-tile {
+  background: linear-gradient(160deg, #fff, #f2f8fa);
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: .8rem; text-align: center;
+  box-shadow: 0 2px 10px rgba(15, 43, 70, .06);
+}
+@media (prefers-color-scheme: dark) {
+  .report-tile { background: linear-gradient(160deg, #1d2f31, #182627); }
+}
+.report-tile .rt-v { font-size: 1.45rem; font-weight: 800; color: var(--lv-navy); }
+@media (prefers-color-scheme: dark) { .report-tile .rt-v { color: #c9f0f7; } }
+.report-tile .rt-k { font-size: .72rem; color: var(--text-soft); margin-top: .15rem; }
+
+/* ---------- کارت طراحان ---------- */
+.author-grid { display: grid; gap: .8rem; margin-top: .8rem; }
+@media (min-width: 560px) { .author-grid { grid-template-columns: 1fr 1fr; } }
+.author-card {
+  background: linear-gradient(160deg, #fff, #f4f9fc);
+  border: 1px solid var(--border); border-radius: 18px;
+  padding: 1.2rem; text-align: center;
+  box-shadow: 0 6px 18px rgba(15, 43, 70, .07);
+}
+@media (prefers-color-scheme: dark) {
+  .author-card { background: linear-gradient(160deg, #1d2f31, #182627); }
+}
+.author-avatar {
+  width: 74px; height: 74px; border-radius: 50%; margin: 0 auto .6rem;
+  display: flex; align-items: center; justify-content: center; font-size: 34px;
+  background: linear-gradient(135deg, var(--lv-accent), var(--lv-accent2));
+  box-shadow: 0 6px 16px rgba(14, 124, 143, .35);
+}
+.author-card h3 { margin: 0; font-weight: 800; }
+.author-role { color: var(--text-soft); font-size: .78rem; margin: .2rem 0 .5rem; }
+.author-card p { font-size: .8rem; color: var(--text-soft); margin: 0; line-height: 1.9; }
+
+/* ---------- لینک‌های راهنما ---------- */
+.docs-links { display: grid; gap: .5rem; margin: .7rem 0; }
+.docs-full-link { margin-top: .4rem; width: 100%; }
+.plain-list { padding-inline-start: 1.2rem; }
+.plain-list li { margin: .3rem 0; font-size: .88rem; }
+#page-docs .btn-secondary { justify-content: flex-start; text-align: right; }
+
+/* v1.8.0-ب: بازنویسی صریح قواعد قدیمی st-* تا رنگ مرحله حاکم شود */
+.stage-row.st-running,
+.stage-row.st-done,
+.stage-row.st-warn { border-inline-start-color: var(--stage-color); }
+.stage-row.st-running .stage-icon {
+  background: var(--stage-color); animation: lv-stpulse 1.15s infinite;
+}
+.stage-row.st-done .stage-icon,
+.stage-row.st-warn .stage-icon {
+  background: color-mix(in srgb, var(--stage-color) 26%, transparent);
+}
+.stage-row.st-fail { --stage-color: var(--bad); }

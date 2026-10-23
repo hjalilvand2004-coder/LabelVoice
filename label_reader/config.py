@@ -39,18 +39,28 @@ class Settings(BaseSettings):
     deskew_max_angle_deg: float = 15.0
     use_binarized_variant: bool = True
     use_white_on_dark_variant: bool = True
+    # v1.8.0: جداسازی جوهر رنگی (255 - بیشینهٔ کانال) برای متن رنگی روی زمینه روشن
+    use_ink_isolated_variant: bool = True
 
     # ---------- OCR ----------
     # tesseract | easyocr | auto (اولین موتور در دسترس)
     ocr_provider: str = "tesseract"
     tessdata_dir: Path = PROJECT_ROOT / "models" / "tessdata"
     ocr_languages: str = "fas+eng"
+    # v1.8.0: استراتژی زبان تطبیقی — «fas» و «eng» جدا اجرا می‌شوند نه ترکیبی؛
+    # ترکیب fas+eng باعث تزریق حروف لاتین به کلمات فارسی می‌شود (ریشهٔ خروجی آشغال).
+    # adaptive: کاوش اول با fas؛ اگر متن فارسی‌غالب بود eng کلاً اجرا نمی‌شود.
+    ocr_language_strategy: str = "adaptive"
     tesseract_psm: int = 3
     # اجرای دوم با psm دیگر برای پوشش بهتر سطرها (0 = غیرفعال)
     tesseract_extra_psm: int = 6
     # اجرای سوم با PSM پراکنده (Sparse) برای برچسب‌هایی با متن پراکنده (0 = غیرفعال)
     tesseract_sparse_psm: int = 11
     easyocr_model_dir: Path | None = None
+    # v1.8.0: موتور دوم (EasyOCR) به‌عنوان مکمل Tesseract برای نواحی ناخوانا؛
+    # در نبود easyocr بی‌صدا رد می‌شود. فقط دسکتاپ (موبایل WASM پشتیبانی نمی‌کند).
+    dual_engine: bool = True
+    easyocr_variants: str = "original,gray_clahe"
 
     # ---------- گیت کیفیت قطعه‌های OCR (v1.7.0) ----------
     # کف مطلق اطمینان: قطعه زیر این مقدار همیشه حذف می‌شود
@@ -61,6 +71,14 @@ class Settings(BaseSettings):
     short_piece_conf_min: float = 0.30
     # کمینه اطمینان برای اینکه سطر «کاندید نام» معتبر شود
     name_min_confidence: float = 0.45
+
+    # ---------- رأی‌گیری اجماعی (v1.8.0) ----------
+    # قطعه‌ای که فقط در «یک» پیکربندی (واریانت×PSM×زبان) دیده شود و اطمینانش
+    # زیر این کف باشد حذف می‌شود (نویز تک‌پیکربندی). متن پرتکرار سالم می‌ماند.
+    lonely_piece_conf: float = 0.55
+    # فیلتر اجماع فقط وقتی قطعه‌های کافی وجود دارد اعمال می‌شود تا تصاویر
+    # کم‌متن خالی نمانند.
+    min_pieces_for_consensus: int = 6
 
     # ---------- استخراج فیلدها ----------
     low_confidence_threshold: float = 0.55
