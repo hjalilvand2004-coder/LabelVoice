@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import time
 
+import cv2
 import numpy as np
 
 from .config import Settings, load_settings
@@ -22,11 +23,18 @@ from .ocr.tesseract_provider import TesseractProvider
 from .preprocess import auto_deskew, build_variants, crop_fraction
 from .preprocess import VARIANT_BINARIZED, VARIANT_ORIGINAL
 from .quality import assess_quality
+from .stages import image_quality_metrics
 from .textnorm import normalize_for_matching, normalize_digits_ascii
 from .validation import validate_and_load, pil_to_bgr
 from .extraction import classify_product_type, extract_fields
 from .response import build_response, validate_text
 from .llm.rewriter import rewrite_with_llm
+
+PRODUCT_TYPE_FA = {
+    "medicine": "دارو",
+    "general_product": "محصول عمومی",
+    "unknown": "نامشخص",
+}
 
 MULTI_PRODUCT_NOTE_FA = (
     "در تصاویر چندمحصولی، لطفاً یک بسته را برش بزنید یا انتخاب کنید؛ "
@@ -52,20 +60,37 @@ class LabelReaderPipeline:
         return self.process_pil(img, crop=crop)
 
     def process_pil(self, pil_image, crop: tuple | None = None,
-                    ocr_engine: str | None = None) -> AnalysisResult:
+                    ocr_engine: str | None = None,
+                    stage_callback=None) -> AnalysisResult:
+        """پردازش کامل؛ اگر stage_callback داده شود، در پایان هر مرحله از
+        پنج‌مرحله‌ای ملزومات استاد با payload خروجی/ارزیابی فراخوانی می‌شود."""
         t_total = time.perf_counter()
         durations: dict[str, int] = {}
         warnings_fa: list[str] = []
 
+        def _emit(key: str, payload: dict) -> None:
+            if stage_callback is not None:
+                try:
+                    stage_callback(key, payload)
+                except Exception:  # noqa: BLE001 - اعلام هرگز پردازش را نمی‌شکند
+                    pass
+
         bgr = pil_to_bgr(pil_image)
         orig_w, orig_h = bgr.shape[1], bgr.shape[0]
 
-        # ۱) کیفیت
+        # ---- مرحله ۱: OpenCV (کیفیت، برش، اصلاح زاویه، بهبود وضوح) ----
+        t_stage = time.perf_counter()
         t0 = time.perf_counter()
         metrics, quality_issues = assess_quality(bgr, self.settings)
         durations["quality_ms"] = int((time.perf_counter() - t0) * 1000)
+        quality_before = {
+            "sharpness": metrics.laplacian_var,
+            "contrast": round(float(cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY).std()), 2),
+            "brightness": metrics.mean_brightness,
+        }
 
         # ۲) برش دستی (اختیاری)
+        crop_applied = crop is not None
         if crop is not None:
             bgr = crop_fraction(bgr, crop)
 
@@ -80,6 +105,25 @@ class LabelReaderPipeline:
 
         # ۴) نسخه‌های پردازشی
         variants = build_variants(bgr, self.settings)
+        durations["opencv_ms"] = int((time.perf_counter() - t_stage) * 1000)
+        issues_note = ""
+        issue_codes = [i.code for i in quality_issues if i.code != "ok"]
+        if issue_codes:
+            FA = {"blurry": "تاری", "dark": "نور کم", "bright": "بیش‌نوری",
+                  "glare": "انعکاس", "low_resolution": "رزولوشن پایین"}
+            issues_note = "ملاحظات کیفیت: " + "، ".join(
+                FA.get(c, c) for c in issue_codes)
+        _emit("opencv", {
+            "quality_before": quality_before,
+            "quality_after": image_quality_metrics(variants[VARIANT_ORIGINAL]),
+            "crop_applied": crop_applied,
+            "deskew_applied": deskew_applied,
+            "deskew_angle_deg": deskew_angle,
+            "variants": list(variants.keys()),
+            "issues_note": issues_note,
+            "duration_ms": durations["opencv_ms"],
+            "image_bgr": bgr,
+        })
 
         # ۵) OCR روی نسخه‌ها
         t0 = time.perf_counter()
@@ -93,7 +137,7 @@ class LabelReaderPipeline:
                 if mean_conf and float(np.mean(mean_conf)) >= 0.8:
                     continue
             raw_pieces.extend(provider.run(image, name))
-        durations["ocr_ms"] = int((time.perf_counter() - t0) * 1000)
+        durations["ocr_raw_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # ۶) ادغام و شناسه‌گذاری قطعه‌ها
         pieces = self._merge_pieces(raw_pieces)
@@ -101,6 +145,20 @@ class LabelReaderPipeline:
 
         # ۷) سطرهای منطقی
         raw_lines = self._build_lines(pieces)
+
+        # ---- مرحله ۲: OCR (اعلام خروجی و ارزیابی) ----
+        durations["ocr_ms"] = int((time.perf_counter() - t0) * 1000)
+        confs = [p.confidence for p in pieces if p.confidence is not None]
+        _emit("ocr", {
+            "pieces_count": len(pieces),
+            "chars_total": sum(len(p.text) for p in pieces),
+            "mean_confidence": (round(sum(confs) / len(confs), 3) if confs
+                                else None),
+            "lines_count": len(raw_lines),
+            "engine": provider.name,
+            "lines_preview": [ln.text for ln in raw_lines[:6]],
+            "duration_ms": durations["ocr_ms"],
+        })
 
         # ۸) طبقه‌بندی نوع بسته
         lines_text = [ln.normalized_text for ln in raw_lines]
@@ -112,6 +170,25 @@ class LabelReaderPipeline:
             raw_lines, product_type.value, self.settings,
             image_height=variants[VARIANT_ORIGINAL].shape[0])
         durations["extraction_ms"] = int((time.perf_counter() - t0) * 1000)
+
+        # ---- مرحله ۳: پردازش متن و کنترل فیلدها (اعلام) ----
+        status_counts: dict[str, int] = {}
+        for f in fields.values():
+            status_counts[f.status.value] = status_counts.get(f.status.value, 0) + 1
+        extracted_n = status_counts.get("extracted", 0) + \
+            status_counts.get("user_corrected", 0)
+        with_evidence = sum(
+            1 for f in fields.values()
+            if f.status.value in ("extracted", "user_corrected") and f.source_ids)
+        coverage = round(100 * with_evidence / extracted_n) if extracted_n else 100
+        _emit("fields", {
+            "status_counts": status_counts,
+            "evidence_coverage": coverage,
+            "product_type_fa": PRODUCT_TYPE_FA.get(
+                product_type.value, product_type.value),
+            "warnings_fa": list(extraction_warnings),
+            "duration_ms": durations["extraction_ms"],
+        })
 
         # ۱۰) پاسخ قالبی (و LLM اختیاری)
         t0 = time.perf_counter()
@@ -129,7 +206,18 @@ class LabelReaderPipeline:
             response_fa = (
                 "پاسخ تولیدشده از قواعد ایمنی عبور نکرد؛ لطفاً تصویر واضح‌تری "
                 "ارائه دهید. " + build_response({}, quality_issues, [], 0))
+            self_check = validate_text(response_fa)
         durations["response_ms"] = int((time.perf_counter() - t0) * 1000)
+
+        # ---- مرحله ۴: تولید پاسخ فارسی (اعلام) ----
+        _emit("response", {
+            "guard_ok": self_check.ok,
+            "guard_violations": list(self_check.violations),
+            "llm_used": llm_text is not None,
+            "length": len(response_fa),
+            "preview": response_fa[:200] + ("…" if len(response_fa) > 200 else ""),
+            "duration_ms": durations["response_ms"],
+        })
         durations["total_ms"] = int((time.perf_counter() - t_total) * 1000)
 
         notes = [

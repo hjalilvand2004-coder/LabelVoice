@@ -320,18 +320,56 @@
   }
 
   // ---------- ساخت نتیجه کامل از قطعات خام (پس از OCR) ----------
+  // extra.onStage: اختیاری — اعلام مرحله‌به‌مرحله مطابق ملزومات استاد (v1.6.0)
+  //   onStage('fields', payload) و onStage('response', payload)
   function buildResultFromPieces(rawPieces, settings, imageW, imageH, durations, extra) {
     extra = extra || {};
+    var onStage = typeof extra.onStage === 'function' ? extra.onStage : null;
+    var tStage = performance.now();
     var pieces = assignIds(mergePieces(rawPieces));
     var rawLines = buildLines(pieces);
     var cls = extractor.classifyProductType(rawLines.map(function (l) { return l.normalized_text; }));
     var ex = extractor.extractFields(rawLines, cls.type, settings, imageH);
+    var extractMs = Math.round(performance.now() - tStage);
+    if (onStage) {
+      var statusCounts = {};
+      Object.keys(ex.fields).forEach(function (k) {
+        var st = ex.fields[k].status;
+        statusCounts[st] = (statusCounts[st] || 0) + 1;
+      });
+      var extractedN = (statusCounts.extracted || 0) + (statusCounts.user_corrected || 0);
+      var withEv = 0;
+      Object.keys(ex.fields).forEach(function (k) {
+        var f = ex.fields[k];
+        if ((f.status === 'extracted' || f.status === 'user_corrected') && f.source_ids && f.source_ids.length) withEv++;
+      });
+      onStage('fields', {
+        status_counts: statusCounts,
+        evidence_coverage: extractedN ? Math.round(100 * withEv / extractedN) : 100,
+        product_type_fa: cls.type === 'medicine' ? 'دارو' :
+          (cls.type === 'general_product' ? 'محصول عمومی' : 'نامشخص'),
+        warnings_fa: ex.warnings || [],
+        duration_ms: extractMs
+      });
+    }
+    var tResp = performance.now();
     var responseFa = responder.buildResponse(ex.fields, extra.qualityIssues || [], ex.warnings, pieces.length, cls.type);
     var selfCheck = guard.validateText(responseFa);
     if (!selfCheck.ok) {
       // حکمتی برای خطای سازنده؛ پاسخ امن حداقلی جایگزین می‌شود
       responseFa = 'پاسخ تولیدشده از قواعد ایمنی عبور نکرد؛ لطفاً تصویر واضح‌تری ارائه دهید. ' +
         responder.buildResponse({}, extra.qualityIssues || [], [], 0);
+      selfCheck = guard.validateText(responseFa);
+    }
+    if (onStage) {
+      onStage('response', {
+        guard_ok: !!selfCheck.ok,
+        guard_violations: (selfCheck.violations || []),
+        llm_used: false,
+        length: responseFa.length,
+        preview: responseFa.slice(0, 200),
+        duration_ms: Math.round(performance.now() - tResp)
+      });
     }
     var notes = [
       'طبقه‌بندی نوع بسته فقط برای انتخاب قالب فیلدهاست و تأیید هویت یا ' +
@@ -368,7 +406,7 @@
         warnings_fa: extra.warningsFa || [],
         notes_fa: notes,
         timestamp_utc: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
-        app_version: '1.2.0-mobile'
+        app_version: '1.6.0-mobile'
       }
     };
   }

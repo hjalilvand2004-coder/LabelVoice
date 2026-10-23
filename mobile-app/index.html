@@ -92,6 +92,15 @@
       <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
       <p id="progress-text" aria-live="polite">آماده…</p>
     </div>
+    <!-- اعلام مرحله‌به‌مرحله پردازش و ارزیابی مرحله‌ای (v1.6.0) -->
+    <div id="stages-box" class="stages-box hidden" aria-live="polite">
+      <h3 class="stages-title">🧭 اعلام مراحل پردازش (مطابق ملزومات استاد)</h3>
+      <p class="stages-hint">تکمیل هر مرحله از ۵ مرحله نمودار معماری استاد اعلام می‌شود؛ خروجی و معیارهای ارزیابی کیفیت همان مرحله با دکمه «خروجی و ارزیابی» قابل مشاهده است.</p>
+      <div id="stages-list"></div>
+      <p id="stages-summary" class="stages-summary hidden" aria-live="polite"></p>
+      <button type="button" class="btn btn-ghost btn-small hidden" id="btn-stages-report">⬇️ دریافت گزارش ارزیابی مرحله‌ای (JSON)</button>
+      <button type="button" class="btn btn-ghost btn-small" data-help="stages">اعلام مراحل و ارزیابی مرحله‌ای چگونه کار می‌کند؟</button>
+    </div>
     <p id="error-box" class="error-box hidden" role="alert"></p>
   </section>
 
@@ -168,8 +177,9 @@
 </main>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۵.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۶.۰</p>
   <p>👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
+  <p><button type="button" class="btn btn-ghost btn-small" data-help="stages">🧭 اعلام مراحل پردازش و ارزیابی مرحله‌ای</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">📌 ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="eval">📊 ارزیابی و آزمون مدل‌ها</button></p>
   <p><a href="documentation.html">📚 مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها، ملزومات استاد، ارزیابی)</a></p>

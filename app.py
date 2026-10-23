@@ -12,6 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import cv2
 import streamlit as st
 from PIL import Image
 
@@ -20,6 +21,11 @@ from label_reader.config import load_settings
 from label_reader.models import FieldStatus
 from label_reader.pipeline import LabelReaderPipeline
 from label_reader.response.tts_prep import prepare_for_tts
+from label_reader.stages import (
+    PROBLEM_STATEMENT_FA, STAGE_TTS_KEY, STATUS_FA as STAGE_STATUS_FA,
+    build_stage_item, report_json as stage_report_json, summary_rows as stage_summary_rows,
+    tts_payload,
+)
 from label_reader.tts import TtsError, make_tts_provider, synthesize_with_fallback
 from label_reader.ui_helpers import (
     PRODUCT_TYPE_FA, STATUS_FA, draw_ocr_boxes, editable_fields,
@@ -55,6 +61,10 @@ HELP_CONTENT = {
 
 این دو زیرسیستم **دقیقاً همان قواعد** را پیاده می‌کنند و با آزمون‌های پاریتی
 (۵۴ آزمون Node در برابر pytest) هم‌رفتاری‌شان راستی‌آزمایی می‌شود.
+
+**از نسخه ۱.۶.۰:** در حین پردازش، تکمیل هر مرحله از این پنج مرحله به‌صورت
+زنده اعلام می‌شود (اعلام مرحله + خروجی + معیارهای ارزیابی کیفیت همان مرحله)
+— ماژول `label_reader/stages.py` و callback مرحله‌ای در `pipeline.py`.
 
 **کتابخانه‌ها:** opencv-python، pytesseract، easyocr، pydantic، pydantic-settings،
 streamlit، edge-tts، gTTS، Pillow (دسکتاپ) — Tesseract.js 6، Web Speech API،
@@ -99,6 +109,12 @@ Service Worker، Vazirmatn (موبایل) — pytest، Node test runner (آزم�
 **جمع‌بندی انطباق:** هر ۵ جمله الزام دسته ۱ و هر ۵ مرحله دسته ۲ پیاده، آزمون و
 راستی‌آزمایی شده‌اند؛ همین نگاشت در سند PDF (بخش ۲)، سند HTML (بخش «ملزومات استاد»)
 و نسخه موبایل (بخش 📌) نیز آمده است.
+
+**اعلام زنده (v1.6.0):** در حین پردازش، سامانه اعلام می‌کند «الان کدام بخش از
+نیازمندی استاد انجام شد»؛ برای هر مرحله، خروجی واقعی و معیارهای ارزیابی کیفیت
+(تیزی/کنتراست تصویر، اطمینان OCR، پوشش شواهد فیلدها، عبور از نگهبان ایمنی و
+وضعیت صوت) با دکمه مشاهده ارائه می‌شود. پیاده‌سازی: `label_reader/stages.py` +
+`pipeline.py` (callback مرحله‌ای) + `app.py` (رابط).
 """,
     "eval": """
 ### روش و اصول ارزیابی مدل‌ها
@@ -127,6 +143,25 @@ Service Worker، Vazirmatn (موبایل) — pytest، Node test runner (آزم�
 
 **فناوری‌ها:** pytest، Node test runner، pandas + Altair (نمودارهای این بخش)،
 OpenCV + Tesseract 5 (خط لوله ارزیابی‌شده).
+""",
+    "stages": """
+### اعلام مرحله‌به‌مرحله پردازش و ارزیابی مرحله‌ای (v1.6.0)
+
+مطابق دسته ۲ ملزومات استاد (نمودار معماری)، پردازش در **۵ مرحله** انجام و
+تکمیل هر مرحله به کاربر **اعلام می‌شود**؛ برای هر مرحله **خروجی واقعی** و
+**معیارهای ارزیابی کیفیت همان مرحله** با دکمه «مشاهده خروجی و ارزیابی» ارائه
+می‌گردد و در پایان، گزارش JSON قابل دانلود است:
+
+| مرحله | اعلام انجام | خروجی نمایش‌داده‌شده | معیارهای ارزیابی | فایل پیاده‌سازی |
+|---|---|---|---|---|
+| ۱. OpenCV | «تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح انجام شد» | تصویر بهبودیافته | تیزی/کنتراست قبل←بعد، برش، زاویه اصلاحی، نسخه‌ها | `label_reader/stages.py` + `pipeline.py` + `preprocess.py` |
+| ۲. OCR | «استخراج نام، اعداد و متن انجام شد» | متن خام سطربه‌سطر | تعداد قطعه/سطر، میانگین اطمینان، نویسه‌ها | `ocr/tesseract_provider.py` |
+| ۳. کنترل فیلدها | «نرمال‌سازی نام و استخراج قدرت و تعداد انجام شد» | جدول فیلدها + شواهد | تعداد وضعیت‌ها، پوشش شواهد ٪ | `extraction/*` + `textnorm.py` |
+| ۴. پاسخ فارسی | «تولید پاسخ وفادار به متن انجام شد» | پاسخ فارسی | نگهبان ایمنی (بدون «دوز مصرف»/توصیه)، مسیر تولید | `response/builder.py` + `guard.py` |
+| ۵. TTS + نمایش | «خواندن اطلاعات و نمایش متن انجام شد» | متن آماده خوانش + پخش‌کننده | موتور صوتی، آماده‌سازی تلفظ، وضعیت صوت | `tts/*` + `app.py` |
+
+همین رفتار در نسخه موبایل با خط‌زمان مراحل و دکمه «خروجی و ارزیابی» برای هر
+مرحله پیاده شده است (`mobile-app/js/app.js` + `js/pipeline.js`).
 """,
     "engine": """
 ### موتورهای OCR دسکتاپ
@@ -260,6 +295,15 @@ with st.sidebar:
     tech_help("engine", "🧩 موتورهای OCR چه هستند؟", "sb")
 
     st.divider()
+    st.subheader("📣 نحوه اجرای پردازش")
+    st.checkbox(
+        "اعلام مرحله‌به‌مرحله پردازش (مطابق ملزومات استاد)",
+        value=True, key="staged_mode",
+        help="در حین پردازش، تکمیل هر مرحله از ۵ مرحله ملزومات استاد اعلام و "
+             "خروجی و معیارهای ارزیابی کیفیت همان مرحله نمایش داده می‌شود.")
+    tech_help("stages", "🧩 اعلام مراحل و ارزیابی مرحله‌ای چگونه کار می‌کند؟", "st")
+
+    st.divider()
     st.subheader("🔒 حریم خصوصی")
     st.markdown(
         "- پردازش تصویر و متن **کاملاً محلی** انجام می‌شود.\n"
@@ -339,18 +383,68 @@ else:
 if read_clicked and pil_image is not None:
     import time
 
+    staged_mode = get_state("staged_mode", True)
+    stage_records: list[dict] = []
+    stage_images: dict[str, object] = {}
+
+    def on_stage(key: str, payload: dict) -> None:
+        """اعلام زنده: در پایان هر مرحله از پنج‌مرحله‌ای ملزومات استاد فراخوانی می‌شود."""
+        item = build_stage_item(key, payload)
+        stage_records.append(item)
+        img_bgr = payload.pop("image_bgr", None)
+        if img_bgr is not None:
+            stage_images[key] = Image.fromarray(
+                cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+        if not staged_mode:
+            return
+        with st.status(item["start_label"], expanded=True) as sbox:
+            st.write("📌 الزام استاد (عین ملزومات): " + item["requirement_fa"])
+            st.write("🛠 فایل پیاده‌سازی — دسکتاپ: `" + item["files_desktop_fa"]
+                     + "` · موبایل: `" + item["files_mobile_fa"] + "`")
+            for out in item["outputs_fa"]:
+                st.write(out)
+            for m in item["metrics"]:
+                icon = "✅" if m["status"] == "ok" else (
+                    "⚠️" if m["status"] == "warn" else "⛔")
+                note = f" — {m['note_fa']}" if m["note_fa"] else ""
+                st.write(f"{icon} **{m['name_fa']}:** {m['value']}{note}")
+            st.write(item["done_message_fa"])
+            sbox.update(
+                label=item["done_label"],
+                state="complete" if item["status"] != "fail" else "error",
+                expanded=False)
+
     try:
-        status_box = st.status("در حال پردازش…", expanded=True)
-        with status_box:
-            st.write("۱) اعتبارسنجی فایل و ارزیابی کیفیت…")
-            t0 = time.perf_counter()
-            result = pipeline.process_pil(pil_image, crop=crop_box,
-                                          ocr_engine=engine_choice)
-            st.write("۲) پیش‌پردازش OpenCV و اجرای OCR…")
-            st.write("۳) استخراج فیلدها و تولید پاسخ فارسی…")
-            status_box.update(label="پردازش کامل شد ✅", state="complete",
-                              expanded=False)
+        if staged_mode:
+            prog = st.progress(0, text="شروع پردازش مرحله‌به‌مرحله…")
+            st.info(
+                "🚀 **پردازش مرحله‌به‌مرحله (۵ مرحله مطابق نمودار معماری استاد) شروع شد.**\n\n"
+                "📌 تعریف مسئله (دسته ۱ ملزومات استاد): " + PROBLEM_STATEMENT_FA)
+
+        t0 = time.perf_counter()
+        result = pipeline.process_pil(pil_image, crop=crop_box,
+                                      ocr_engine=engine_choice,
+                                      stage_callback=on_stage)
+        if staged_mode:
+            prog.progress(100, text="✅ هر ۵ مرحله پردازش تکمیل شد — اعلام هر مرحله در ادامه نمایش داده شده است.")
+
+        # مرحله ۵ (TTS + نمایش): در لایه رابط کاربری اعلام می‌شود
+        try:
+            _prov = make_tts_provider(settings.tts_provider)
+            _ok, _note = _prov.available()
+            spoken = prepare_for_tts(result.response_fa)
+            stage_records.append(build_stage_item(STAGE_TTS_KEY, tts_payload(
+                provider=getattr(_prov, "name", settings.tts_provider),
+                note_fa=_note or ("در دسترس است" if _ok else "در دسترس نیست؛ جایگزین به‌صورت خودکار آزمایش می‌شود"),
+                spoken_text=spoken, synthesized=False)))
+        except Exception:  # noqa: BLE001
+            stage_records.append(build_stage_item(STAGE_TTS_KEY, tts_payload(
+                provider=settings.tts_provider, note_fa="وضعیت نامشخص",
+                spoken_text=result.response_fa, synthesized=False)))
+
         st.session_state["result"] = result
+        st.session_state["stage_records"] = stage_records
+        st.session_state["stage_images"] = stage_images
         st.session_state.pop("audio_bytes", None)
         st.session_state.pop("tts_used", None)
         st.toast(f"پردازش در {result.metadata.durations_ms.get('total_ms', 0)} میلی‌ثانیه انجام شد.")
@@ -374,6 +468,58 @@ if result is not None:
             st.warning("⚠️ " + issue.message_fa)
     for w in md.warnings_fa:
         st.warning("ℹ️ " + w)
+
+    # ---------------- اعلام مراحل پردازش و ارزیابی مرحله‌ای ----------------
+    _stage_records = get_state("stage_records") or []
+    _stage_images = get_state("stage_images") or {}
+    if _stage_records:
+        st.divider()
+        st.subheader("🧭 اعلام مراحل پردازش و ارزیابی مرحله‌ای (مطابق ملزومات استاد)")
+        st.caption(
+            "پردازش دقیقاً بر اساس نمودار معماری ملزومات استاد در ۵ مرحله اجرا شد؛ "
+            "تکمیل هر مرحله هنگام پردازش اعلام شد. خروجی و معیارهای ارزیابی کیفیت "
+            "هر مرحله را با بازکردن همان مرحله ببینید.")
+        for item in _stage_records:
+            icon = STAGE_STATUS_FA.get(item["status"], "")
+            dur = (f" · {item['duration_ms']} ms" if item.get("duration_ms")
+                   is not None else "")
+            with st.expander(
+                    f"{icon} مرحله {item['num_fa']} از ۵ — {item['title_fa']}{dur} "
+                    f"· الزام استاد: {item['requirement_fa']}"):
+                st.markdown(f"**پیام اعلام‌شده به کاربر:** {item['done_message_fa']}")
+                st.caption(
+                    f"🛠 فایل پیاده‌سازی — دسکتاپ: `{item['files_desktop_fa']}` · "
+                    f"موبایل: `{item['files_mobile_fa']}`")
+                st.markdown("**خروجی این مرحله:**")
+                for out in item["outputs_fa"]:
+                    st.write("- " + out)
+                if item["key"] == "opencv" and _stage_images.get("opencv") is not None:
+                    st.image(_stage_images["opencv"],
+                             caption="خروجی مرحله ۱: تصویر بهبودیافته پس از "
+                                     "پیش‌پردازش OpenCV (مقیاس + CLAHE + تیزکردن)",
+                             use_container_width=True)
+                st.markdown("**معیارهای ارزیابی کیفیت این مرحله:**")
+                for m in item["metrics"]:
+                    icon2 = "✅" if m["status"] == "ok" else (
+                        "⚠️" if m["status"] == "warn" else
+                        "⛔" if m["status"] == "fail" else "⏳")
+                    note = f" — {m['note_fa']}" if m["note_fa"] else ""
+                    st.write(f"{icon2} **{m['name_fa']}:** {m['value']}{note}")
+        st.markdown("**جدول خلاصه ارزیابی مرحله‌ای:**")
+        st.dataframe(stage_summary_rows(_stage_records), hide_index=True,
+                     use_container_width=True)
+        st.download_button(
+            "⬇️ دریافت گزارش ارزیابی مرحله‌ای (JSON — الزام استاد ← وضعیت ← معیارها)",
+            data=stage_report_json(
+                _stage_records,
+                {"engine": md.engine, "languages": md.languages,
+                 "durations_ms": md.durations_ms,
+                 "deskew_applied": md.deskew_applied,
+                 "variants_used": md.variants_used,
+                 "timestamp_utc": md.timestamp_utc}),
+            file_name="stage-evaluation-report.json",
+            mime="application/json",
+        )
 
     left_col, right_col = st.columns([3, 2])
 
@@ -467,6 +613,15 @@ if result is not None:
                     st.session_state["audio_bytes"] = audio_bytes
                     st.session_state["tts_used"] = used
                     st.session_state["audio_text_hash"] = hash(result.response_fa)
+                    # به‌روزرسانی اعلام مرحله ۵: صوت تولید شد
+                    _recs = st.session_state.get("stage_records") or []
+                    for _i, _r in enumerate(_recs):
+                        if _r.get("key") == STAGE_TTS_KEY:
+                            _recs[_i] = build_stage_item(STAGE_TTS_KEY, tts_payload(
+                                provider=used,
+                                note_fa="صوت با موفقیت تولید شد",
+                                spoken_text=spoken_text, synthesized=True))
+                    st.session_state["stage_records"] = _recs
                 except TtsError as err:
                     st.error("🔇 " + err.message_fa)
     with col_info:

@@ -198,8 +198,182 @@
     hide($('preview-wrap'));
     hide($('quality-box'));
     hide($('result-section'));
+    hide($('stages-box'));
     $('btn-analyze').disabled = true;
     setError('');
+  }
+
+  // ---------- اعلام مرحله‌به‌مرحله پردازش و ارزیابی مرحله‌ای (v1.6.0) ----------
+  // مطابق دسته ۲ ملزومات استاد (نمودار معماری): هر ۵ مرحله هنگام اجرا اعلام،
+  // خروجی و معیارهای ارزیابی کیفیت همان مرحله با دکمه نمایش داده می‌شود.
+  var STAGES_FA = [
+    { key: 'opencv', num: '۱', title: 'پیش‌پردازش OpenCV',
+      req: 'OpenCV (تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح)',
+      files: 'js/boxdetect.js + js/preprocess.js ⇄ desktop: label_reader/preprocess.py' },
+    { key: 'ocr', num: '۲', title: 'موتور OCR',
+      req: 'OCR (استخراج نام، اعداد و متن بسته‌بندی)',
+      files: 'js/ocr.js (Tesseract.js/WASM) ⇄ desktop: label_reader/ocr/*' },
+    { key: 'fields', num: '۳', title: 'پردازش متن و کنترل فیلدها',
+      req: 'پردازش متن و کنترل فیلدها (نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده)',
+      files: 'js/textnorm.js + patterns.js + extractor.js ⇄ desktop: extraction/*' },
+    { key: 'response', num: '۴', title: 'تولید پاسخ فارسی',
+      req: 'تولید پاسخ فارسی (منطق استخراج اطلاعات یا LLM برای بازنویسی وفادار به متن)',
+      files: 'js/responder.js + js/guard.js ⇄ desktop: response/builder.py + guard.py' },
+    { key: 'tts', num: '۵', title: 'خوانش صوتی و نمایش (TTS + رابط)',
+      req: 'TTS + Streamlit (خواندن اطلاعات و نمایش متن استخراج‌شده)',
+      files: 'js/app.js (speechSynthesis) ⇄ desktop: label_reader/tts/* + app.py' }
+  ];
+  var STAGE_BY_KEY_FA = {};
+  STAGES_FA.forEach(function (s) { STAGE_BY_KEY_FA[s.key] = s; });
+  var stageEls = {};
+  var stageRecords = [];
+
+  var STAGE_ICON = { pending: '⏳', running: '🔄', done: '✅', warn: '⚠️', fail: '⛔' };
+
+  function stagesInit() {
+    var list = $('stages-list');
+    list.innerHTML = '';
+    stageEls = {};
+    stageRecords = [];
+    STAGES_FA.forEach(function (s) {
+      var row = document.createElement('div');
+      row.className = 'stage-row st-pending';
+      var head = document.createElement('div');
+      head.className = 'stage-head';
+      var icon = document.createElement('span');
+      icon.className = 'stage-icon';
+      icon.textContent = STAGE_ICON.pending;
+      var title = document.createElement('span');
+      title.className = 'stage-title';
+      title.textContent = s.num + '. ' + s.title;
+      var time = document.createElement('span');
+      time.className = 'stage-time';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-ghost btn-small stage-detail-btn';
+      btn.textContent = 'خروجی و ارزیابی';
+      btn.disabled = true;
+      btn.addEventListener('click', function () {
+        var det = row.querySelector('.stage-detail');
+        if (det) det.classList.toggle('hidden');
+      });
+      head.appendChild(icon); head.appendChild(title);
+      head.appendChild(time); head.appendChild(btn);
+      var req = document.createElement('div');
+      req.className = 'stage-req';
+      req.textContent = '📌 الزام استاد: ' + s.req;
+      var det = document.createElement('div');
+      det.className = 'stage-detail hidden';
+      row.appendChild(head); row.appendChild(req); row.appendChild(det);
+      list.appendChild(row);
+      stageEls[s.key] = { row: row, detail: det, btn: btn, time: time, icon: icon };
+    });
+    hide($('stages-summary'));
+    hide($('btn-stages-report'));
+    show($('stages-box'));
+  }
+
+  function stageRun(key) {
+    var el = stageEls[key];
+    if (!el) return;
+    el.row.className = 'stage-row st-running';
+    el.icon.textContent = STAGE_ICON.running;
+  }
+
+  function stageDone(key, data) {
+    var el = stageEls[key];
+    var s = STAGE_BY_KEY_FA[key];
+    if (!el || !s) return;
+    data = data || {};
+    var status = data.status || 'done';
+    var dur = (data.duration_ms !== undefined && data.duration_ms !== null) ? data.duration_ms : null;
+    el.row.className = 'stage-row st-' + status;
+    el.icon.textContent = STAGE_ICON[status] || '✅';
+    el.time.textContent = dur !== null ? dur + ' ms' : '';
+    el.btn.disabled = false;
+
+    var doneMsg = document.createElement('p');
+    doneMsg.className = 'stage-done-msg';
+    doneMsg.textContent = (status === 'fail' ? '⛔ ' : '✅ ') +
+      'مرحله ' + s.num + ' از ۵ انجام شد — این بخش از نیازمندی استاد برآورده شد.';
+    el.detail.innerHTML = '';
+    el.detail.appendChild(doneMsg);
+
+    (data.outputs || []).forEach(function (o) {
+      var p = document.createElement('p');
+      p.className = 'stage-output';
+      p.textContent = '▸ ' + o;
+      el.detail.appendChild(p);
+    });
+
+    if (data.metrics && data.metrics.length) {
+      var chips = document.createElement('div');
+      chips.className = 'stage-metrics';
+      data.metrics.forEach(function (m) {
+        var chip = document.createElement('span');
+        chip.className = 'stage-chip mc-' + (m.status || 'ok');
+        chip.textContent = (m.status === 'ok' ? '✅ ' : m.status === 'warn' ? '⚠️ ' : '⛔ ') +
+          m.n + ': ' + m.v;
+        chips.appendChild(chip);
+      });
+      el.detail.appendChild(chips);
+    }
+
+    var files = document.createElement('p');
+    files.className = 'stage-files';
+    files.textContent = '🛠 فایل پیاده‌سازی: ' + s.files;
+    el.detail.appendChild(files);
+
+    stageRecords.push({
+      key: key, num_fa: s.num, title_fa: s.title,
+      requirement_fa: s.req, status: status, duration_ms: dur,
+      outputs_fa: data.outputs || [],
+      metrics_fa: (data.metrics || []).map(function (m) {
+        return { name_fa: m.n, value: String(m.v), status: m.status || 'ok' };
+      }),
+      files_fa: s.files
+    });
+  }
+
+  function stageFinish() {
+    var ok = stageRecords.filter(function (r) { return r.status === 'done' || r.status === 'warn'; }).length;
+    var sum = $('stages-summary');
+    sum.textContent = ok === 5
+      ? '🎉 ۵ از ۵ مرحله مطابق نیازمندی استاد انجام شد؛ خروجی و ارزیابی هر مرحله با دکمه هر سطر قابل مشاهده است.'
+      : 'اعلام مراحل: ' + ok + ' از ۵ مرحله با موفقیت انجام شد؛ سطرهای دارای هشدار را بررسی کنید.';
+    show(sum);
+    show($('btn-stages-report'));
+  }
+
+  function piecesStats(pieces) {
+    var confSum = 0, confN = 0, chars = 0;
+    pieces.forEach(function (p) {
+      if (p.confidence !== null && p.confidence !== undefined) { confSum += p.confidence; confN++; }
+      chars += (p.text || '').length;
+    });
+    return { pieces: pieces.length, mean_conf: confN ? confSum / confN : null, chars: chars };
+  }
+
+  function downloadStagesReport() {
+    var payload = {
+      report: 'stage_evaluation_report',
+      project: 'برچسب‌خوان هوشمند دارو و محصولات (LabelVoice) — نسخه موبایل',
+      requirement_basis: 'ملزومات طرح‌شده توسط استاد قربانی — دسته ۲: نمودار معماری',
+      problem_statement: 'کاربر دوربین را به سمت جعبه دارو یا بسته‌بندی یک محصول می‌گیرد؛ سامانه نام، اطلاعات چاپ‌شده و سایر فیلدهای قابل خواندن را استخراج و به فارسی می‌خواند و اطلاعات خوانده‌شده را از توصیه‌های پزشکی جدا نگه می‌دارد.',
+      stages: stageRecords,
+      metadata: {
+        total_ms: state.result && state.result.metadata ? state.result.metadata.durations_ms.total_ms : null,
+        app_version: '1.6.0-mobile',
+        timestamp_utc: new Date().toISOString()
+      }
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'stage-evaluation-report.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 500);
   }
 
   // ---------- تحلیل ----------
@@ -240,6 +414,7 @@
     setError('');
     var t0 = performance.now();
     var durations = {};
+    stagesInit();
 
     // تنظیمات فعال از رابط
     var settings = Object.assign({}, DEFAULT_SETTINGS);
@@ -254,7 +429,9 @@
     Promise.resolve()
       .then(function () {
         // ۱) ارزیابی اولیه و صاف‌کردن چرخش کم‌زاویه
-        setProgress(2, 'ارزیابی کیفیت تصویر…');
+        // اعلام مرحله ۱ (OpenCV) — ملزومات استاد
+        stageRun('opencv');
+        setProgress(2, 'مرحله ۱ از ۵ — پیش‌پردازش OpenCV: ارزیابی کیفیت و اصلاح زاویه…');
         var pre = LBR.preprocess.drawScaled(state.imageSource, state.imageW, state.imageH, settings);
         if (settings.deskew_max_angle_deg > 0) {
           setProgress(4, 'بررسی چرخش تصویر…');
@@ -267,7 +444,7 @@
       })
       .then(function (baseCanvas) {
         // ۲) تشخیص بسته/جعبه و برش پس‌زمینه (کاهش نویز OCR)
-        setProgress(6, 'تشخیص ناحیه بسته…');
+        setProgress(6, 'مرحله ۱ از ۵ — تشخیص ناحیه برچسب…');
         var w = baseCanvas.width, h = baseCanvas.height;
         var bctx = baseCanvas.getContext('2d', { willReadFrequently: true });
         var gray = LBR.preprocess.toGrayData(bctx, w, h);
@@ -281,18 +458,36 @@
       })
       .then(function (baseCanvas) {
         // ۳) کیفیت روی همان تصویری که OCR می‌شود (پس از برش)
-        setProgress(8, 'ارزیابی کیفیت تصویر…');
+        setProgress(8, 'مرحله ۱ از ۵ — بهبود وضوح و ارزیابی کیفیت…');
         var w = baseCanvas.width, h = baseCanvas.height;
         var bctx = baseCanvas.getContext('2d', { willReadFrequently: true });
         var gray = LBR.preprocess.toGrayData(bctx, w, h);
         var q = LBR.pipeline.assessQuality(gray, w, h, settings);
         qualityIssues = q.issues;
         qualityMetrics = q.metrics;
+        // اعلام پایان مرحله ۱ با خروجی و ارزیابی کیفیت همان مرحله
+        var hadIssue = qualityIssues.some(function (i) { return i.code !== 'ok'; });
+        stageDone('opencv', {
+          status: hadIssue ? 'warn' : 'done',
+          duration_ms: Math.round(performance.now() - t0),
+          outputs: [
+            'ناحیه برچسب: ' + (cropApplied ? 'شناسایی و پس‌زمینه حذف شد ✅' : 'کل تصویر پردازش شد (جعبه جدا نشد)'),
+            deskewApplied ? 'چرخش کم‌زاویه تصویر (' + deskewAngle + ' درجه) اصلاح شد ✅' : 'اصلاح زاویه لازم نبود',
+            'تصویر برای OCR بهبود داده شد (مقیاس + CLAHE + تیزکردن در گذر بعد)'
+          ],
+          metrics: [
+            { n: 'تیزی (واریانس لاپلاسین)', v: qualityMetrics.laplacian_var, status: qualityMetrics.laplacian_var >= settings.severe_blur_threshold ? 'ok' : 'warn' },
+            { n: 'روشنایی میانگین', v: qualityMetrics.mean_brightness, status: 'ok' },
+            { n: 'ملاحظات کیفیت', v: hadIssue ? qualityIssues.filter(function (i) { return i.code !== 'ok'; }).map(function (i) { return i.code; }).join('، ') : 'ندارد', status: hadIssue ? 'warn' : 'ok' }
+          ]
+        });
         return baseCanvas;
       })
       .then(function (baseCanvas) {
         // ۴) گذر اصلی OCR
-        setProgress(10, 'خواندن متن…');
+        // اعلام مرحله ۲ (OCR) — ملزومات استاد
+        stageRun('ocr');
+        setProgress(10, 'مرحله ۲ از ۵ — OCR: خواندن نام، اعداد و متن بسته‌بندی…');
         durations.preprocess_ms = Math.round(performance.now() - t0);
         return runPass(baseCanvas, settings, langQuality)
           .then(function (pass1) {
@@ -332,8 +527,27 @@
       })
       .then(function (winner) {
         durations.ocr_ms = Math.round(performance.now() - t0) - (durations.preprocess_ms || 0);
-        // ۶) استخراج + پاسخ از بهترین خوانش
-        setProgress(96, 'استخراج فیلدها و تولید پاسخ…');
+        // اعلام پایان مرحله ۲ (OCR) با خروجی و ارزیابی همان مرحله
+        var st2 = piecesStats(winner.pieces);
+        stageDone('ocr', {
+          status: st2.pieces === 0 ? 'fail' : ((st2.mean_conf !== null && st2.mean_conf < 0.6) ? 'warn' : 'done'),
+          duration_ms: durations.ocr_ms,
+          outputs: [
+            'متن خام بسته‌بندی خوانده شد و قطعه‌های تکراری بین نسخه‌ها ادغام شدند.',
+            winner.note ? winner.note : 'خوانش در جهت اصلی تصویر کافی بود.',
+            'متن استخراج‌شده در بخش «شواهد OCR» قابل مشاهده است.'
+          ],
+          metrics: [
+            { n: 'قطعه‌های متنی خوانده‌شده', v: st2.pieces, status: st2.pieces > 0 ? 'ok' : 'fail' },
+            { n: 'میانگین اطمینان موتور', v: st2.mean_conf === null ? '—' : Math.round(st2.mean_conf * 100) + '٪', status: (st2.mean_conf !== null && st2.mean_conf < 0.6) ? 'warn' : 'ok' },
+            { n: 'مجموع نویسه‌ها', v: st2.chars, status: 'ok' },
+            { n: 'تعداد گذر (جهت/چرخش)', v: winner.attempts, status: 'ok' }
+          ]
+        });
+        // ۶) استخراج + پاسخ از بهترین خوانش — اعلام مراحل ۳ و ۴
+        stageRun('fields');
+        stageRun('response');
+        setProgress(96, 'مرحله ۳ و ۴ از ۵ — کنترل فیلدها و تولید پاسخ فارسی…');
         var result = LBR.pipeline.buildResultFromPieces(
           winner.pieces, settings, winner.built.width, winner.built.height, durations, {
             qualityIssues: qualityIssues,
@@ -345,12 +559,29 @@
             cropApplied: cropApplied,
             cropBox: cropBox,
             orientationAttempts: winner.attempts,
-            orientationNoteFa: winner.note
+            orientationNoteFa: winner.note,
+            onStage: function (key, payload) { stageDone(key, payloadToStage(key, payload)); }
           });
         durations.total_ms = Math.round(performance.now() - t0);
         state.result = result;
         setProgress(100, 'انجام شد.');
         renderResult();
+        // اعلام مرحله ۵ (TTS + نمایش) — پایان همه مراحل
+        stageRun('tts');
+        var ttsOk = 'speechSynthesis' in window;
+        stageDone('tts', {
+          status: 'done',
+          duration_ms: 0,
+          outputs: [
+            'متن استخراج‌شده نمایش داده شد (بخش «پاسخ»).' + (ttsOk ? ' پخش صوتی با دکمه «پخش صوتی پاسخ» انجام می‌شود.' : ' این مرورگر پخش صوتی ندارد.'),
+            'پخش صوتی روی همین دستگاه انجام می‌شود؛ هیچ داده‌ای ارسال نمی‌شود.'
+          ],
+          metrics: [
+            { n: 'موتور خوانش', v: ttsOk ? 'speechSynthesis (روی دستگاه)' : 'پشتیبانی نمی‌شود', status: ttsOk ? 'ok' : 'warn' },
+            { n: 'طول متن پاسخ', v: result.response_fa.length + ' نویسه', status: 'ok' }
+          ]
+        });
+        stageFinish();
       })
       .catch(function (e) {
         console.error(e);
@@ -364,6 +595,49 @@
         $('btn-analyze').disabled = false;
         setTimeout(function () { hide($('progress-box')); }, 1200);
       });
+  }
+
+  // تبدیل payload مراحل ۳ و ۴ (pipeline.js) به داده نمایشی/گزارشی مرحله
+  function payloadToStage(key, p) {
+    if (key === 'fields') {
+      var c = p.status_counts || {};
+      var extracted = (c.extracted || 0) + (c.user_corrected || 0);
+      var outputs = [
+        'نام و ارقام نرمال‌سازی شد و ۷ فیلد ساختاریافته کنترل شد (نام، قدرت درج‌شده، تعداد، انقضا، وزن، سری، سازنده).',
+        'نوع بسته تشخیص‌داده‌شده: ' + (p.product_type_fa || 'نامشخص'),
+        'هر مقدار به شناسه قطعه OCR (شاهد) متصل است — جدول فیلدها در بخش نتیجه.'
+      ];
+      (p.warnings_fa || []).forEach(function (w) { outputs.push(w); });
+      return {
+        status: extracted ? 'done' : 'warn',
+        duration_ms: p.duration_ms,
+        outputs: outputs,
+        metrics: [
+          { n: 'فیلدهای استخراج‌شده', v: extracted + ' از ۷', status: extracted ? 'ok' : 'warn' },
+          { n: 'فیلدهای نامطمئن', v: c.uncertain || 0, status: (c.uncertain || 0) ? 'warn' : 'ok' },
+          { n: 'فیلدهای غایب', v: c.missing || 0, status: 'ok' },
+          { n: 'فیلدهای متناقض', v: c.conflicting || 0, status: (c.conflicting || 0) ? 'warn' : 'ok' },
+          { n: 'پوشش شواهد (ردیابی‌پذیری)', v: p.evidence_coverage + '٪', status: p.evidence_coverage === 100 ? 'ok' : 'warn' }
+        ]
+      };
+    }
+    if (key === 'response') {
+      return {
+        status: p.guard_ok ? 'done' : 'fail',
+        duration_ms: p.duration_ms,
+        outputs: [
+          'پاسخ فارسی وفادار به متن بسته تولید شد — در بخش «پاسخ» نمایش داده می‌شود.',
+          'اطلاعات خوانده‌شده از توصیه پزشکی جدا نگه داشته می‌شود؛ هر عدد پاسخ از شواهد OCR است.',
+          'نمونه پاسخ: ' + p.preview
+        ],
+        metrics: [
+          { n: 'نگهبان ایمنی', v: p.guard_ok ? 'عبور بدون نقض (بدون «دوز مصرف» و توصیه)' : 'نقض: ' + (p.guard_violations || []).join('؛ '), status: p.guard_ok ? 'ok' : 'fail' },
+          { n: 'مسیر تولید', v: 'منطق استخراج قاعده‌محور (بدون مدل زبانی ابری)', status: 'ok' },
+          { n: 'طول پاسخ', v: p.length + ' نویسه', status: 'ok' }
+        ]
+      };
+    }
+    return { status: 'done', duration_ms: p.duration_ms, outputs: [], metrics: [] };
   }
 
   // ---------- نمایش نتیجه ----------
@@ -657,6 +931,7 @@
     });
     $('btn-clear').addEventListener('click', clearImage);
     $('btn-analyze').addEventListener('click', analyze);
+    $('btn-stages-report').addEventListener('click', downloadStagesReport);
     $('btn-tts').addEventListener('click', speakResponse);
     $('btn-copy').addEventListener('click', copyResponse);
     $('btn-share').addEventListener('click', shareResponse);

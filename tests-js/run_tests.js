@@ -395,6 +395,29 @@ test('خروجی خط کامل: نگهبان و پاسخ', () => {
   assert(result.response_fa.includes('Paracetamol'), result.response_fa);
   assert(!result.response_fa.includes('دوز'), result.response_fa);
 });
+// ---------------- v1.6.0: اعلام مرحله‌به‌مرحله (onStage) ----------------
+test('اعلام مراحل ۳ و ۴ با onStage (پاریتی با stage_callback دسکتاپ)', () => {
+  const pieces = [mkPiece(1, 'Paracetamol', 30), mkPiece(2, '500', 100),
+    mkPiece(3, 'mg', 100, 120), mkPiece(4, '20', 170), mkPiece(5, 'Tablets', 170, 120)];
+  const events = [];
+  pipe.buildResultFromPieces(pieces, SETTINGS, 600, 400, {}, {
+    onStage: (key, payload) => events.push([key, payload])
+  });
+  assertEq(events.map((e) => e[0]).join(','), 'fields,response');
+  const fieldsP = events[0][1];
+  assertEq(fieldsP.evidence_coverage, 100);
+  assertEq(fieldsP.product_type_fa, 'دارو');
+  assert((fieldsP.status_counts.extracted || 0) >= 3, JSON.stringify(fieldsP.status_counts));
+  assert(fieldsP.duration_ms !== undefined && fieldsP.duration_ms !== null);
+  const respP = events[1][1];
+  assertEq(respP.guard_ok, true);
+  assertEq(respP.llm_used, false);
+  assert(respP.length > 0 && respP.preview.length > 0);
+  // بدون onStage هم باید سالم کار کند (سازگاری رو به عقب)
+  const r2 = pipe.buildResultFromPieces(pieces, SETTINGS, 600, 400, {}, {});
+  assert(r2.response_fa.includes('Paracetamol'), r2.response_fa);
+});
+
 test('کیفیت تصویر: تاری شدید تشخیص داده می‌شود', () => {
   // تصویر یکدست → واریانس لاپلاسین ≈ 0 → تاری شدید
   const w = 200, h = 200;

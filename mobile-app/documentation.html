@@ -343,7 +343,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 
 <header class="hero" id="top">
   <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
-  <span class="kicker">📘 سند فنی رسمی — نسخه ۱.۵.۰</span>
+  <span class="kicker">📘 سند فنی رسمی — نسخه ۱.۶.۰</span>
   <h1>برچسب‌خوان هوشمند دارو و محصولات<br><span class="grad">LabelVoice — معماری، کارکرد و فناوری</span></h1>
   <p class="lede">
     سامانه‌ای دو زیرسیستمی (دسکتاپ + موبایل) که فقط «متن روی بسته» را با OCR می‌خواند،
@@ -494,6 +494,32 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 
   <div class="bridge reveal" style="margin-top:1rem">📋 <b>جمع‌بندی انطباق:</b> هر ۵ جمله الزام دسته ۱ و هر ۵ مرحله دسته ۲ پیاده‌سازی، آزمون و راستی‌آزمایی شده‌اند؛ «یا»ی ملزومات در مرحله پاسخ‌سازی به نفع مسیر امن‌تر (منطق استخراج قاعده‌محور) و LLM وفادار اختیاری/خاموش انتخاب شده است. همین نگاشت در سند PDF (بخش ۲) و در رابط دسکتاپ (بخش «ملزومات استاد» و مودال راهنمای آن) نیز آمده است.</div>
 
+  <h3 class="chart-title reveal" id="staged-processing">🧭 اعلام مرحله‌به‌مرحله پردازش، نمایش خروجی و ارزیابی مرحله‌ای (از v1.6.0)</h3>
+  <div class="card reveal" style="margin-bottom:1.1rem">
+    <p style="color:#e7f4f4">بر اساس همین ملزومات، پردازش دیگر «جعبه سیاه» نیست: در حین اجرا، سامانه به کاربر <b>اعلام می‌کند</b> که «الان کدام بخش از نیازمندی استاد انجام شد»؛ برای هر مرحله <b>خروجی واقعی</b> همان مرحله و <b>معیارهای ارزیابی کیفیت</b> آن با دکمه «خروجی و ارزیابی» نمایش داده می‌شود و در پایان، <b>گزارش ارزیابی مرحله‌ای (JSON)</b> قابل دانلود است. این رفتار در هر دو زیرسیستم (دسکتاپ Streamlit و موبایل PWA) پیاده شده است.</p>
+    <p style="color:#e7f4f4">پیام اعلام هر مرحله دقیقاً به همین شکل است: «✅ مرحله <i>n</i> از ۵ انجام شد: … — این بخش از نیازمندی استاد برآورده شد.» و پیش از شروع، «تعریف مسئله» (دسته ۱ ملزومات) نیز به کاربر اعلام می‌شود.</p>
+  </div>
+  <div class="card reveal" style="overflow-x:auto; margin-bottom:1.1rem">
+    <table style="width:100%; border-collapse:collapse; font-size:.88rem">
+      <thead><tr style="text-align:right; color:#5eead4">
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">مرحله (الزام استاد)</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">پیام اعلام به کاربر</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">خروجی نمایش‌داده‌شده</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">معیارهای ارزیابی کیفیت</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل دسکتاپ</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل موبایل</th>
+      </tr></thead>
+      <tbody style="opacity:.94">
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۱. OpenCV (تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">«مرحله ۱ از ۵ انجام شد — این بخش از نیازمندی استاد برآورده شد»</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">تصویر بهبودیافته + وضعیت برش/چرخش</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">تیزی (لاپلاسین) قبل←بعد، کنتراست، زاویه اصلاحی، نسخه‌های ساخته‌شده</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/stages.py</code> + <code>pipeline.py</code> (callback) + <code>preprocess.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>js/app.js</code> (خط‌زمان) + <code>js/boxdetect.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۲. OCR (استخراج نام، اعداد و متن)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">همان الگوی اعلام</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">متن خام سطربه‌سطر + نواحی شناسایی‌شده</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">تعداد قطعه/سطر، میانگین اطمینان ٪، نویسه‌ها، گذرها</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/ocr/*</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>js/ocr.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۳. پردازش متن و کنترل فیلدها</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">همان الگوی اعلام</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">جدول فیلدها با وضعیت پنج‌گانه و شواهد</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">تعداد وضعیت‌ها، پوشش شواهد (ردیابی‌پذیری ٪)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>extraction/*</code> + <code>textnorm.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>js/extractor.js</code> (onStage در <code>pipeline.js</code>)</td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۴. تولید پاسخ فارسی (استخراج یا LLM وفادار)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">همان الگوی اعلام</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">پاسخ فارسی نهایی</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">عبور از نگهبان (بدون «دوز مصرف»/توصیه)، مسیر تولید، طول</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>response/builder.py</code> + <code>guard.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>js/responder.js</code> + <code>js/guard.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem">۵. TTS + رابط (خواندن و نمایش)</td><td style="padding:.55rem .6rem">همان الگوی اعلام</td><td style="padding:.55rem .6rem">متن آماده خوانش + پخش‌کننده صوتی</td><td style="padding:.55rem .6rem">موتور صوتی، آماده‌سازی تلفظ، وضعیت صوت (در دسکتاپ با رضایت)</td><td style="padding:.55rem .6rem"><code>label_reader/tts/*</code> + <code>app.py</code></td><td style="padding:.55rem .6rem"><code>speechSynthesis</code> در <code>js/app.js</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="bridge reveal">🧪 <b>آزمون این رفتار:</b> ۱۶ آزمون pytest جدید (<code>tests/test_stages.py</code> — ترتیب مراحل، پیام‌های اعلام، معیارها، گزارش JSON) و آزمون پاریتی Node برای اعلام مراحل ۳ و ۴ (<code>tests-js/run_tests.js</code>). فایل‌های رابط: <code>app.py</code> (بخش «اعلام مراحل پردازش و ارزیابی مرحله‌ای») و <code>mobile-app/index.html</code> (خط‌زمان <code>stages-box</code>).</div>
+
   <h3 class="chart-title reveal">🧭 نمودار معماری مرجع — از تصویر بسته‌بندی تا خوانش فارسی</h3>
   <div class="steps reveal">
     <div class="step"><span class="n">۰</span>
@@ -547,7 +573,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
   <div class="block-head reveal">
     <div class="eyebrow">■ بخش ۴</div>
     <h2>چگونه کار می‌کند؟ — خط پردازش ۹ مرحله‌ای</h2>
-    <p class="sub">این خط در هر دو زیرسیستم با همان ترتیب اجرا می‌شود؛ تفاوت فقط در پیاده‌سازی (OpenCV ⇄ Canvas) است، نه در قواعد. هر مرحله با فناوری واقعی‌اش مشخص شده است.</p>
+    <p class="sub">این خط در هر دو زیرسیستم با همان ترتیب اجرا می‌شود؛ تفاوت فقط در پیاده‌سازی (OpenCV ⇄ Canvas) است، نه در قواعد. هر مرحله با فناوری واقعی‌اش مشخص شده است. <b>از نسخه ۱.۶.۰</b> تکمیل هر مرحله هنگام پردازش به کاربر اعلام و خروجی و ارزیابی کیفیت همان مرحله نمایش داده می‌شود (جدول کامل در بخش ۳ — <a href="#staged-processing" style="color:#5eead4">اعلام مرحله‌به‌مرحله</a>).</p>
   </div>
   <div class="steps">
     <div class="step reveal"><span class="n">۱</span>
@@ -866,6 +892,8 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <h2>تاریخچه نسخه‌ها</h2>
   </div>
   <div class="timeline">
+    <div class="tl-item reveal"><h4>اعلام مرحله‌به‌مرحله پردازش + خروجی و ارزیابی هر مرحله <span class="ver">v1.6.0</span></h4>
+      <p>در حین پردازش، سامانه اعلام می‌کند «الان کدام بخش از نیازمندی استاد انجام شد»؛ برای هر مرحله از ۵ مرحله معماری استاد، خروجی واقعی و معیارهای ارزیابی کیفیت (تیزی/کنتراست تصویر، اطمینان OCR، پوشش شواهد، عبور از نگهبان، وضعیت صوت) با دکمه «خروجی و ارزیابی» نمایش داده می‌شود؛ گزارش ارزیابی مرحله‌ای (JSON) قابل دانلود؛ پیاده‌سازی در هر دو زیرسیستم (<code>label_reader/stages.py</code> + stage_callback در <code>pipeline.py</code> ⇄ خط‌زمان مراحل در <code>js/app.js</code> + onStage در <code>js/pipeline.js</code>) با ۱۶ آزمون pytest جدید و آزمون پاریتی Node؛ مودال راهنمای اختصاصی؛ این بخش در همین سند (بخش ۳) و سند PDF نیز مستند شده است.</p></div>
     <div class="tl-item reveal"><h4>بخش «ملزومات طرح‌شده توسط استاد (استاد قربانی)» با جدول انطباق <span class="ver">v1.5.0</span></h4>
       <p>ملزومات پروژه در دو دسته (تعریف مسئله + نمودار معماری) عیناً در هر دو سند (HTML/PDF) و هر دو رابط (موبایل و دسکتاپ) نقل و برای هر الزام، نحوه تحقق، فایل(های) پیاده‌سازی و آزمون ردیابی‌پذیر آن مشخص شد — جدول انطباق کامل بخش ۳ سند و بخش اختصاصی رابط‌ها.</p></div>
     <div class="tl-item reveal"><h4>نام توسعه‌دهندگان + بخش ارزیابی مدل‌ها + تقویت مستندات <span class="ver">v1.4.0</span></h4>
@@ -884,7 +912,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 </section>
 
 <footer class="docfoot">
-  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۵.۰ · 👨‍💻 توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
+  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۶.۰ · 👨‍💻 توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
   <div class="links">
     <a href="index.html">🚀 برنامه</a>
     <a href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ GitHub</a>
