@@ -59,10 +59,17 @@ def _washed_ratio(gray: np.ndarray) -> float:
 
 
 def assess_quality(bgr: np.ndarray, settings: Settings) -> tuple[QualityMetrics, list[QualityIssue]]:
-    """سنجش کیفیت و تولید هشدارهای فارسی (همیشه همراه متن؛ نه فقط رنگ)."""
+    """سنجش کیفیت و تولید هشدارهای فارسی (همیشه همراه متن؛ نه فقط رنگ).
+
+    v1.7.0 — رفع هشدار کاذب «شسته‌شده»: عکس محصول روی پس‌زمینه روشن/میز روشن
+    (مثل جعبه دارو روی میز سفید) نسبت بالایی از پیکسل‌های ۱۹۰..۲۴۶ دارد بدون
+    اینکه بیش‌نور باشد. اکنون هشدار فقط وقتی صادر می‌شود که «شستگی» با
+    کنتراست سراسری پایین (یکدست بودن تصویر) و میانگین روشن بالا همراه باشد.
+    """
     gray = _standard_gray(bgr)
     lap_var = float(cv2.Laplacian(gray, cv2.CV_64F).var())
     mean_brightness = float(gray.mean())
+    gray_std = float(gray.std())
     highlight_ratio = float((gray > 248).sum()) / float(gray.size)
     washed = _washed_ratio(gray)
 
@@ -83,7 +90,9 @@ def assess_quality(bgr: np.ndarray, settings: Settings) -> tuple[QualityMetrics,
             code="dark", severity="warning",
             message_fa="نور تصویر کم است. لطفاً در محیط روشن‌تر از بسته عکس بگیرید."))
 
-    if washed > 0.55:
+    # شستگی واقعی = میان‌روشن زیاد + کنتراست سراسری کم + میانگین روشن
+    # (بدون شرط کنتراست، هر عکس محصول روی میز/پس‌زمینه روشن هشدار کاذب می‌گرفت)
+    if washed > 0.55 and gray_std < 35 and mean_brightness > 200:
         issues.append(QualityIssue(
             code="bright", severity="warning",
             message_fa="تصویر بیش از حد روشن/شسته‌شده است؛ نور مستقیم روی بسته نیفتد."))

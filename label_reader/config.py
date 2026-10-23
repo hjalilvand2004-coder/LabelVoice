@@ -32,11 +32,13 @@ class Settings(BaseSettings):
     min_dimension_px: int = 300
 
     # ---------- پیش‌پردازش ----------
+    # 1000: مقیاس بهینه آزمایش‌شده (۱۴۰۰ حروف درشت را برای تسراکت بیش‌ازحد بزرگ می‌کند)
     target_min_side: int = 1000
     clahe_clip_limit: float = 2.0
     clahe_tile_size: int = 8
     deskew_max_angle_deg: float = 15.0
     use_binarized_variant: bool = True
+    use_white_on_dark_variant: bool = True
 
     # ---------- OCR ----------
     # tesseract | easyocr | auto (اولین موتور در دسترس)
@@ -46,7 +48,19 @@ class Settings(BaseSettings):
     tesseract_psm: int = 3
     # اجرای دوم با psm دیگر برای پوشش بهتر سطرها (0 = غیرفعال)
     tesseract_extra_psm: int = 6
+    # اجرای سوم با PSM پراکنده (Sparse) برای برچسب‌هایی با متن پراکنده (0 = غیرفعال)
+    tesseract_sparse_psm: int = 11
     easyocr_model_dir: Path | None = None
+
+    # ---------- گیت کیفیت قطعه‌های OCR (v1.7.0) ----------
+    # کف مطلق اطمینان: قطعه زیر این مقدار همیشه حذف می‌شود
+    piece_conf_floor: float = 0.30
+    # قطعه‌های کوتاه (≤ این طول) باید اطمینان بیشتری داشته باشند
+    # (۰٫۳۰ = برابر کف مطلق تا واحدهای معنی‌دار کم‌اطمینان مثل «mg» حذف نشوند)
+    short_piece_max_len: int = 2
+    short_piece_conf_min: float = 0.30
+    # کمینه اطمینان برای اینکه سطر «کاندید نام» معتبر شود
+    name_min_confidence: float = 0.45
 
     # ---------- استخراج فیلدها ----------
     low_confidence_threshold: float = 0.55

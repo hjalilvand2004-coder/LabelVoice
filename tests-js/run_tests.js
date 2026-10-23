@@ -496,6 +496,80 @@ test('scoreOcrYield: متن چرخیده (بی‌معنا) نمره الگو ن�
   assert(y.score < 60, JSON.stringify(y));
 });
 
+
+// ---------- v1.7.0: دروازه نام، گیت قطعه، ادغام بهترین-اول ----------
+console.log('— v1.7.0 کیفیت OCR —');
+
+test('plausibleName: خوانش آشغال کاربر رد می‌شود', () => {
+  assertEq(ext.plausibleName('RIE [SE ۱ ES {= ray WE'), false);
+  assertEq(ext.plausibleName('@ » °'), false);
+  assertEq(ext.plausibleName("__import__('os').system('echo hacked')"), false);
+});
+
+test('plausibleName: نام واقعی قبول می‌شود', () => {
+  assertEq(ext.plausibleName('MEDICINE'), true);
+  assertEq(ext.plausibleName('استامینوفن'), true);
+});
+
+test('filterPieces: نماد محض و کادر-غول‌پیکر حذف می‌شوند', () => {
+  const raws = [
+    mkPiece(1, '@', 0, 0, 0.9),
+    mkPiece(2, 'MEDICINE', 30, 0, 0.96),
+    mkPiece(3, '3', 60, 0, 0.56),
+  ];
+  raws[2].w = 431; raws[2].h = 394; // کادر غول‌پیکر
+  const kept = pipe.filterPieces(raws, 1000 * 1000, SETTINGS);
+  assertEq(kept.map((p) => p.text), ['MEDICINE']);
+});
+
+test('filterPieces: واحد کم‌اطمینان mg حذف نمی‌شود', () => {
+  const kept = pipe.filterPieces([mkPiece(1, 'mg', 0, 0, 0.30)], 1000000, SETTINGS);
+  assertEq(kept.length, 1);
+});
+
+test('mergePiecesBestFirst: خوانش جزئی CINE داخل MEDICINE ادغام می‌شود', () => {
+  const a = mkPiece(1, 'MEDICINE', 247, 348, 0.96, 'gray_clahe');
+  a.w = 418; a.h = 125;
+  const b = mkPiece(2, 'CINE', 247, 575, 0.71, 'binarized');
+  b.w = 190; b.h = 141;
+  const pieces = pipe.mergePiecesBestFirst({ gray_clahe: [a], binarized: [b] });
+  assertEq(pieces.map((p) => p.text), ['MEDICINE']);
+});
+
+test('mergePiecesBestFirst: DA با conf بالاتر متن BOX را بازنویسی نمی‌کند', () => {
+  const box = mkPiece(1, 'BOX', 372, 499, 0.88, 'white_on_dark');
+  box.w = 126; box.h = 65;
+  const da = mkPiece(2, 'DA', 375, 576, 0.92, 'binarized');
+  da.w = 50; da.h = 53;
+  const pieces = pipe.mergePiecesBestFirst({ white_on_dark: [box], binarized: [da] });
+  assertEq(pieces[0].text, 'BOX');
+});
+
+test('mergePiecesBestFirst: MEDICINES کم‌اطمینان با MEDICINE واقعی جانشین می‌شود', () => {
+  const bad = mkPiece(1, 'MEDICINES', 189, 350, 0.42, 'white_on_dark');
+  bad.w = 458; bad.h = 183;
+  const good = mkPiece(2, 'MEDICINE', 247, 348, 0.96, 'gray_clahe');
+  good.w = 418; good.h = 125;
+  const pieces = pipe.mergePiecesBestFirst({ white_on_dark: [bad], gray_clahe: [good] });
+  assertEq(pieces.map((p) => p.text), ['MEDICINE']);
+});
+
+test('sameRegion: کلمات همسایه با کادر همپوشان یکی نمی‌شوند', () => {
+  const a = { x: 20, y: 30, w: 110, h: 24 };
+  const b = { x: 140, y: 30, w: 80, h: 24 };
+  assertEq(pipe.sameRegion(a, b, 'system(\'echo', 'hacked\')'), false);
+});
+
+test('assessQuality: عکس محصول روی میز روشن هشدار شستگی نمی‌گیرد', () => {
+  // پس‌زمینه روشن + جعبه تیره = کنتراست بالا → نه bright
+  const w = 60, h = 60;
+  const gray = new Uint8ClampedArray(w * h).fill(215);
+  for (let y = 15; y < 45; y++) for (let x = 15; x < 45; x++) gray[y * w + x] = 90;
+  const issues = pipe.assessQuality(gray, w, h, SETTINGS).issues;
+  assertEq(issues.some((i) => i.code === 'bright'), false);
+});
+
+
 console.log('\nنتیجه: ' + passed + ' پاس، ' + failed + ' شکست');
 if (failed) {
   console.log('\nجزئیات شکست‌ها:');

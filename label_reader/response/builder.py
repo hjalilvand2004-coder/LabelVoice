@@ -120,7 +120,12 @@ def build_response(
     extraction_warnings: list[str],
     ocr_piece_count: int,
 ) -> str:
-    """پاسخ فارسی قالبی وفادار به شواهد."""
+    """پاسخ فارسی قالبی وفادار به شواهد.
+
+    v1.7.0 — ترتیب جدید: اول اطلاعات خوانده‌شده، بعد هشدار کیفیت (در صورت
+    وجود) و در پایان سلب مسئولیت. پیش‌تر هشدار کیفیت اول پاسخ می‌آمد و حتی
+    وقتی فقط نویز خوانده شده بود، کاربر یک «دیوار هشدار» می‌دید.
+    """
     if ocr_piece_count == 0:
         return NO_TEXT_RESPONSE_FA
 
@@ -129,10 +134,6 @@ def build_response(
         return (NO_TEXT_RESPONSE_FA.split("، سپس")[0] + ". " + DISCLAIMER_FA)
 
     sentences: list[str] = []
-    q = _quality_sentence(quality_issues)
-    if q:
-        sentences.append(q)
-
     order = ["name", "active_ingredient", "strength", "count", "dosage_form",
              "net_weight", "ingredients", "manufacturer", "batch",
              "production_date", "expiry_date", "storage", "warnings"]
@@ -151,6 +152,10 @@ def build_response(
         sentences.append(
             f"متن دستور چاپ‌شده روی بسته: «{directives.value}». این صرفاً "
             f"بازخوانی متن چاپ‌شده است و توصیه شخصی به شما نیست.")
+
+    q = _quality_sentence(quality_issues)
+    if q:
+        sentences.append(q)
 
     for w in extraction_warnings:
         sentences.append(w)

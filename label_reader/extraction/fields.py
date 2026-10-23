@@ -50,9 +50,41 @@ _GENERAL_KEYS = ["name", "net_weight", "count", "ingredients", "manufacturer",
 
 _ALPHA_MIN = 3
 
+# نویسه‌هایی که در نام محصول واقعی به‌ندرت ظاهر می‌شوند؛ حضورشان نشانه خوانش
+# آشغال OCR است (مثل «RIE [SE ۱ ES {= ray WE» که پیش‌تر به‌عنوان نام چاپ می‌شد)
+_NAME_FORBIDDEN_RE = re.compile(r'[\[\]{}<>|=+*#@$%^~\\/_⌐«»"]')
+
 
 def _has_alpha(text: str) -> bool:
     return sum(1 for ch in text if ch.isalpha()) >= _ALPHA_MIN
+
+
+def _plausible_name(text: str) -> bool:
+    """آیا این سطر می‌تواند نام محصول باشد؟ (v1.7.0 — دروازه ضدزباله)
+
+    معیارها:
+    - دست‌کم سه نویسه حرفی؛
+    - فاقد نویسه‌های ممنوعه (کروشه/آکولاد/نمادهای ریاضی/گیومه و…)؛
+    - نسبت نویسه‌های حرف/رقم به کل نویسه‌ها ≥ ۰٫۶ (نام آشغال نماد زیاد دارد)؛
+    - ترکیب حرف لاتین + رقم فارسی/عربی در یک سطر رد می‌شود (برچسب واقعی
+      در نام فقط از یک خط نوشتار استفاده می‌کند؛ این ترکیب فقط در خوانش خراب
+      دیده می‌شود)؛
+    - بیشینه یک فاصله‌داشتنی پیوسته نماد غیرمجاز نیست… (با الگوی بالا پوشش داده می‌شود).
+    """
+    if not _has_alpha(text):
+        return False
+    if _NAME_FORBIDDEN_RE.search(text):
+        return False
+    total = len(text)
+    alnum = sum(1 for ch in text if ch.isalnum())
+    if total == 0 or alnum / total < 0.6:
+        return False
+    latin = sum(1 for ch in text if ch.isalpha() and "\u0000" <= ch <= "\u024f")
+    fa_digit = sum(1 for ch in text if ch in "\u06f0\u06f1\u06f2\u06f3\u06f4\u06f5\u06f6\u06f7\u06f8\u06f9"
+                   "\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669")
+    if latin > 0 and fa_digit > 0:
+        return False
+    return True
 
 
 def _mk_record(key: str, status: FieldStatus, *, value=None, unit=None,
@@ -170,15 +202,25 @@ def _free_text_field(key: str, lines: list[RawLine], keyword_re,
                       confidence=round(conf, 2), note_fa=note), set(hits)
 
 
-def _name_candidates(consumed: set[int], lines: list[RawLine]) -> list[int]:
+def _name_candidates(consumed: set[int], lines: list[RawLine],
+                     settings: Settings) -> list[int]:
+    """کاندیدهای نام — فقط سطرهای «باورپذیر» (v1.7.0 دروازه ضدزباله).
+
+    سطرهای آشغال OCR (مثل «RIE [SE ۱ ES {= ray WE») دیگر نام نمی‌شوند؛
+    سطرهای با اطمینان زیر name_min_confidence هم کاندید نمی‌شوند تا زبالهٔ
+    کم‌اطمینان بالای تصویر، نام واقعیِ پراطمینان (مثل MEDICINE) را نپوشاند.
+    در نبود کاندید معتبر، نام صادقانه MISSING اعلام می‌شود.
+    """
     out = []
     for idx, line in enumerate(lines):
-        if idx in consumed or not _has_alpha(line.normalized_text):
+        if idx in consumed or not _plausible_name(line.normalized_text):
+            continue
+        if (line.confidence_mean if line.confidence_mean is not None else 0.5) \
+                < settings.name_min_confidence:
             continue
         if len(line.normalized_text) > 80:
             continue
         out.append(idx)
-    out.sort(key=lambda i: (lines[i].bbox.y, lines[i].bbox.x))
     return out
 
 
@@ -404,7 +446,7 @@ def extract_fields(
         m = RE_STRENGTH.search(top_line.normalized_text)
         if m is not None:
             remainder = top_line.normalized_text[: m.start()].strip(" :-.،,")
-            if sum(1 for ch in remainder if ch.isalpha()) >= _ALPHA_MIN:
+            if _plausible_name(remainder):
                 conf = _conf_of(top_line)
                 fields["name"] = _mk_record(
                     "name",
@@ -416,9 +458,25 @@ def extract_fields(
                     confidence=round(conf, 2))
                 consumed.add(top)
                 name_set = True
-    name_idx_list = [] if name_set else _name_candidates(consumed, lines)
+    name_idx_list = [] if name_set else _name_candidates(consumed, lines, settings)
     if name_idx_list:
+        # v1.7.0: انتخاب «بالاترین سطرِ باورپذیر» با شرط نزدیکی اطمینان —
+        # نام محصول معمولاً بالای بسته است؛ اما اگر سطر بالایی زبالهٔ
+        # کم‌اطمینان باشد (فاصلهٔ اطمینان > 0.۱۵ با بهترین کاندید)،
+        # اولین کاندیدِ نزدیک به بهترین اطمینان انتخاب می‌شود.
+        name_idx_list.sort(key=lambda i: (lines[i].bbox.y, lines[i].bbox.x))
+        best_conf = max(
+            (lines[i].confidence_mean
+             if lines[i].confidence_mean is not None else 0.5)
+            for i in name_idx_list)
+        threshold = max(best_conf - 0.15, settings.name_min_confidence)
         idx = name_idx_list[0]
+        for cand in name_idx_list:
+            cand_conf = (lines[cand].confidence_mean
+                         if lines[cand].confidence_mean is not None else 0.5)
+            if cand_conf >= threshold:
+                idx = cand
+                break
         line = lines[idx]
         conf = _conf_of(line)
         fields["name"] = _mk_record(
@@ -427,10 +485,22 @@ def extract_fields(
             value=cleaned_display_text(line.text), unit=None, raw_text=line.text,
             source_ids=list(line.source_ids), confidence=round(conf, 2))
         consumed.add(idx)
-        # چندمحصولی: نام دوم در بخش پایین «تصویر» → درخواست برش یک بسته
+        # چندمحصولی: نام دوم معتبر در بخش پایین «تصویر» → درخواست برش یک بسته
+        # (v1.7.0) شرط سخت‌گیرانه: نام دوم باید تک‌خطی (فقط فارسی یا فقط لاتین)،
+        # نسبت حرف/رقم بالا و طول کافی داشته باشد؛ با OCR آشغال این هشدار کاذب
+        # دیگر صادر نمی‌شود.
         ref_h = image_height or max((l.bbox.y2 for l in lines), default=1)
         for other in name_idx_list[1:]:
-            if lines[other].bbox.y > 0.55 * ref_h:
+            other_text = lines[other].normalized_text
+            alpha_n = sum(1 for ch in other_text if ch.isalpha())
+            latin_n = sum(1 for ch in other_text
+                          if ch.isalpha() and "\u0000" <= ch <= "\u024f")
+            single_script = latin_n == alpha_n or latin_n == 0
+            alnum_ratio = (sum(1 for ch in other_text if ch.isalnum()) /
+                           max(1, len(other_text)))
+            if lines[other].bbox.y > 0.55 * ref_h and alpha_n >= 4 and \
+                    single_script and alnum_ratio >= 0.7 and \
+                    _plausible_name(other_text):
                 extraction_warnings.append(
                     "چند ناحیه متنی مستقل در تصویر دیده می‌شود؛ برای نتیجه دقیق، "
                     "لطفاً یک بسته را برش بزنید یا فقط یک بسته را عکس بگیرید. "

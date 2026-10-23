@@ -69,14 +69,18 @@
   // gray: Uint8ClampedArray با طول w*h
   function assessQuality(gray, w, h, settings) {
     var n = w * h;
-    var sum = 0, bright = 0, washed = 0, k;
+    var sum = 0, sqSum = 0, bright = 0, washed = 0, k;
     for (k = 0; k < n; k++) {
       var v = gray[k];
       sum += v;
+      sqSum += v * v;
       if (v > 248) bright++;
       if (v >= 190 && v <= 246) washed++;
     }
     var meanBrightness = sum / n;
+    // انحراف معیار سراسری (v1.7.0): برای رفع هشدار کاذب «شسته‌شده» لازم است —
+    // عکس محصول روی میز روشن، washedRatio بالا دارد ولی کنتراست کم نیست
+    var grayStd = Math.sqrt(Math.max(0, sqSum / n - meanBrightness * meanBrightness));
     var highlightRatio = bright / n;
     var washedRatio = washed / n;
 
@@ -109,7 +113,10 @@
         message_fa: 'نور تصویر کم است. لطفاً در محیط روشن‌تر از بسته عکس بگیرید.'
       });
     }
-    if (washedRatio > 0.55) {
+    // شستگی واقعی = میان‌روشن زیاد + کنتراست سراسری کم + میانگین روشن
+    // (v1.7.0 — معادل شرط اصلاح‌شده در quality.py؛ بدون شرط کنتراست،
+    // هر عکس محصول روی میز/پس‌زمینه روشن هشدار کاذب می‌گرفت)
+    if (washedRatio > 0.55 && grayStd < 35 && meanBrightness > 200) {
       issues.push({
         code: 'bright', severity: 'warning',
         message_fa: 'تصویر بیش از حد روشن/شسته‌شده است؛ نور مستقیم روی بسته نیفتد.'
@@ -156,7 +163,122 @@
     return union > 0 ? inter / union : 0.0;
   }
 
-  // حذف قطعه‌های تکراری بین نسخه‌ها (IoU بالا + متن یکسان)
+  // تشخیص «همان ناحیه متن»: IoU بالا یا احتواء ≥ 0.55 «با قرینه متنی»
+  // (v1.7.0 — معادل _same_region در pipeline.py؛ قرینه = زیررشته یا شباهت ≥ 0.6
+  // تا کلمات همسایه با کادر همپوشان اشتباهاً یکی نشوند)
+  function sameRegion(a, b, textA, textB) {
+    if (iou(a, b) > 0.40) return true;
+    var ax2 = a.x + a.w, ay2 = a.y + a.h;
+    var bx2 = b.x + b.w, by2 = b.y + b.h;
+    var ix = Math.max(0, Math.min(ax2, bx2) - Math.max(a.x, b.x));
+    var iy = Math.max(0, Math.min(ay2, by2) - Math.max(a.y, b.y));
+    var inter = ix * iy;
+    if (inter <= 0) return false;
+    var contained = (inter / (b.w * b.h)) >= 0.55 ||
+      (inter / (a.w * a.h)) >= 0.55;
+    if (!contained) return false;
+    var ta = (textA || '').trim().toLowerCase();
+    var tb = (textB || '').trim().toLowerCase();
+    if (!ta || !tb) return false;
+    if (ta.indexOf(tb) !== -1 || tb.indexOf(ta) !== -1) return true;
+    return similarityRatio(ta, tb) >= 0.60;
+  }
+
+  // ---------- گیت کیفیت قطعه‌ها (v1.7.0 — معادل _filter_pieces) ----------
+  // نماد محض، اطمینان خیلی پایین، قطعه کوتاه کم‌اطمینان و قطعه کوتاهِ
+  // کادر-غول‌پیکر (شکست تحلیل چیدمان) حذف می‌شوند.
+  function filterPieces(raw, imageArea, settings) {
+    var out = [];
+    (raw || []).forEach(function (p) {
+      var text = (p.text || '').trim();
+      if (!text) return;
+      if (p.confidence !== null && p.confidence !== undefined &&
+        p.confidence < 0.30) return; // piece_conf_floor
+      var hasAlnum = /[\p{L}\p{N}]/u.test(text);
+      if (!hasAlnum) return;
+      var alnumN = (text.match(/[\p{L}\p{N}]/gu) || []).length;
+      if (text.length <= 2 && (p.confidence === null || p.confidence === undefined ||
+        p.confidence < 0.30)) return; // short_piece_conf_min (برابر کف مطلق تا
+      // واحدهای معنی‌دار کم‌اطمینان مثل «mg» حذف نشوند)
+      if (imageArea && alnumN <= 2 && (p.w * p.h) > 0.15 * imageArea) return;
+      out.push(p);
+    });
+    return out;
+  }
+
+  // امتیاز واریانت (معادل _score_variant): اطمینان × طول مؤثر قطعه‌های معتبر
+  function scoreVariant(pieces) {
+    var score = 0;
+    (pieces || []).forEach(function (p) {
+      if (p.confidence === null || p.confidence === undefined) return;
+      var alnum = ((p.text || '').match(/[\p{L}\p{N}]/gu) || []).length;
+      if (alnum < 2) return;
+      score += p.confidence * Math.min(alnum, 14);
+    });
+    return score;
+  }
+
+  // ادغام بهترین-اول (v1.7.0 — معادل _merge_pieces_best_first):
+  // واریانت با بیشترین امتیاز مبناست؛ بقیه فقط نواحی پوشش‌نداده را پر می‌کنند.
+  // جانشینی محافظه‌کارانه: فقط خوانش «کامل‌ترِ معتبر» (احتوای متنی یا طولانی‌تر)
+  // جای خوانش موجود را می‌گیرد — نه صرفاً اطمینان بالاتر.
+  function mergePiecesBestFirst(byVariant) {
+    var order = Object.keys(byVariant || {}).map(function (k) {
+      return { name: k, pieces: byVariant[k] };
+    }).sort(function (a, b) { return scoreVariant(b.pieces) - scoreVariant(a.pieces); });
+    var kept = [];
+    order.forEach(function (v) {
+      v.pieces.forEach(function (rp) {
+        var bb = { x: rp.x, y: rp.y, w: rp.w, h: rp.h };
+        var norm = tn.normalizeForMatching(rp.text);
+        var normL = norm.toLowerCase();
+        var duplicated = false;
+        for (var i = 0; i < kept.length; i++) {
+          var ex = kept[i];
+          if (!sameRegion(ex.bbox, bb, ex.text, rp.text)) continue;
+          var exNorm = ex.normalized_text.toLowerCase();
+          var confRp = rp.confidence || 0;
+          var confEx = ex.confidence || 0;
+          if (exNorm !== normL) {
+            if (normL.indexOf(exNorm) !== -1 || exNorm.indexOf(normL) !== -1) {
+              // احتوای متنی: خوانش جزئی همان کلمه
+              var lenGap = Math.abs(normL.length - exNorm.length);
+              var longerNew = normL.length > exNorm.length;
+              var winnerNew;
+              if (lenGap >= 2 && ((longerNew && confRp >= 0.5) ||
+                (!longerNew && confEx >= 0.5))) {
+                winnerNew = longerNew;
+              } else {
+                winnerNew = confRp > confEx;
+              }
+              if (winnerNew) {
+                ex.text = rp.text; ex.normalized_text = norm;
+                ex.confidence = rp.confidence; ex.variant = rp.variant;
+              }
+            } else {
+              var longer = normL.length > exNorm.length;
+              var sameLenBetter = normL.length === exNorm.length && confRp > confEx;
+              if ((longer || sameLenBetter) && confRp >= confEx * 0.9) {
+                ex.text = rp.text; ex.normalized_text = norm;
+                ex.confidence = rp.confidence; ex.variant = rp.variant;
+              }
+            }
+          }
+          duplicated = true;
+          break;
+        }
+        if (!duplicated) {
+          kept.push({
+            id: '', text: rp.text, normalized_text: norm, bbox: bb,
+            confidence: rp.confidence, variant: rp.variant, engine: rp.engine
+          });
+        }
+      });
+    });
+    return kept;
+  }
+
+  // حذف قطعه‌های تکراری بین نسخه‌ها (IoU بالا + متن یکسان) — مسیر قدیمی (سازگاری آزمون‌ها)
   function mergePieces(raw) {
     var pieces = [];
     raw.forEach(function (rp) {
@@ -326,7 +448,18 @@
     extra = extra || {};
     var onStage = typeof extra.onStage === 'function' ? extra.onStage : null;
     var tStage = performance.now();
-    var pieces = assignIds(mergePieces(rawPieces));
+    var pieces;
+    if (extra.byVariant) {
+      // v1.7.0: ادغام بهترین-اول با گیت کیفیت قطعه‌ها
+      var byVariant = {};
+      var imageArea = (imageW && imageH) ? (imageW * imageH) : null;
+      Object.keys(extra.byVariant).forEach(function (k) {
+        byVariant[k] = filterPieces(extra.byVariant[k], imageArea, settings);
+      });
+      pieces = mergePiecesBestFirst(byVariant);
+    } else {
+      pieces = mergePieces(rawPieces);
+    }
     var rawLines = buildLines(pieces);
     var cls = extractor.classifyProductType(rawLines.map(function (l) { return l.normalized_text; }));
     var ex = extractor.extractFields(rawLines, cls.type, settings, imageH);
@@ -406,7 +539,7 @@
         warnings_fa: extra.warningsFa || [],
         notes_fa: notes,
         timestamp_utc: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
-        app_version: '1.6.0-mobile'
+        app_version: '1.7.0-mobile'
       }
     };
   }
@@ -443,6 +576,10 @@
     similarityRatio: similarityRatio,
     assessQuality: assessQuality,
     iou: iou,
+    sameRegion: sameRegion,
+    filterPieces: filterPieces,
+    scoreVariant: scoreVariant,
+    mergePiecesBestFirst: mergePiecesBestFirst,
     mergePieces: mergePieces,
     assignIds: assignIds,
     dedupeSimilarPieces: dedupeSimilarPieces,

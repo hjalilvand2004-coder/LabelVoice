@@ -343,7 +343,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 
 <header class="hero" id="top">
   <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
-  <span class="kicker">📘 سند فنی رسمی — نسخه ۱.۶.۰</span>
+  <span class="kicker">📘 سند فنی رسمی — نسخه ۱.۷.۰</span>
   <h1>برچسب‌خوان هوشمند دارو و محصولات<br><span class="grad">LabelVoice — معماری، کارکرد و فناوری</span></h1>
   <p class="lede">
     سامانه‌ای دو زیرسیستمی (دسکتاپ + موبایل) که فقط «متن روی بسته» را با OCR می‌خواند،
@@ -892,6 +892,8 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <h2>تاریخچه نسخه‌ها</h2>
   </div>
   <div class="timeline">
+    <div class="tl-item reveal"><h4>اصلاح اساسی کیفیت OCR — رفع خروجی بی‌معنی و هشدارهای کاذب <span class="ver">v1.7.0</span></h4>
+      <p>با بازخورد واقعی کاربر (جعبه با متن سفید روی زمینه سبز-آبی که خروجی «RIE [SE ۱ ES {= ray WE» می‌داد)، چهار اصلاح ریشه‌ای در هر دو زیرسیستم اعمال شد: ۱) واریانت جدید <code>white_on_dark</code> (آستانه تطبیقی برای متن روشن روی جعبه رنگی — <code>preprocess.py</code> ⇄ <code>js/preprocess.js</code>)؛ ۲) ادغام «بهترین-اول» نسخه‌های پردازشی با امتیازدهی و جانشینی محافظه‌کارانه (فقط خوانش کامل‌ترِ معتبر — <code>pipeline.py</code> ⇄ <code>js/pipeline.js</code>)؛ ۳) گیت کیفیت قطعه‌ها (حذف نماد محض، اطمینان زیر ۰٫۳ و کادر غول‌پیکر)؛ ۴) دروازه نام معتبر (<code>_plausible_name</code>) + شرط کنتراست برای هشدار شستگی + هشدار چندناحیه فقط با نام دوم معتبر + ترتیب جدید پاسخ (اول اطلاعات، بعد هشدار). همچنین خروجی مرحله ۲ خط‌زمان، مقایسه نسخه‌ها (قطعه/اطمینان/امتیاز) را شفاف نشان می‌دهد؛ ۱۱ آزمون pytest و ۹ آزمون Node جدید.</p></div>
     <div class="tl-item reveal"><h4>اعلام مرحله‌به‌مرحله پردازش + خروجی و ارزیابی هر مرحله <span class="ver">v1.6.0</span></h4>
       <p>در حین پردازش، سامانه اعلام می‌کند «الان کدام بخش از نیازمندی استاد انجام شد»؛ برای هر مرحله از ۵ مرحله معماری استاد، خروجی واقعی و معیارهای ارزیابی کیفیت (تیزی/کنتراست تصویر، اطمینان OCR، پوشش شواهد، عبور از نگهبان، وضعیت صوت) با دکمه «خروجی و ارزیابی» نمایش داده می‌شود؛ گزارش ارزیابی مرحله‌ای (JSON) قابل دانلود؛ پیاده‌سازی در هر دو زیرسیستم (<code>label_reader/stages.py</code> + stage_callback در <code>pipeline.py</code> ⇄ خط‌زمان مراحل در <code>js/app.js</code> + onStage در <code>js/pipeline.js</code>) با ۱۶ آزمون pytest جدید و آزمون پاریتی Node؛ مودال راهنمای اختصاصی؛ این بخش در همین سند (بخش ۳) و سند PDF نیز مستند شده است.</p></div>
     <div class="tl-item reveal"><h4>بخش «ملزومات طرح‌شده توسط استاد (استاد قربانی)» با جدول انطباق <span class="ver">v1.5.0</span></h4>
@@ -912,7 +914,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 </section>
 
 <footer class="docfoot">
-  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۶.۰ · 👨‍💻 توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
+  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۷.۰ · 👨‍💻 توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
   <div class="links">
     <a href="index.html">🚀 برنامه</a>
     <a href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ GitHub</a>

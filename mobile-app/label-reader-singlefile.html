@@ -676,7 +676,7 @@ body.help-open { overflow: hidden; }
 </main>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۶.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل ۱.۷.۰</p>
   <p>👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="stages">🧭 اعلام مراحل پردازش و ارزیابی مرحله‌ای</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">📌 ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
@@ -1421,15 +1421,36 @@ body.help-open { overflow: hidden; }
     }), new Set(hits)];
   }
 
-  function nameCandidates(consumed, lines) {
+  // دروازه ضدزباله نام (v1.7.0 — معادل _plausible_name در extraction/fields.py):
+  // سطرهای آشغال OCR (مثل «RIE [SE ۱ ES {= ray WE») دیگر نام نمی‌شوند.
+  var NAME_FORBIDDEN_RE = /[\[\]{}<>|=+*#@$%^~\\/_«»"]/;
+
+  function plausibleName(text) {
+    if (!hasAlpha(text)) return false;
+    if (NAME_FORBIDDEN_RE.test(text)) return false;
+    if (!text.length) return false;
+    var alnum = (text.match(/[\p{L}\p{N}]/gu) || []).length;
+    if (alnum / text.length < 0.6) return false;
+    var latin = 0, faDigit = 0;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (/[\u0000-\u024f]/.test(ch) && /\p{L}/u.test(ch)) latin++;
+      if (/[\u06f0-\u06f9\u0660-\u0669]/.test(ch)) faDigit++;
+    }
+    if (latin > 0 && faDigit > 0) return false;
+    return true;
+  }
+
+  function nameCandidates(consumed, lines, settings) {
     var out = [];
     lines.forEach(function (line, idx) {
-      if (consumed.has(idx) || !hasAlpha(line.normalized_text)) return;
+      // v1.7.0: فقط سطرهای باورپذیر و پراطمینان کاندید نام می‌شوند
+      if (consumed.has(idx) || !plausibleName(line.normalized_text)) return;
+      var conf = (line.confidence_mean === null || line.confidence_mean === undefined)
+        ? 0.5 : line.confidence_mean;
+      if (conf < settings.name_min_confidence) return;
       if (line.normalized_text.length > 80) return;
       out.push(idx);
-    });
-    out.sort(function (a, b) {
-      return (lines[a].bbox.y - lines[b].bbox.y) || (lines[a].bbox.x - lines[b].bbox.x);
     });
     return out;
   }
@@ -1721,7 +1742,8 @@ body.help-open { overflow: hidden; }
         for (var c = 0; c < remainder.length; c++) {
           if (/\p{L}/u.test(remainder[c])) alphaCount++;
         }
-        if (alphaCount >= ALPHA_MIN) {
+        // v1.7.0: سطر بالایی هم باید «باورپذیر» باشد، نه فقط حرف‌دار
+        if (alphaCount >= ALPHA_MIN && plausibleName(remainder)) {
           var confT = confOf(lines[top]);
           fields.name = mkRecord('name',
             confT >= settings.low_confidence_threshold ? 'extracted' : 'uncertain', {
@@ -1734,9 +1756,27 @@ body.help-open { overflow: hidden; }
         }
       }
     }
-    var nameIdxList = nameSet ? [] : nameCandidates(consumed, lines);
+    var nameIdxList = nameSet ? [] : nameCandidates(consumed, lines, settings);
     if (nameIdxList.length) {
+      // v1.7.0: «بالاترین سطر باورپذیر» با شرط نزدیکی اطمینان (تفاوت ≤ ۰٫۱۵
+      // با بهترین کاندید) — نام واقعی معمولاً بالای بسته است
+      nameIdxList.sort(function (a, b) {
+        return (lines[a].bbox.y - lines[b].bbox.y) || (lines[a].bbox.x - lines[b].bbox.x);
+      });
+      var bestConf = 0;
+      nameIdxList.forEach(function (i) {
+        var c = (lines[i].confidence_mean === null ||
+          lines[i].confidence_mean === undefined) ? 0.5 : lines[i].confidence_mean;
+        if (c > bestConf) bestConf = c;
+      });
+      var thr = Math.max(bestConf - 0.15, settings.name_min_confidence);
       var idxN = nameIdxList[0];
+      for (var ci = 0; ci < nameIdxList.length; ci++) {
+        var cc = (lines[nameIdxList[ci]].confidence_mean === null ||
+          lines[nameIdxList[ci]].confidence_mean === undefined)
+          ? 0.5 : lines[nameIdxList[ci]].confidence_mean;
+        if (cc >= thr) { idxN = nameIdxList[ci]; break; }
+      }
       var lineN = lines[idxN];
       var confN = confOf(lineN);
       fields.name = mkRecord('name',
@@ -1746,9 +1786,20 @@ body.help-open { overflow: hidden; }
         confidence: Math.round(confN * 100) / 100
       });
       consumed.add(idxN);
-      // چندمحصولی: نام دوم در بخش پایین «تصویر» → درخواست برش یک بسته
+      // چندمحصولی: نام دوم «معتبر» در بخش پایین تصویر → درخواست برش یک بسته
+      // (v1.7.0) شرط سخت‌گیرانه: تک‌خطی، نسبت حرف/رقم بالا، طول کافی؛
+      // با OCR آشغال این هشدار کاذب دیگر صادر نمی‌شود.
       for (var o = 1; o < nameIdxList.length; o++) {
-        if (lines[nameIdxList[o]].bbox.y > 0.55 * refH) {
+        var otherText = lines[nameIdxList[o]].normalized_text;
+        var alphaN = (otherText.match(/\p{L}/gu) || []).length;
+        var latinN = (otherText.match(/[\u0000-\u024f]/gu) || []).filter(function (ch) {
+          return /\p{L}/u.test(ch);
+        }).length;
+        var alnumRatio = (otherText.match(/[\p{L}\p{N}]/gu) || []).length /
+          Math.max(1, otherText.length);
+        var singleScript = (latinN === alphaN) || (latinN === 0);
+        if (lines[nameIdxList[o]].bbox.y > 0.55 * refH && alphaN >= 4 &&
+          singleScript && alnumRatio >= 0.7 && plausibleName(otherText)) {
           extractionWarnings.push(
             'چند ناحیه متنی مستقل در تصویر دیده می‌شود؛ برای نتیجه دقیق، ' +
             'لطفاً یک بسته را برش بزنید یا فقط یک بسته را عکس بگیرید. ' +
@@ -1769,6 +1820,7 @@ body.help-open { overflow: hidden; }
     FIELD_LABELS_FA: FIELD_LABELS_FA,
     MEDICINE_KEYS: MEDICINE_KEYS,
     GENERAL_KEYS: GENERAL_KEYS,
+    plausibleName: plausibleName,
     classifyProductType: classifyProductType,
     resolveCandidates: resolveCandidates,
     extractFields: extractFields
@@ -1915,9 +1967,8 @@ body.help-open { overflow: hidden; }
     sentences.push('بر اساس متن قابل خواندن روی بسته، این ' + typeFa + ' است و ' +
       tn.digitsToPersian(String(presentCount)) + ' فیلد از برچسب خوانده شد:');
 
-    var q = qualitySentence(qualityIssues);
-    if (q) sentences.push(q);
-
+    // v1.7.0: اول اطلاعات خوانده‌شده، بعد هشدار کیفیت (قبلاً هشدار اول می‌آمد
+    // و کاربر حتی با خوانش سالم «دیوار هشدار» می‌دید)
     var order = ['name', 'active_ingredient', 'strength', 'count', 'dosage_form',
       'net_weight', 'ingredients', 'manufacturer', 'batch',
       'production_date', 'expiry_date', 'storage', 'warnings'];
@@ -1928,6 +1979,9 @@ body.help-open { overflow: hidden; }
       var s = fieldSentence(f);
       if (s) sentences.push(s);
     });
+
+    var q = qualitySentence(qualityIssues);
+    if (q) sentences.push(q);
 
     var directives = fields.printed_directives;
     if (directives && isPresent(directives)) {
@@ -2036,14 +2090,18 @@ body.help-open { overflow: hidden; }
   // gray: Uint8ClampedArray با طول w*h
   function assessQuality(gray, w, h, settings) {
     var n = w * h;
-    var sum = 0, bright = 0, washed = 0, k;
+    var sum = 0, sqSum = 0, bright = 0, washed = 0, k;
     for (k = 0; k < n; k++) {
       var v = gray[k];
       sum += v;
+      sqSum += v * v;
       if (v > 248) bright++;
       if (v >= 190 && v <= 246) washed++;
     }
     var meanBrightness = sum / n;
+    // انحراف معیار سراسری (v1.7.0): برای رفع هشدار کاذب «شسته‌شده» لازم است —
+    // عکس محصول روی میز روشن، washedRatio بالا دارد ولی کنتراست کم نیست
+    var grayStd = Math.sqrt(Math.max(0, sqSum / n - meanBrightness * meanBrightness));
     var highlightRatio = bright / n;
     var washedRatio = washed / n;
 
@@ -2076,7 +2134,10 @@ body.help-open { overflow: hidden; }
         message_fa: 'نور تصویر کم است. لطفاً در محیط روشن‌تر از بسته عکس بگیرید.'
       });
     }
-    if (washedRatio > 0.55) {
+    // شستگی واقعی = میان‌روشن زیاد + کنتراست سراسری کم + میانگین روشن
+    // (v1.7.0 — معادل شرط اصلاح‌شده در quality.py؛ بدون شرط کنتراست،
+    // هر عکس محصول روی میز/پس‌زمینه روشن هشدار کاذب می‌گرفت)
+    if (washedRatio > 0.55 && grayStd < 35 && meanBrightness > 200) {
       issues.push({
         code: 'bright', severity: 'warning',
         message_fa: 'تصویر بیش از حد روشن/شسته‌شده است؛ نور مستقیم روی بسته نیفتد.'
@@ -2123,7 +2184,122 @@ body.help-open { overflow: hidden; }
     return union > 0 ? inter / union : 0.0;
   }
 
-  // حذف قطعه‌های تکراری بین نسخه‌ها (IoU بالا + متن یکسان)
+  // تشخیص «همان ناحیه متن»: IoU بالا یا احتواء ≥ 0.55 «با قرینه متنی»
+  // (v1.7.0 — معادل _same_region در pipeline.py؛ قرینه = زیررشته یا شباهت ≥ 0.6
+  // تا کلمات همسایه با کادر همپوشان اشتباهاً یکی نشوند)
+  function sameRegion(a, b, textA, textB) {
+    if (iou(a, b) > 0.40) return true;
+    var ax2 = a.x + a.w, ay2 = a.y + a.h;
+    var bx2 = b.x + b.w, by2 = b.y + b.h;
+    var ix = Math.max(0, Math.min(ax2, bx2) - Math.max(a.x, b.x));
+    var iy = Math.max(0, Math.min(ay2, by2) - Math.max(a.y, b.y));
+    var inter = ix * iy;
+    if (inter <= 0) return false;
+    var contained = (inter / (b.w * b.h)) >= 0.55 ||
+      (inter / (a.w * a.h)) >= 0.55;
+    if (!contained) return false;
+    var ta = (textA || '').trim().toLowerCase();
+    var tb = (textB || '').trim().toLowerCase();
+    if (!ta || !tb) return false;
+    if (ta.indexOf(tb) !== -1 || tb.indexOf(ta) !== -1) return true;
+    return similarityRatio(ta, tb) >= 0.60;
+  }
+
+  // ---------- گیت کیفیت قطعه‌ها (v1.7.0 — معادل _filter_pieces) ----------
+  // نماد محض، اطمینان خیلی پایین، قطعه کوتاه کم‌اطمینان و قطعه کوتاهِ
+  // کادر-غول‌پیکر (شکست تحلیل چیدمان) حذف می‌شوند.
+  function filterPieces(raw, imageArea, settings) {
+    var out = [];
+    (raw || []).forEach(function (p) {
+      var text = (p.text || '').trim();
+      if (!text) return;
+      if (p.confidence !== null && p.confidence !== undefined &&
+        p.confidence < 0.30) return; // piece_conf_floor
+      var hasAlnum = /[\p{L}\p{N}]/u.test(text);
+      if (!hasAlnum) return;
+      var alnumN = (text.match(/[\p{L}\p{N}]/gu) || []).length;
+      if (text.length <= 2 && (p.confidence === null || p.confidence === undefined ||
+        p.confidence < 0.30)) return; // short_piece_conf_min (برابر کف مطلق تا
+      // واحدهای معنی‌دار کم‌اطمینان مثل «mg» حذف نشوند)
+      if (imageArea && alnumN <= 2 && (p.w * p.h) > 0.15 * imageArea) return;
+      out.push(p);
+    });
+    return out;
+  }
+
+  // امتیاز واریانت (معادل _score_variant): اطمینان × طول مؤثر قطعه‌های معتبر
+  function scoreVariant(pieces) {
+    var score = 0;
+    (pieces || []).forEach(function (p) {
+      if (p.confidence === null || p.confidence === undefined) return;
+      var alnum = ((p.text || '').match(/[\p{L}\p{N}]/gu) || []).length;
+      if (alnum < 2) return;
+      score += p.confidence * Math.min(alnum, 14);
+    });
+    return score;
+  }
+
+  // ادغام بهترین-اول (v1.7.0 — معادل _merge_pieces_best_first):
+  // واریانت با بیشترین امتیاز مبناست؛ بقیه فقط نواحی پوشش‌نداده را پر می‌کنند.
+  // جانشینی محافظه‌کارانه: فقط خوانش «کامل‌ترِ معتبر» (احتوای متنی یا طولانی‌تر)
+  // جای خوانش موجود را می‌گیرد — نه صرفاً اطمینان بالاتر.
+  function mergePiecesBestFirst(byVariant) {
+    var order = Object.keys(byVariant || {}).map(function (k) {
+      return { name: k, pieces: byVariant[k] };
+    }).sort(function (a, b) { return scoreVariant(b.pieces) - scoreVariant(a.pieces); });
+    var kept = [];
+    order.forEach(function (v) {
+      v.pieces.forEach(function (rp) {
+        var bb = { x: rp.x, y: rp.y, w: rp.w, h: rp.h };
+        var norm = tn.normalizeForMatching(rp.text);
+        var normL = norm.toLowerCase();
+        var duplicated = false;
+        for (var i = 0; i < kept.length; i++) {
+          var ex = kept[i];
+          if (!sameRegion(ex.bbox, bb, ex.text, rp.text)) continue;
+          var exNorm = ex.normalized_text.toLowerCase();
+          var confRp = rp.confidence || 0;
+          var confEx = ex.confidence || 0;
+          if (exNorm !== normL) {
+            if (normL.indexOf(exNorm) !== -1 || exNorm.indexOf(normL) !== -1) {
+              // احتوای متنی: خوانش جزئی همان کلمه
+              var lenGap = Math.abs(normL.length - exNorm.length);
+              var longerNew = normL.length > exNorm.length;
+              var winnerNew;
+              if (lenGap >= 2 && ((longerNew && confRp >= 0.5) ||
+                (!longerNew && confEx >= 0.5))) {
+                winnerNew = longerNew;
+              } else {
+                winnerNew = confRp > confEx;
+              }
+              if (winnerNew) {
+                ex.text = rp.text; ex.normalized_text = norm;
+                ex.confidence = rp.confidence; ex.variant = rp.variant;
+              }
+            } else {
+              var longer = normL.length > exNorm.length;
+              var sameLenBetter = normL.length === exNorm.length && confRp > confEx;
+              if ((longer || sameLenBetter) && confRp >= confEx * 0.9) {
+                ex.text = rp.text; ex.normalized_text = norm;
+                ex.confidence = rp.confidence; ex.variant = rp.variant;
+              }
+            }
+          }
+          duplicated = true;
+          break;
+        }
+        if (!duplicated) {
+          kept.push({
+            id: '', text: rp.text, normalized_text: norm, bbox: bb,
+            confidence: rp.confidence, variant: rp.variant, engine: rp.engine
+          });
+        }
+      });
+    });
+    return kept;
+  }
+
+  // حذف قطعه‌های تکراری بین نسخه‌ها (IoU بالا + متن یکسان) — مسیر قدیمی (سازگاری آزمون‌ها)
   function mergePieces(raw) {
     var pieces = [];
     raw.forEach(function (rp) {
@@ -2293,7 +2469,18 @@ body.help-open { overflow: hidden; }
     extra = extra || {};
     var onStage = typeof extra.onStage === 'function' ? extra.onStage : null;
     var tStage = performance.now();
-    var pieces = assignIds(mergePieces(rawPieces));
+    var pieces;
+    if (extra.byVariant) {
+      // v1.7.0: ادغام بهترین-اول با گیت کیفیت قطعه‌ها
+      var byVariant = {};
+      var imageArea = (imageW && imageH) ? (imageW * imageH) : null;
+      Object.keys(extra.byVariant).forEach(function (k) {
+        byVariant[k] = filterPieces(extra.byVariant[k], imageArea, settings);
+      });
+      pieces = mergePiecesBestFirst(byVariant);
+    } else {
+      pieces = mergePieces(rawPieces);
+    }
     var rawLines = buildLines(pieces);
     var cls = extractor.classifyProductType(rawLines.map(function (l) { return l.normalized_text; }));
     var ex = extractor.extractFields(rawLines, cls.type, settings, imageH);
@@ -2373,7 +2560,7 @@ body.help-open { overflow: hidden; }
         warnings_fa: extra.warningsFa || [],
         notes_fa: notes,
         timestamp_utc: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
-        app_version: '1.6.0-mobile'
+        app_version: '1.7.0-mobile'
       }
     };
   }
@@ -2410,6 +2597,10 @@ body.help-open { overflow: hidden; }
     similarityRatio: similarityRatio,
     assessQuality: assessQuality,
     iou: iou,
+    sameRegion: sameRegion,
+    filterPieces: filterPieces,
+    scoreVariant: scoreVariant,
+    mergePiecesBestFirst: mergePiecesBestFirst,
     mergePieces: mergePieces,
     assignIds: assignIds,
     dedupeSimilarPieces: dedupeSimilarPieces,
@@ -2615,7 +2806,7 @@ body.help-open { overflow: hidden; }
   }
 
   // ---------- آستانه‌گذاری تطبیقی (معادل adaptiveThreshold گاوسی) ----------
-  function binarize(gray, w, h, windowSize, c) {
+  function binarizeCore(gray, w, h, windowSize, c, above) {
     // میانگین با تصویر انتگرالی (تقریب کارآمد پنجره گاوسی)
     var integral = new Float64Array((w + 1) * (h + 1));
     for (var y = 0; y < h; y++) {
@@ -2637,10 +2828,28 @@ body.help-open { overflow: hidden; }
           integral[(y1c + 1) * (w + 1) + x0] +
           integral[y0 * (w + 1) + x0];
         var mean = sum / area;
-        out[y2 * w + x2] = gray[y2 * w + x2] > mean - c ? 255 : 0;
+        if (above) {
+          // متن روشن‌تر از همسایگی → جوهر (برای متن سفید روی جعبه تیره)
+          out[y2 * w + x2] = gray[y2 * w + x2] > mean + c ? 255 : 0;
+        } else {
+          out[y2 * w + x2] = gray[y2 * w + x2] > mean - c ? 255 : 0;
+        }
       }
     }
     return out;
+  }
+
+  function binarize(gray, w, h, windowSize, c) {
+    return binarizeCore(gray, w, h, windowSize, c, false);
+  }
+
+  // نسخه ویژه «متن روشن روی پس‌زمینه تیره/میانه» (v1.7.0 — معادل white_on_dark
+  // در preprocess.py): desktop = bitwise_not(adaptiveThreshold(BINARY_INV,51,12))
+  // که از نظر ریاضی ≡ adaptiveThreshold(BINARY, 51, 12) است؛ یعنی متن روشن
+  // (روشن‌تر از همسایگی منهای C) جوهر سفید می‌شود و تسراکت ۵ پلاریتی معکوس
+  // را خودش تشخیص می‌دهد (روی نمونه واقعی «MEDICINE / BOX» را خواند).
+  function whiteOnDark(gray, w, h, windowSize, c) {
+    return binarizeCore(gray, w, h, windowSize, c, false);
   }
 
   // ---------- صاف‌کردن چرخش کم‌زاویه (معادل auto_deskew) ----------
@@ -2732,6 +2941,11 @@ body.help-open { overflow: hidden; }
       var bw = binarize(gray, scaled.w, scaled.h, 31, 15);
       variants[VARIANT_BINARIZED] = grayToCanvas(bw, scaled.w, scaled.h);
     }
+    // v1.7.0: نسخه متن-روشن-روی-تیره برای نام سفید روی جعبه‌های رنگی
+    if (settings.use_white_on_dark_variant) {
+      var wod = whiteOnDark(gray, scaled.w, scaled.h, 51, 12);
+      variants[VARIANT_WHITE_ON_DARK] = grayToCanvas(wod, scaled.w, scaled.h);
+    }
     return {
       variants: variants,
       width: scaled.w,
@@ -2746,11 +2960,13 @@ body.help-open { overflow: hidden; }
     VARIANT_GRAY_CLAHE: VARIANT_GRAY_CLAHE,
     VARIANT_BINARIZED: VARIANT_BINARIZED,
     VARIANT_SHARPENED: VARIANT_SHARPENED,
+    VARIANT_WHITE_ON_DARK: VARIANT_WHITE_ON_DARK,
     loadImage: loadImage,
     drawScaled: drawScaled,
     toGrayData: toGrayData,
     clahe: clahe,
     binarize: binarize,
+    whiteOnDark: whiteOnDark,
     sharpenGray: sharpenGray,
     cropCanvas: cropCanvas,
     rotate90: rotate90,
@@ -3168,8 +3384,14 @@ window.LBR_SAMPLES = [
   }
 
   // اجرای کامل روی نسخه‌های تصویر — معادل provider.run + منطق binarized در pipeline.py
+  // v1.7.0: گروه‌بندی خروجی به تفکیک نسخه (byVariant) برای ادغام بهترین-اول
   function runOcr(canvases, settings, langQuality, onProgress) {
     var rawPieces = [];
+    var byVariant = {};
+    var add = function (variant, words) {
+      rawPieces = rawPieces.concat(words);
+      byVariant[variant] = (byVariant[variant] || []).concat(words);
+    };
     return getWorker(settings, langQuality, onProgress).then(function (env) {
       var worker = env.worker;
       var psms = [settings.tesseract_psm];
@@ -3177,15 +3399,18 @@ window.LBR_SAMPLES = [
       if (extra && extra !== settings.tesseract_psm) psms.push(extra);
 
       var chain = Promise.resolve();
-      ['original', 'gray_clahe'].forEach(function (name) {
+      var mainNames = ['original', 'gray_clahe'];
+      if (settings.use_white_on_dark_variant && canvases.white_on_dark) {
+        // نسخه متن-روشن-روی-تیره: نام سفید روی جعبه‌های رنگی (v1.7.0)
+        mainNames.push('white_on_dark');
+      }
+      mainNames.forEach(function (name) {
         var canvas = canvases[name];
         if (!canvas) return;
         psms.forEach(function (psm) {
           chain = chain.then(function () {
             return recognizeWords(worker, canvas, name, psm)
-              .then(function (words) {
-                rawPieces = rawPieces.concat(words);
-              });
+              .then(function (words) { add(name, words); });
           });
         });
       });
@@ -3197,24 +3422,34 @@ window.LBR_SAMPLES = [
           .map(function (p) { return p.confidence; });
         if (!confs.length) {
           return recognizeWords(worker, canvases.binarized, 'binarized', psms[0])
-            .then(function (words) { rawPieces = rawPieces.concat(words); });
+            .then(function (words) { add('binarized', words); });
         }
         var mean = confs.reduce(function (s, c) { return s + c; }, 0) / confs.length;
         if (mean >= 0.8) return null;
         return recognizeWords(worker, canvases.binarized, 'binarized', psms[0])
-          .then(function (words) { rawPieces = rawPieces.concat(words); });
+          .then(function (words) { add('binarized', words); });
       });
       // گذر پراکنده (PSM 11): روی بسته‌ها متن‌ها پراکنده‌اند؛ وقتی خوانش
       // خط‌محور کم‌بازده است، این گذر کلمه‌های جاافتاده را برمی‌گرداند
+      // v1.7.0: روی نسخه متن-روشن-روی-تیره هم اجرا می‌شود (برای نام سفید)
       chain = chain.then(function () {
         if (!settings.use_sparse_psm || rawPieces.length >= 25) return null;
-        var canvas = canvases.gray_clahe || canvases.original;
-        if (!canvas) return null;
-        return recognizeWords(worker, canvas, 'sparse11', 11)
-          .then(function (words) { rawPieces = rawPieces.concat(words); });
+        var targets = [];
+        if (canvases.gray_clahe) targets.push(['sparse11', canvases.gray_clahe]);
+        if (settings.use_white_on_dark_variant && canvases.white_on_dark) {
+          targets.push(['sparse11_wod', canvases.white_on_dark]);
+        }
+        var sub = Promise.resolve();
+        targets.forEach(function (t) {
+          sub = sub.then(function () {
+            return recognizeWords(worker, t[1], t[0], 11)
+              .then(function (words) { add(t[0], words); });
+          });
+        });
+        return sub;
       });
       return chain.then(function () {
-        return { rawPieces: rawPieces, cfg: env.cfg };
+        return { rawPieces: rawPieces, byVariant: byVariant, cfg: env.cfg };
       });
     });
   }
@@ -3918,6 +4153,7 @@ window.LBR_SAMPLES = [
     tesseract_psm: 3,
     tesseract_extra_psm: 6,
     low_confidence_threshold: 0.55,
+    name_min_confidence: 0.45,
     target_min_side: 1200,
     max_side_px: 2600,
     clahe_clip_limit: 2.0,
@@ -3925,6 +4161,7 @@ window.LBR_SAMPLES = [
     deskew_max_angle_deg: 15,
     use_binarized_variant: true,
     use_sharpened_variant: true,
+    use_white_on_dark_variant: true,
     use_sparse_psm: true,
     auto_orientation_retry: true,
     max_file_mb: 10,
@@ -4301,11 +4538,14 @@ window.LBR_SAMPLES = [
 
   // اجرای یک گذر کامل OCR روی یک بوم (نسخه‌ها + دو PSM + گذرهای کمکی)
   // توجه: buildVariants همگام است و شیء ساده برمی‌گرداند؛ فقط OCR وعده‌دار است.
+  // v1.7.0: byVariant برای ادغام بهترین-اول برگردانده می‌شود.
   function runPass(baseCanvas, settings, langQuality) {
     var built = LBR.preprocess.buildVariants(
       baseCanvas, baseCanvas.width, baseCanvas.height, settings);
     return LBR.ocr.runOcr(built.variants, settings, langQuality, ocrProgress)
-      .then(function (r) { return { pieces: r.rawPieces, built: built }; });
+      .then(function (r) {
+        return { pieces: r.rawPieces, byVariant: r.byVariant || null, built: built };
+      });
   }
 
   // خوانش کم‌بازده؟ (اندک، کم‌اطمینان، یا بدون هیچ فیلد شناخته‌شده)
@@ -4399,7 +4639,7 @@ window.LBR_SAMPLES = [
           .then(function (pass1) {
             var y1 = LBR.pipeline.scoreOcrYield(pass1.pieces);
             if (!settings.auto_orientation_retry || !isWeakYield(y1)) {
-              return { pieces: pass1.pieces, built: pass1.built, attempts: 1, note: null };
+              return { pieces: pass1.pieces, byVariant: pass1.byVariant, built: pass1.built, attempts: 1, note: null };
             }
             // ۵) خوانش ضعیف → آزمون چرخش ۹۰ درجه (بسته‌های عکاسی‌شده از پهلو)
             setProgress(40, 'خوانش کم‌بازده بود؛ آزمایش جهت‌های دیگر…');
@@ -4413,10 +4653,11 @@ window.LBR_SAMPLES = [
                 return runPass(ccw, settings, langQuality).then(function (pass3) {
                   var y3 = LBR.pipeline.scoreOcrYield(pass3.pieces);
                   var best = y1; var pick = 1; var pieces = pass1.pieces;
-                  if (y2.score > best.score) { best = y2; pick = 2; pieces = pass2.pieces; }
-                  if (y3.score > best.score) { best = y3; pick = 3; pieces = pass3.pieces; }
+                  var bv = pass1.byVariant;
+                  if (y2.score > best.score) { best = y2; pick = 2; pieces = pass2.pieces; bv = pass2.byVariant; }
+                  if (y3.score > best.score) { best = y3; pick = 3; pieces = pass3.pieces; bv = pass3.byVariant; }
                   return {
-                    pieces: pieces, built: pass1.built, attempts: 3,
+                    pieces: pieces, byVariant: bv, built: pass1.built, attempts: 3,
                     note: 'تصویر در ' + (pick === 1 ? 'جهت اصلی' :
                       (pick === 2 ? 'چرخش ۹۰ درجه ساعتگرد' : 'چرخش ۹۰ درجه پادساعتگرد')) +
                       ' بهتر خوانده شد (امتیاز ' + best.score + ' در برابر ' + y1.score + ').'
@@ -4424,7 +4665,7 @@ window.LBR_SAMPLES = [
                 });
               }
               return {
-                pieces: pass2.pieces, built: pass1.built, attempts: 2,
+                pieces: pass2.pieces, byVariant: pass2.byVariant, built: pass1.built, attempts: 2,
                 note: 'تصویر در چرخش ۹۰ درجه ساعتگرد بهتر خوانده شد ' +
                   '(امتیاز ' + y2.score + ' در برابر ' + y1.score + ').'
               };
@@ -4435,11 +4676,24 @@ window.LBR_SAMPLES = [
         durations.ocr_ms = Math.round(performance.now() - t0) - (durations.preprocess_ms || 0);
         // اعلام پایان مرحله ۲ (OCR) با خروجی و ارزیابی همان مرحله
         var st2 = piecesStats(winner.pieces);
+        // v1.7.0: مقایسه نسخه‌های پردازشی در خروجی مرحله شفاف می‌شود
+        var variantLine = null;
+        if (winner.byVariant) {
+          var parts = Object.keys(winner.byVariant).map(function (k) {
+            var vps = winner.byVariant[k] || [];
+            var sc = LBR.pipeline.scoreVariant(vps);
+            return k + ' (' + vps.length + ' قطعه، امتیاز ' + (Math.round(sc * 100) / 100) + ')';
+          });
+          if (parts.length) {
+            variantLine = 'مقایسه نسخه‌های پردازشی (ادغام بهترین-اول): ' + parts.join(' | ');
+          }
+        }
         stageDone('ocr', {
           status: st2.pieces === 0 ? 'fail' : ((st2.mean_conf !== null && st2.mean_conf < 0.6) ? 'warn' : 'done'),
           duration_ms: durations.ocr_ms,
           outputs: [
-            'متن خام بسته‌بندی خوانده شد و قطعه‌های تکراری بین نسخه‌ها ادغام شدند.',
+            'متن خام بسته‌بندی خوانده شد؛ قطعه‌های زباله فیلتر و نواحی تکراری با ادغام بهترین-اول یکسان شدند (v1.7.0).',
+            variantLine || 'نسخه‌های پردازشی: ' + Object.keys(winner.built.variants).join('، '),
             winner.note ? winner.note : 'خوانش در جهت اصلی تصویر کافی بود.',
             'متن استخراج‌شده در بخش «شواهد OCR» قابل مشاهده است.'
           ],
@@ -4460,6 +4714,7 @@ window.LBR_SAMPLES = [
             qualityMetrics: qualityMetrics,
             languages: settings.ocr_languages,
             variantsUsed: Object.keys(winner.built.variants),
+            byVariant: winner.byVariant || null,
             deskewApplied: deskewApplied,
             deskewAngle: deskewAngle,
             cropApplied: cropApplied,

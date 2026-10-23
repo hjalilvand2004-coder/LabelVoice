@@ -60,6 +60,10 @@ class TesseractProvider(OcrProvider):
         extra = int(self.settings.tesseract_extra_psm or 0)
         if extra and extra != self.settings.tesseract_psm:
             psms.append(extra)
+        sparse = int(self.settings.tesseract_sparse_psm or 0)
+        if sparse and sparse not in psms:
+            # PSM 11 (پراکنده) برای برچسب‌هایی با چند بلوک متن جدا از هم حیاتی است
+            psms.append(sparse)
         pieces: list[OcrRaw] = []
         for psm in psms:
             data = pytesseract.image_to_data(

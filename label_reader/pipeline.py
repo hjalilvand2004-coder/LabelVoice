@@ -125,22 +125,37 @@ class LabelReaderPipeline:
             "image_bgr": bgr,
         })
 
-        # ۵) OCR روی نسخه‌ها
+        # ۵) OCR روی نسخه‌ها + گیت کیفیت قطعه + امتیازدهی واریانت (v1.7.0)
         t0 = time.perf_counter()
         provider = self._resolve_provider(ocr_engine)
-        raw_pieces = []
+        by_variant: dict[str, list] = {}
         for name, image in variants.items():
             if name == VARIANT_BINARIZED:
                 # نسخه دودویی فقط برای مقایسه؛ وقتی خوانش نسخه‌های اصلی ضعیف است
-                mean_conf = [p.confidence for p in raw_pieces
-                             if p.confidence is not None]
+                mean_conf = [p.confidence for vps in by_variant.values()
+                             for p in vps if p.confidence is not None]
                 if mean_conf and float(np.mean(mean_conf)) >= 0.8:
                     continue
-            raw_pieces.extend(provider.run(image, name))
+            by_variant[name] = self._filter_pieces(
+                provider.run(image, name),
+                image_area=int(variants[VARIANT_ORIGINAL].shape[0]) *
+                int(variants[VARIANT_ORIGINAL].shape[1]))
         durations["ocr_raw_ms"] = int((time.perf_counter() - t0) * 1000)
 
-        # ۶) ادغام و شناسه‌گذاری قطعه‌ها
-        pieces = self._merge_pieces(raw_pieces)
+        variant_results = []
+        for name, vps in by_variant.items():
+            vconfs = [p.confidence for p in vps if p.confidence is not None]
+            variant_results.append({
+                "variant": name,
+                "pieces": len(vps),
+                "chars_total": sum(len(p.text) for p in vps),
+                "mean_confidence": (round(sum(vconfs) / len(vconfs), 3)
+                                    if vconfs else None),
+                "score": round(self._score_variant(vps), 2),
+            })
+
+        # ۶) ادغام «بهترین-اول»: مبنا بهترین واریانت؛ بقیه فقط مکمل بدون همپوشانی
+        pieces = self._merge_pieces_best_first(by_variant)
         self._assign_ids(pieces)
 
         # ۷) سطرهای منطقی
@@ -157,6 +172,7 @@ class LabelReaderPipeline:
             "lines_count": len(raw_lines),
             "engine": provider.name,
             "lines_preview": [ln.text for ln in raw_lines[:6]],
+            "variant_results": variant_results,
             "duration_ms": durations["ocr_ms"],
         })
 
@@ -285,6 +301,151 @@ class LabelReaderPipeline:
         return result
 
     # ---------- ابزارهای داخلی ----------
+    def _filter_pieces(self, raw: list, image_area: int | None = None) -> list:
+        """گیت کیفیت قطعه‌های OCR (v1.7.0) — حذف زباله قبل از هر ادغام.
+
+        - نمادهای محض بدون هیچ حرف/رقم (@ ، » ، ° و…) حذف می‌شوند؛
+        - کف مطلق اطمینان (settings.piece_conf_floor)؛
+        - قطعه‌های خیلی کوتاه باید اطمینان بالاتری داشته باشند؛
+        - قطعه‌ی کوتاه با کادر غول‌پیکر (نشان شکست تحلیل چیدمان، مثل یک «3»
+          با کادر ۴۳۱×۳۹۴ که کل پایین تصویر را می‌بلعید) حذف می‌شود.
+        این فیلتر جلوی تولید سطرهای فرانکشتاین را می‌گیرد.
+        """
+        out = []
+        for p in raw:
+            text = (p.text or "").strip()
+            if not text:
+                continue
+            if p.confidence is not None and \
+                    p.confidence < self.settings.piece_conf_floor:
+                continue
+            if not any(ch.isalnum() for ch in text):
+                continue
+            alnum_n = sum(1 for ch in text if ch.isalnum())
+            if len(text) <= self.settings.short_piece_max_len and \
+                    (p.confidence is None or
+                     p.confidence < self.settings.short_piece_conf_min):
+                continue
+            if image_area and alnum_n <= 2 and \
+                    (p.w * p.h) > 0.15 * image_area:
+                continue
+            out.append(p)
+        return out
+
+    @staticmethod
+    def _score_variant(pieces: list) -> float:
+        """امتیاز واریانت: مجموع اطمینان × طول مؤثر قطعه‌های معتبر.
+
+        قطعه‌های با کمتر از دو نویسه حرف/رقم سهمی نمی‌گیرند تا واریانت‌هایی که
+        فقط نماد و نویز تولید کرده‌اند پایین‌تر از واریانت‌های واقعاً خوانا بمانند.
+        """
+        score = 0.0
+        for p in pieces:
+            if p.confidence is None:
+                continue
+            alnum = sum(1 for ch in (p.text or "") if ch.isalnum())
+            if alnum < 2:
+                continue
+            score += float(p.confidence) * min(alnum, 14)
+        return score
+
+    def _merge_pieces_best_first(self, by_variant: dict[str, list]) -> list:
+        """ادغام بهترین-اول (v1.7.0) — جانشین ادغام کامل قبلی.
+
+        مشکل روش قبلی: ریختن همه قطعه‌های همه واریانت‌ها در یک سبد، سطرهای
+        ترکیبی بی‌معنی می‌ساخت (هر واریانت همان کلمه را کمی جابه‌جا/متفاوت
+        می‌خواند). اکنون: واریانت با بیشترین امتیاز مبناست؛ سایر واریانت‌ها فقط
+        ناحیه‌هایی را پر می‌کنند که هنوز پوشش داده نشده (بدون همپوشانی کادر).
+        """
+        order = sorted(
+            by_variant.items(),
+            key=lambda kv: self._score_variant(kv[1]), reverse=True)
+        kept: list[OcrPiece] = []
+        for _name, vps in order:
+            for rp in vps:
+                bb = BoundingBox(x=rp.x, y=rp.y, w=rp.w, h=rp.h)
+                norm = normalize_for_matching(rp.text)
+                duplicated = False
+                for ex in kept:
+                    # همان ناحیه فیزیکی: IoU بالا یا احتواء با قرینه متنی
+                    if self._same_region(ex.bbox, bb, ex.text, rp.text):
+                        ex_norm = normalize_for_matching(ex.text).lower()
+                        norm_l = norm.lower()  # مقایسه بدون حساسیت به بزرگی حروف
+                        conf_rp = rp.confidence or 0
+                        conf_ex = ex.confidence or 0
+                        if ex_norm != norm_l:
+                            if norm_l in ex_norm or ex_norm in norm_l:
+                                # «احتوای متنی»: یکی زیررشتهٔ دیگری است
+                                # (خوانش جزئی همان کلمه). برنده: اطمینان بالاتر؛
+                                # مگر آنکه طول‌ها ≥۲ اختلاف داشته باشند و
+                                # خوانش بلندتر معتبر باشد (مثل BOX به‌جای O)
+                                len_gap = abs(len(norm_l) - len(ex_norm))
+                                longer_new = len(norm_l) > len(ex_norm)
+                                if len_gap >= 2 and \
+                                        ((longer_new and conf_rp >= 0.5) or
+                                         (not longer_new and conf_ex >= 0.5)):
+                                    winner_new = longer_new
+                                else:
+                                    winner_new = conf_rp > conf_ex
+                                if winner_new:
+                                    ex.text = rp.text
+                                    ex.normalized_text = norm
+                                    ex.confidence = rp.confidence
+                                    ex.variant = rp.variant
+                            else:
+                                # متفاوت: فقط کامل‌ترِ معتبر جانشین می‌شود
+                                # (اطمینان بالا به‌تنهایی کافی نیست؛ خوانش
+                                # جزئی آشغال مثل «DA» هم conf بالا می‌گیرد)
+                                longer = len(norm_l) > len(ex_norm)
+                                same_len_better = (len(norm_l) == len(ex_norm) and
+                                                   conf_rp > conf_ex)
+                                if (longer or same_len_better) and \
+                                        conf_rp >= conf_ex * 0.9:
+                                    ex.text = rp.text
+                                    ex.normalized_text = norm
+                                    ex.confidence = rp.confidence
+                                    ex.variant = rp.variant
+                        duplicated = True
+                        break
+                if duplicated:
+                    continue
+                kept.append(OcrPiece(
+                    id="", text=rp.text, normalized_text=norm, bbox=bb,
+                    confidence=rp.confidence, variant=rp.variant,
+                    engine=rp.engine))
+        return kept
+
+    @staticmethod
+    def _same_region(a: BoundingBox, b: BoundingBox, text_a: str = "",
+                     text_b: str = "") -> bool:
+        """تشخیص همان ناحیه متن: IoU > 0.4، یا احتواء ≥ 0.55 «با قرینه متنی».
+
+        قرینه متنی = یکی زیررشتهٔ دیگری است (خوانش جزئی) یا شباهت گشتالتی
+        ≥ 0.6 (خوانش فازی همان کلمه، مثل MEDIGIN/MEDICINES). بدون قرینه،
+        کلمات همسایه با کادرهای همپوشان (چیدمان‌های متراکم) اشتباهاً یکی
+        می‌شدند — آزمون امنیتی این خطا را گرفت.
+        """
+        if a.iou(b) > 0.40:
+            return True
+        ix = max(0, min(a.x2, b.x2) - max(a.x, b.x))
+        iy = max(0, min(a.y2, b.y2) - max(a.y, b.y))
+        inter = float(ix * iy)
+        if inter <= 0:
+            return False
+        area_b = float(b.w * b.h)
+        area_a = float(a.w * a.h)
+        contained = (inter / area_b) >= 0.55 or (inter / area_a) >= 0.55
+        if not contained:
+            return False
+        ta = (text_a or "").strip().lower()
+        tb = (text_b or "").strip().lower()
+        if not ta or not tb:
+            return False
+        if ta in tb or tb in ta:
+            return True
+        import difflib
+        return difflib.SequenceMatcher(None, ta, tb).ratio() >= 0.60
+
     def _resolve_provider(self, ocr_engine: str | None) -> OcrProvider:
         if self._injected_provider is not None:
             return self._injected_provider

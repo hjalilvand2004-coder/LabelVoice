@@ -191,6 +191,18 @@ def build_stage_item(key: str, payload: dict) -> dict:
         metrics.append(_metric(
             "سطرهای منطقی ساخته‌شده", payload["lines_count"], "ok"))
         metrics.append(_metric("موتور OCR", payload["engine"], "ok"))
+        # مقایسه نسخه‌های پردازشی (v1.7.0) — خروجی و دقت هر واریانت شفاف می‌شود
+        vr_lines = []
+        for vr in payload.get("variant_results", []) or []:
+            conf_txt = ("—" if vr.get("mean_confidence") is None
+                        else f"{round(vr['mean_confidence'] * 100)}٪")
+            vr_lines.append(
+                f"«{vr['variant']}»: {vr['pieces']} قطعه، "
+                f"اطمینان {conf_txt}، امتیاز {vr['score']}")
+        if vr_lines:
+            outputs.append(
+                "🔀 مقایسه نسخه‌های پردازشی (ادغام بهترین-اول): " +
+                " | ".join(vr_lines))
         outputs.append("📄 خروجی این مرحله: متن خام استخراج‌شده (سطر به سطر) — "
                        "در بخش «مشاهده خروجی» و در ناحیه «نواحی شناسایی‌شده OCR».")
         if payload.get("lines_preview"):

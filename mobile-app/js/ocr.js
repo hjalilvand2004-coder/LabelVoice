@@ -141,8 +141,14 @@
   }
 
   // اجرای کامل روی نسخه‌های تصویر — معادل provider.run + منطق binarized در pipeline.py
+  // v1.7.0: گروه‌بندی خروجی به تفکیک نسخه (byVariant) برای ادغام بهترین-اول
   function runOcr(canvases, settings, langQuality, onProgress) {
     var rawPieces = [];
+    var byVariant = {};
+    var add = function (variant, words) {
+      rawPieces = rawPieces.concat(words);
+      byVariant[variant] = (byVariant[variant] || []).concat(words);
+    };
     return getWorker(settings, langQuality, onProgress).then(function (env) {
       var worker = env.worker;
       var psms = [settings.tesseract_psm];
@@ -150,15 +156,18 @@
       if (extra && extra !== settings.tesseract_psm) psms.push(extra);
 
       var chain = Promise.resolve();
-      ['original', 'gray_clahe'].forEach(function (name) {
+      var mainNames = ['original', 'gray_clahe'];
+      if (settings.use_white_on_dark_variant && canvases.white_on_dark) {
+        // نسخه متن-روشن-روی-تیره: نام سفید روی جعبه‌های رنگی (v1.7.0)
+        mainNames.push('white_on_dark');
+      }
+      mainNames.forEach(function (name) {
         var canvas = canvases[name];
         if (!canvas) return;
         psms.forEach(function (psm) {
           chain = chain.then(function () {
             return recognizeWords(worker, canvas, name, psm)
-              .then(function (words) {
-                rawPieces = rawPieces.concat(words);
-              });
+              .then(function (words) { add(name, words); });
           });
         });
       });
@@ -170,24 +179,34 @@
           .map(function (p) { return p.confidence; });
         if (!confs.length) {
           return recognizeWords(worker, canvases.binarized, 'binarized', psms[0])
-            .then(function (words) { rawPieces = rawPieces.concat(words); });
+            .then(function (words) { add('binarized', words); });
         }
         var mean = confs.reduce(function (s, c) { return s + c; }, 0) / confs.length;
         if (mean >= 0.8) return null;
         return recognizeWords(worker, canvases.binarized, 'binarized', psms[0])
-          .then(function (words) { rawPieces = rawPieces.concat(words); });
+          .then(function (words) { add('binarized', words); });
       });
       // گذر پراکنده (PSM 11): روی بسته‌ها متن‌ها پراکنده‌اند؛ وقتی خوانش
       // خط‌محور کم‌بازده است، این گذر کلمه‌های جاافتاده را برمی‌گرداند
+      // v1.7.0: روی نسخه متن-روشن-روی-تیره هم اجرا می‌شود (برای نام سفید)
       chain = chain.then(function () {
         if (!settings.use_sparse_psm || rawPieces.length >= 25) return null;
-        var canvas = canvases.gray_clahe || canvases.original;
-        if (!canvas) return null;
-        return recognizeWords(worker, canvas, 'sparse11', 11)
-          .then(function (words) { rawPieces = rawPieces.concat(words); });
+        var targets = [];
+        if (canvases.gray_clahe) targets.push(['sparse11', canvases.gray_clahe]);
+        if (settings.use_white_on_dark_variant && canvases.white_on_dark) {
+          targets.push(['sparse11_wod', canvases.white_on_dark]);
+        }
+        var sub = Promise.resolve();
+        targets.forEach(function (t) {
+          sub = sub.then(function () {
+            return recognizeWords(worker, t[1], t[0], 11)
+              .then(function (words) { add(t[0], words); });
+          });
+        });
+        return sub;
       });
       return chain.then(function () {
-        return { rawPieces: rawPieces, cfg: env.cfg };
+        return { rawPieces: rawPieces, byVariant: byVariant, cfg: env.cfg };
       });
     });
   }

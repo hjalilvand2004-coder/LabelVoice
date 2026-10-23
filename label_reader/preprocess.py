@@ -15,6 +15,7 @@ from .config import Settings
 VARIANT_ORIGINAL = "original"
 VARIANT_GRAY_CLAHE = "gray_clahe"
 VARIANT_BINARIZED = "binarized"
+VARIANT_WHITE_ON_DARK = "white_on_dark"
 
 
 def upscale_if_needed(bgr: np.ndarray, target_min_side: int) -> np.ndarray:
@@ -49,6 +50,23 @@ def binarize(bgr: np.ndarray) -> np.ndarray:
     bw = cv2.adaptiveThreshold(
         gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 15)
     return cv2.cvtColor(bw, cv2.COLOR_GRAY2BGR)
+
+
+def white_on_dark(bgr: np.ndarray) -> np.ndarray:
+    """نسخه ویژه «متن روشن روی پس‌زمینه تیره/میانه» (مثل نام سفید روی جعبه آبی/سبز).
+
+    آستانه‌گذاری تطبیقی معکوس: پیکسل‌های روشن‌تر از همسایگی (متن سفید) به‌عنوان
+    پیش‌زمینه علامت می‌خورند و سپس معکوس می‌شوند تا OCR ورودی استاندارد
+    (متن تیره روی زمینه روشن) ببیند. اوتسو سراسری در این سناریو شکست می‌خورد
+    چون مرز جعبه/میز را جدا می‌کند نه متن/جعبه را (آزمایش v1.7.0 روی نمونه
+    جعبه کمک‌دستی: با اوتسو هیچ، با تطبیقی معکوس هر سه واژه خوانده شد).
+    """
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (3, 3), 0)
+    bw = cv2.adaptiveThreshold(
+        blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 51, 12)
+    bw = cv2.medianBlur(bw, 3)
+    return cv2.cvtColor(cv2.bitwise_not(bw), cv2.COLOR_GRAY2BGR)
 
 
 def estimate_skew_angle(bgr: np.ndarray) -> float:
@@ -100,10 +118,16 @@ def crop_fraction(bgr: np.ndarray, box: tuple[float, float, float, float]) -> np
 
 
 def build_variants(bgr: np.ndarray, settings: Settings) -> dict[str, np.ndarray]:
-    """ساخت نسخه‌های پردازشی؛ تصویر اصلی حفظ و بازگردانده می‌شود."""
+    """ساخت نسخه‌های پردازشی؛ تصویر اصلی حفظ و بازگردانده می‌شود.
+
+    واریانت white_on_dark برای متن روشن روی جعبه‌های تیره اضافه شد (v1.7.0)؛
+    در تصویر نمونه جعبه کمک‌دستی، «MEDICINE/BOX» سفید روی سبز-آبی فقط با این
+    واریانت یا CLAHE خوانا می‌شود.
+    """
     base = upscale_if_needed(bgr, settings.target_min_side)
     variants: dict[str, np.ndarray] = {VARIANT_ORIGINAL: base}
     variants[VARIANT_GRAY_CLAHE] = to_gray_clahe(base, settings)
     if settings.use_binarized_variant:
         variants[VARIANT_BINARIZED] = binarize(base)
+    variants[VARIANT_WHITE_ON_DARK] = white_on_dark(base)
     return variants

@@ -256,15 +256,36 @@
     }), new Set(hits)];
   }
 
-  function nameCandidates(consumed, lines) {
+  // دروازه ضدزباله نام (v1.7.0 — معادل _plausible_name در extraction/fields.py):
+  // سطرهای آشغال OCR (مثل «RIE [SE ۱ ES {= ray WE») دیگر نام نمی‌شوند.
+  var NAME_FORBIDDEN_RE = /[\[\]{}<>|=+*#@$%^~\\/_«»"]/;
+
+  function plausibleName(text) {
+    if (!hasAlpha(text)) return false;
+    if (NAME_FORBIDDEN_RE.test(text)) return false;
+    if (!text.length) return false;
+    var alnum = (text.match(/[\p{L}\p{N}]/gu) || []).length;
+    if (alnum / text.length < 0.6) return false;
+    var latin = 0, faDigit = 0;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (/[\u0000-\u024f]/.test(ch) && /\p{L}/u.test(ch)) latin++;
+      if (/[\u06f0-\u06f9\u0660-\u0669]/.test(ch)) faDigit++;
+    }
+    if (latin > 0 && faDigit > 0) return false;
+    return true;
+  }
+
+  function nameCandidates(consumed, lines, settings) {
     var out = [];
     lines.forEach(function (line, idx) {
-      if (consumed.has(idx) || !hasAlpha(line.normalized_text)) return;
+      // v1.7.0: فقط سطرهای باورپذیر و پراطمینان کاندید نام می‌شوند
+      if (consumed.has(idx) || !plausibleName(line.normalized_text)) return;
+      var conf = (line.confidence_mean === null || line.confidence_mean === undefined)
+        ? 0.5 : line.confidence_mean;
+      if (conf < settings.name_min_confidence) return;
       if (line.normalized_text.length > 80) return;
       out.push(idx);
-    });
-    out.sort(function (a, b) {
-      return (lines[a].bbox.y - lines[b].bbox.y) || (lines[a].bbox.x - lines[b].bbox.x);
     });
     return out;
   }
@@ -556,7 +577,8 @@
         for (var c = 0; c < remainder.length; c++) {
           if (/\p{L}/u.test(remainder[c])) alphaCount++;
         }
-        if (alphaCount >= ALPHA_MIN) {
+        // v1.7.0: سطر بالایی هم باید «باورپذیر» باشد، نه فقط حرف‌دار
+        if (alphaCount >= ALPHA_MIN && plausibleName(remainder)) {
           var confT = confOf(lines[top]);
           fields.name = mkRecord('name',
             confT >= settings.low_confidence_threshold ? 'extracted' : 'uncertain', {
@@ -569,9 +591,27 @@
         }
       }
     }
-    var nameIdxList = nameSet ? [] : nameCandidates(consumed, lines);
+    var nameIdxList = nameSet ? [] : nameCandidates(consumed, lines, settings);
     if (nameIdxList.length) {
+      // v1.7.0: «بالاترین سطر باورپذیر» با شرط نزدیکی اطمینان (تفاوت ≤ ۰٫۱۵
+      // با بهترین کاندید) — نام واقعی معمولاً بالای بسته است
+      nameIdxList.sort(function (a, b) {
+        return (lines[a].bbox.y - lines[b].bbox.y) || (lines[a].bbox.x - lines[b].bbox.x);
+      });
+      var bestConf = 0;
+      nameIdxList.forEach(function (i) {
+        var c = (lines[i].confidence_mean === null ||
+          lines[i].confidence_mean === undefined) ? 0.5 : lines[i].confidence_mean;
+        if (c > bestConf) bestConf = c;
+      });
+      var thr = Math.max(bestConf - 0.15, settings.name_min_confidence);
       var idxN = nameIdxList[0];
+      for (var ci = 0; ci < nameIdxList.length; ci++) {
+        var cc = (lines[nameIdxList[ci]].confidence_mean === null ||
+          lines[nameIdxList[ci]].confidence_mean === undefined)
+          ? 0.5 : lines[nameIdxList[ci]].confidence_mean;
+        if (cc >= thr) { idxN = nameIdxList[ci]; break; }
+      }
       var lineN = lines[idxN];
       var confN = confOf(lineN);
       fields.name = mkRecord('name',
@@ -581,9 +621,20 @@
         confidence: Math.round(confN * 100) / 100
       });
       consumed.add(idxN);
-      // چندمحصولی: نام دوم در بخش پایین «تصویر» → درخواست برش یک بسته
+      // چندمحصولی: نام دوم «معتبر» در بخش پایین تصویر → درخواست برش یک بسته
+      // (v1.7.0) شرط سخت‌گیرانه: تک‌خطی، نسبت حرف/رقم بالا، طول کافی؛
+      // با OCR آشغال این هشدار کاذب دیگر صادر نمی‌شود.
       for (var o = 1; o < nameIdxList.length; o++) {
-        if (lines[nameIdxList[o]].bbox.y > 0.55 * refH) {
+        var otherText = lines[nameIdxList[o]].normalized_text;
+        var alphaN = (otherText.match(/\p{L}/gu) || []).length;
+        var latinN = (otherText.match(/[\u0000-\u024f]/gu) || []).filter(function (ch) {
+          return /\p{L}/u.test(ch);
+        }).length;
+        var alnumRatio = (otherText.match(/[\p{L}\p{N}]/gu) || []).length /
+          Math.max(1, otherText.length);
+        var singleScript = (latinN === alphaN) || (latinN === 0);
+        if (lines[nameIdxList[o]].bbox.y > 0.55 * refH && alphaN >= 4 &&
+          singleScript && alnumRatio >= 0.7 && plausibleName(otherText)) {
           extractionWarnings.push(
             'چند ناحیه متنی مستقل در تصویر دیده می‌شود؛ برای نتیجه دقیق، ' +
             'لطفاً یک بسته را برش بزنید یا فقط یک بسته را عکس بگیرید. ' +
@@ -604,6 +655,7 @@
     FIELD_LABELS_FA: FIELD_LABELS_FA,
     MEDICINE_KEYS: MEDICINE_KEYS,
     GENERAL_KEYS: GENERAL_KEYS,
+    plausibleName: plausibleName,
     classifyProductType: classifyProductType,
     resolveCandidates: resolveCandidates,
     extractFields: extractFields

@@ -136,9 +136,8 @@
     sentences.push('بر اساس متن قابل خواندن روی بسته، این ' + typeFa + ' است و ' +
       tn.digitsToPersian(String(presentCount)) + ' فیلد از برچسب خوانده شد:');
 
-    var q = qualitySentence(qualityIssues);
-    if (q) sentences.push(q);
-
+    // v1.7.0: اول اطلاعات خوانده‌شده، بعد هشدار کیفیت (قبلاً هشدار اول می‌آمد
+    // و کاربر حتی با خوانش سالم «دیوار هشدار» می‌دید)
     var order = ['name', 'active_ingredient', 'strength', 'count', 'dosage_form',
       'net_weight', 'ingredients', 'manufacturer', 'batch',
       'production_date', 'expiry_date', 'storage', 'warnings'];
@@ -149,6 +148,9 @@
       var s = fieldSentence(f);
       if (s) sentences.push(s);
     });
+
+    var q = qualitySentence(qualityIssues);
+    if (q) sentences.push(q);
 
     var directives = fields.printed_directives;
     if (directives && isPresent(directives)) {

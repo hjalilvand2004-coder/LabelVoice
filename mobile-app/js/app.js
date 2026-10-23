@@ -12,6 +12,7 @@
     tesseract_psm: 3,
     tesseract_extra_psm: 6,
     low_confidence_threshold: 0.55,
+    name_min_confidence: 0.45,
     target_min_side: 1200,
     max_side_px: 2600,
     clahe_clip_limit: 2.0,
@@ -19,6 +20,7 @@
     deskew_max_angle_deg: 15,
     use_binarized_variant: true,
     use_sharpened_variant: true,
+    use_white_on_dark_variant: true,
     use_sparse_psm: true,
     auto_orientation_retry: true,
     max_file_mb: 10,
@@ -395,11 +397,14 @@
 
   // اجرای یک گذر کامل OCR روی یک بوم (نسخه‌ها + دو PSM + گذرهای کمکی)
   // توجه: buildVariants همگام است و شیء ساده برمی‌گرداند؛ فقط OCR وعده‌دار است.
+  // v1.7.0: byVariant برای ادغام بهترین-اول برگردانده می‌شود.
   function runPass(baseCanvas, settings, langQuality) {
     var built = LBR.preprocess.buildVariants(
       baseCanvas, baseCanvas.width, baseCanvas.height, settings);
     return LBR.ocr.runOcr(built.variants, settings, langQuality, ocrProgress)
-      .then(function (r) { return { pieces: r.rawPieces, built: built }; });
+      .then(function (r) {
+        return { pieces: r.rawPieces, byVariant: r.byVariant || null, built: built };
+      });
   }
 
   // خوانش کم‌بازده؟ (اندک، کم‌اطمینان، یا بدون هیچ فیلد شناخته‌شده)
@@ -493,7 +498,7 @@
           .then(function (pass1) {
             var y1 = LBR.pipeline.scoreOcrYield(pass1.pieces);
             if (!settings.auto_orientation_retry || !isWeakYield(y1)) {
-              return { pieces: pass1.pieces, built: pass1.built, attempts: 1, note: null };
+              return { pieces: pass1.pieces, byVariant: pass1.byVariant, built: pass1.built, attempts: 1, note: null };
             }
             // ۵) خوانش ضعیف → آزمون چرخش ۹۰ درجه (بسته‌های عکاسی‌شده از پهلو)
             setProgress(40, 'خوانش کم‌بازده بود؛ آزمایش جهت‌های دیگر…');
@@ -507,10 +512,11 @@
                 return runPass(ccw, settings, langQuality).then(function (pass3) {
                   var y3 = LBR.pipeline.scoreOcrYield(pass3.pieces);
                   var best = y1; var pick = 1; var pieces = pass1.pieces;
-                  if (y2.score > best.score) { best = y2; pick = 2; pieces = pass2.pieces; }
-                  if (y3.score > best.score) { best = y3; pick = 3; pieces = pass3.pieces; }
+                  var bv = pass1.byVariant;
+                  if (y2.score > best.score) { best = y2; pick = 2; pieces = pass2.pieces; bv = pass2.byVariant; }
+                  if (y3.score > best.score) { best = y3; pick = 3; pieces = pass3.pieces; bv = pass3.byVariant; }
                   return {
-                    pieces: pieces, built: pass1.built, attempts: 3,
+                    pieces: pieces, byVariant: bv, built: pass1.built, attempts: 3,
                     note: 'تصویر در ' + (pick === 1 ? 'جهت اصلی' :
                       (pick === 2 ? 'چرخش ۹۰ درجه ساعتگرد' : 'چرخش ۹۰ درجه پادساعتگرد')) +
                       ' بهتر خوانده شد (امتیاز ' + best.score + ' در برابر ' + y1.score + ').'
@@ -518,7 +524,7 @@
                 });
               }
               return {
-                pieces: pass2.pieces, built: pass1.built, attempts: 2,
+                pieces: pass2.pieces, byVariant: pass2.byVariant, built: pass1.built, attempts: 2,
                 note: 'تصویر در چرخش ۹۰ درجه ساعتگرد بهتر خوانده شد ' +
                   '(امتیاز ' + y2.score + ' در برابر ' + y1.score + ').'
               };
@@ -529,11 +535,24 @@
         durations.ocr_ms = Math.round(performance.now() - t0) - (durations.preprocess_ms || 0);
         // اعلام پایان مرحله ۲ (OCR) با خروجی و ارزیابی همان مرحله
         var st2 = piecesStats(winner.pieces);
+        // v1.7.0: مقایسه نسخه‌های پردازشی در خروجی مرحله شفاف می‌شود
+        var variantLine = null;
+        if (winner.byVariant) {
+          var parts = Object.keys(winner.byVariant).map(function (k) {
+            var vps = winner.byVariant[k] || [];
+            var sc = LBR.pipeline.scoreVariant(vps);
+            return k + ' (' + vps.length + ' قطعه، امتیاز ' + (Math.round(sc * 100) / 100) + ')';
+          });
+          if (parts.length) {
+            variantLine = 'مقایسه نسخه‌های پردازشی (ادغام بهترین-اول): ' + parts.join(' | ');
+          }
+        }
         stageDone('ocr', {
           status: st2.pieces === 0 ? 'fail' : ((st2.mean_conf !== null && st2.mean_conf < 0.6) ? 'warn' : 'done'),
           duration_ms: durations.ocr_ms,
           outputs: [
-            'متن خام بسته‌بندی خوانده شد و قطعه‌های تکراری بین نسخه‌ها ادغام شدند.',
+            'متن خام بسته‌بندی خوانده شد؛ قطعه‌های زباله فیلتر و نواحی تکراری با ادغام بهترین-اول یکسان شدند (v1.7.0).',
+            variantLine || 'نسخه‌های پردازشی: ' + Object.keys(winner.built.variants).join('، '),
             winner.note ? winner.note : 'خوانش در جهت اصلی تصویر کافی بود.',
             'متن استخراج‌شده در بخش «شواهد OCR» قابل مشاهده است.'
           ],
@@ -554,6 +573,7 @@
             qualityMetrics: qualityMetrics,
             languages: settings.ocr_languages,
             variantsUsed: Object.keys(winner.built.variants),
+            byVariant: winner.byVariant || null,
             deskewApplied: deskewApplied,
             deskewAngle: deskewAngle,
             cropApplied: cropApplied,

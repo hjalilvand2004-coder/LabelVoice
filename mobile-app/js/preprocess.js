@@ -191,7 +191,7 @@
   }
 
   // ---------- آستانه‌گذاری تطبیقی (معادل adaptiveThreshold گاوسی) ----------
-  function binarize(gray, w, h, windowSize, c) {
+  function binarizeCore(gray, w, h, windowSize, c, above) {
     // میانگین با تصویر انتگرالی (تقریب کارآمد پنجره گاوسی)
     var integral = new Float64Array((w + 1) * (h + 1));
     for (var y = 0; y < h; y++) {
@@ -213,10 +213,28 @@
           integral[(y1c + 1) * (w + 1) + x0] +
           integral[y0 * (w + 1) + x0];
         var mean = sum / area;
-        out[y2 * w + x2] = gray[y2 * w + x2] > mean - c ? 255 : 0;
+        if (above) {
+          // متن روشن‌تر از همسایگی → جوهر (برای متن سفید روی جعبه تیره)
+          out[y2 * w + x2] = gray[y2 * w + x2] > mean + c ? 255 : 0;
+        } else {
+          out[y2 * w + x2] = gray[y2 * w + x2] > mean - c ? 255 : 0;
+        }
       }
     }
     return out;
+  }
+
+  function binarize(gray, w, h, windowSize, c) {
+    return binarizeCore(gray, w, h, windowSize, c, false);
+  }
+
+  // نسخه ویژه «متن روشن روی پس‌زمینه تیره/میانه» (v1.7.0 — معادل white_on_dark
+  // در preprocess.py): desktop = bitwise_not(adaptiveThreshold(BINARY_INV,51,12))
+  // که از نظر ریاضی ≡ adaptiveThreshold(BINARY, 51, 12) است؛ یعنی متن روشن
+  // (روشن‌تر از همسایگی منهای C) جوهر سفید می‌شود و تسراکت ۵ پلاریتی معکوس
+  // را خودش تشخیص می‌دهد (روی نمونه واقعی «MEDICINE / BOX» را خواند).
+  function whiteOnDark(gray, w, h, windowSize, c) {
+    return binarizeCore(gray, w, h, windowSize, c, false);
   }
 
   // ---------- صاف‌کردن چرخش کم‌زاویه (معادل auto_deskew) ----------
@@ -308,6 +326,11 @@
       var bw = binarize(gray, scaled.w, scaled.h, 31, 15);
       variants[VARIANT_BINARIZED] = grayToCanvas(bw, scaled.w, scaled.h);
     }
+    // v1.7.0: نسخه متن-روشن-روی-تیره برای نام سفید روی جعبه‌های رنگی
+    if (settings.use_white_on_dark_variant) {
+      var wod = whiteOnDark(gray, scaled.w, scaled.h, 51, 12);
+      variants[VARIANT_WHITE_ON_DARK] = grayToCanvas(wod, scaled.w, scaled.h);
+    }
     return {
       variants: variants,
       width: scaled.w,
@@ -322,11 +345,13 @@
     VARIANT_GRAY_CLAHE: VARIANT_GRAY_CLAHE,
     VARIANT_BINARIZED: VARIANT_BINARIZED,
     VARIANT_SHARPENED: VARIANT_SHARPENED,
+    VARIANT_WHITE_ON_DARK: VARIANT_WHITE_ON_DARK,
     loadImage: loadImage,
     drawScaled: drawScaled,
     toGrayData: toGrayData,
     clahe: clahe,
     binarize: binarize,
+    whiteOnDark: whiteOnDark,
     sharpenGray: sharpenGray,
     cropCanvas: cropCanvas,
     rotate90: rotate90,
