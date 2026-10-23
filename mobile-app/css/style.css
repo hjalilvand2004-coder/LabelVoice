@@ -658,3 +658,13 @@ main { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
   background: color-mix(in srgb, var(--stage-color) 26%, transparent);
 }
 .stage-row.st-fail { --stage-color: var(--bad); }
+
+/* v1.8.1: احترام به prefers-reduced-motion — کاربرانی که کاهش حرکت خواسته‌اند */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -37,7 +37,13 @@ from label_reader.ui_helpers import (
     PRODUCT_TYPE_FA, STATUS_FA, draw_ocr_boxes, editable_fields,
     fields_to_rows, inject_rtl, pil_to_bytes,
 )
-from label_reader.ui_theme import STAGE_COLORS, STAGE_ICONS, THEME_CSS, stage_timeline_html
+from label_reader.ui_theme import (
+    DARK_THEME_CSS,
+    STAGE_COLORS,
+    STAGE_ICONS,
+    THEME_CSS,
+    stage_timeline_html,
+)
 from label_reader.validation import ImageValidationError
 
 st.set_page_config(page_title=APP_NAME_FA, page_icon="💊", layout="wide")
@@ -114,6 +120,13 @@ with st.sidebar:
         help="در حین پردازش، تکمیل هر مرحله با رنگ اختصاصی همان مرحله اعلام و "
              "خروجی و معیارهای ارزیابی کیفیت آن نمایش داده می‌شود.")
     tech_help("stages", "🧩 مراحل رنگی چگونه کار می‌کنند؟", "st")
+
+    st.subheader("🎨 نمایش")
+    if st.toggle("🌙 حالت تاریک", key="dark_mode",
+                 help="پالت تیرهٔ سرمه‌ای برای محیط کم‌نور؛ چیدمان و رنگ مراحل "
+                      "بدون تغییر می‌ماند. موبایل/PWA به‌طور خودکار از تنظیم "
+                      "سیستم پیروی می‌کند."):
+        st.markdown(DARK_THEME_CSS, unsafe_allow_html=True)
 
     st.divider()
     st.subheader("🔒 حریم خصوصی")
