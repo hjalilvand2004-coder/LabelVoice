@@ -2,7 +2,7 @@
 
 نسخه‌ای که **بدون پایتون، بدون پای‌چارم، بدون نصب هیچ چیز** اجرا می‌شود؛ فقط یک مرورگر مدرن می‌خواهد (Chrome، Edge، Firefox، Safari). کل منطق نسخه دسکتاپ (نرمال‌سازی، استخراج، نگهبان ایمنی، پاسخ قالبی) به جاوااسکریپت منتقل شده و موتور OCR داخل خود مرورگر (Tesseract.js / WebAssembly) اجرا می‌شود.
 
-> 📲 **اندروید ۷ به بالا و ترجیح می‌دهید اپ نصب‌شده داشته باشید؟** APK آماده را از [Releases](https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest) نصب کنید: فایل `LabelVoice-Android-1.8.1.apk` (یا آخرین نسخه در Releases) — همین وب‌اپ داخل APK جاسازی شده و کاملاً آفلاین اجرا می‌شود. راهنما: [android/README-ANDROID-fa.md](../android/README-ANDROID-fa.md)
+> 📲 **اندروید ۷ به بالا و ترجیح می‌دهید اپ نصب‌شده داشته باشید؟** APK آماده را از [Releases](https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest) نصب کنید: فایل `LabelVoice-Android-1.8.2.apk` (یا آخرین نسخه در Releases) — همین وب‌اپ داخل APK جاسازی شده و کاملاً آفلاین اجرا می‌شود. راهنما: [android/README-ANDROID-fa.md](../android/README-ANDROID-fa.md)
 
 > **مرز ایمنی همان نسخه دسکتاپ است:** این ابزار فقط «متن روی بسته» را می‌خواند. قدرت درج‌شده هرگز «دوز مصرف» نامیده نمی‌شود و هیچ توصیه پزشکی، مقدار مصرف یا تشخیصی ارائه نمی‌شود. هر فیلد به شواهد OCR (شناسه قطعه‌ها) متصل است.
 

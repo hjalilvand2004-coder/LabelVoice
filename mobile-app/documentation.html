@@ -892,6 +892,8 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <h2>تاریخچه نسخه‌ها</h2>
   </div>
   <div class="timeline">
+    <div class="tl-item reveal"><h4>بازگردانی تجربهٔ دسکتاپ در وب قابل حمل + موتور آفلاین کامل <span class="ver">v1.8.2</span></h4>
+      <p>نسخهٔ تک‌فایلی که در ریلیز قبل منتشر شد فقط چیدمان موبایل (ستون ۷۲۰px + تب‌بار پایین) داشت و موتور OCR آن از CDN بارگیری می‌شد — عقب‌گردی نسبی نسبت به دسکتاپ Streamlit بود. در v1.8.2 همان تجربهٔ محبوب دسکتاپ به وب قابل حمل بازگشت: (۱) <b>پوستهٔ دسکتاپ سایدباری</b> ≥۱۰۲۴px با چهار بخش «خواندن دارو / گزارشات و ارزیابی / راهنما و مستندات / دربارهٔ طراحان» + بخش «🎨 نمایش» با کلید «🌙 حالت تاریک» دستی (هم‌ارز Streamlit؛ <code>css/style.css</code> + <code>js/app.js</code>) — در موبایل همان تب‌بار قبلی حفظ شده است؛ (۲) <b>حالت تاریک دستی</b> با واریانت‌های خودکار تولیدشدهٔ <code>html.dark</code> از همان بلوک‌های <code>prefers-color-scheme</code>؛ (۳) <b>موتور OCR کاملاً آفلاین در تک‌فایلی</b>: کارگر Tesseract، هستهٔ WASM (simd-lstm) و دادهٔ زبان best فارسی/انگلیسی به‌صورت data: URL داخل فایل تزریق می‌شوند (<code>scripts/build_singlefile.py</code> + <code>js/ocr.js</code> + <code>js/offline-engine.js</code>) — محدودیت شناخته‌شدهٔ مرورگرها «importScripts(blob:) در مبدا-ناشناس file://» با تزریق data: URL در پرلود کارگر دور زده می‌شود و در صورت شکست، زنجیرهٔ بازگشت jsdelivr → unpkg فعال است؛ آزمون E2E سرکوب‌شدهٔ شبکه (مسدودسازی همهٔ درخواست‌های خارجی) خوانش کامل یک نمونهٔ واقعی با ۵ مرحلهٔ رنگی و ۷ فیلد را بدون حتی یک درخواست شبکه تأیید کرد. فایل تک‌فایلی ~۱۵MB شد؛ ۶۴ آزمون Node پاس؛ کش سرویس‌ورکر → v10.</p></div>
     <div class="tl-item reveal"><h4>حالت تاریک دسکتاپ + احترام به کاهش حرکت <span class="ver">v1.8.1</span></h4>
       <p>تکمیل بند ۶ چارچوب «سیستم طراحی مشترک» (حالت روشن و تاریک + رعایت <code>prefers-reduced-motion</code>): در دسکتاپ (Streamlit) کلید «🌙 حالت تاریک» به بخش نمایش سایدبار اضافه شد — پالت تیرهٔ سرمه‌ای روی بدنهٔ اصلی، کارت‌ها، پاسخ بزرگ، خط‌زمان مراحل، چیپ‌های وضعیت فیلد، جدول‌ها، فرم‌ها و اجزای بومی Streamlit اعمال می‌شود و رنگ اختصاصی هر مرحلهٔ پردازش حفظ می‌شود (<code>label_reader/ui_theme.py: DARK_THEME_CSS</code> + تزریق شرطی در <code>app.py</code>)؛ سایدبار گرادیانی از قبل تیره است. موبایل/PWA از قبل با <code>prefers-color-scheme</code> حالت تاریک خودکار داشت (بدون تغییر). در هر دو سامانه، برای کاربرانی که در سیستم‌عامل «کاهش حرکت» فعال کرده‌اند انیمیشن نبض/محو خاموش می‌شود (<code>ui_theme.py</code> + <code>css/style.css</code>)؛ کش سرویس‌ورکر به v9 ارتقا یافت، فایل تک‌فایلی بازسازی شد و README بخش «تازه در v1.8.1» را گرفت. امنیت: توکن افشاشده در گفتگو از پیکربندی گیت حذف شد (گیت‌هاب از قبل ابطالش کرده بود). همان ۱۰۶ آزمون pytest + ۶۴ آزمون Node پاس.</p></div>
     <div class="tl-item reveal"><h4>بازطراحی موتور خوانش فارسی + گرافیک جدید دو سامانه <span class="ver">v1.8.0</span></h4>
@@ -918,7 +920,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 </section>
 
 <footer class="docfoot">
-  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۸.۱ · 👨‍💻 توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
+  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۸.۲ · 👨‍💻 توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
   <div class="links">
     <a href="index.html">🚀 برنامه</a>
     <a href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ GitHub</a>

@@ -668,3 +668,142 @@ main { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   پوستهٔ دسکتاپ با سایدبار (v1.8.2) — بازگردانی تجربهٔ نسخهٔ دسکتاپ
+   چیدمان سایدباری ۴بخشی + خط‌زمان پهن + حالت تاریک دستی
+   ============================================================ */
+.sidebar { display: none; }
+
+@media (min-width: 1024px) {
+  .app-shell {
+    display: flex;
+    align-items: stretch;
+    min-height: 100vh;
+  }
+  .app-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .app-content main { flex: 1; }
+
+  /* ---- سایدبار ---- */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 292px;
+    flex: 0 0 292px;
+    padding: 1.2rem 1rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+    background: linear-gradient(180deg, #0d2438 0%, #103349 55%, #0d3a44 100%);
+    color: #e8f4f5;
+  }
+  .sb-brand {
+    display: flex; align-items: center; gap: .7rem;
+    padding: .2rem .3rem 1.1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, .14);
+  }
+  .sb-brand .logo { width: 44px; height: 44px; border-radius: 10px; }
+  .sb-title { font-weight: 800; font-size: 1.06rem; color: #fff; }
+  .sb-sub { font-size: .78rem; color: #9bcdcf; margin-top: .15rem; }
+
+  .sb-nav { display: flex; flex-direction: column; gap: .35rem; }
+  .snav-btn {
+    display: flex; align-items: center; gap: .65rem;
+    width: 100%; padding: .72rem .9rem;
+    border: none; border-right: 3px solid transparent; border-radius: 12px;
+    background: transparent; color: #d7ecee;
+    font: inherit; font-size: .95rem; text-align: right; cursor: pointer;
+    transition: background .2s, border-color .2s, color .2s;
+  }
+  .snav-btn:hover { background: rgba(255, 255, 255, .08); }
+  .snav-btn.active {
+    background: rgba(13, 115, 119, .38);
+    border-right-color: #2ec4b6;
+    color: #fff; font-weight: 700;
+  }
+  .snav-ic { font-size: 1.15rem; width: 1.4rem; text-align: center; }
+
+  .sb-group {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, .14);
+  }
+  .sb-group-title { font-size: .8rem; color: #9bcdcf; margin-bottom: .55rem; }
+  .sb-switch {
+    display: flex; align-items: center; gap: .65rem;
+    cursor: pointer; font-size: .92rem; color: #d7ecee;
+  }
+  .sb-switch input {
+    appearance: none; -webkit-appearance: none;
+    width: 40px; height: 22px; margin: 0;
+    background: rgba(255, 255, 255, .22);
+    border-radius: 999px; position: relative; cursor: pointer;
+    transition: background .2s; flex: 0 0 auto;
+  }
+  .sb-switch input::after {
+    content: ''; position: absolute; top: 2.5px; inset-inline-start: 2.5px;
+    width: 17px; height: 17px; background: #fff; border-radius: 50%;
+    transition: transform .2s;
+  }
+  .sb-switch input:checked { background: #2ec4b6; }
+  .sb-switch input:checked::after { transform: translateX(-17px); }
+  [dir="rtl"] .sb-switch input:checked::after { transform: translateX(-17px); }
+
+  .sb-foot { font-size: .78rem; color: #8fb6bb; line-height: 1.9; }
+  .sb-ver { color: #c9ecee; font-weight: 700; }
+
+  /* تب‌بار فقط ابزار موبایل است — در دسکتاپ سایدبار جایگزین آن است */
+  .tab-bar { display: none; }
+  .app-content { padding-bottom: 0; }
+
+  /* ---- محتوای پهن‌تر دسکتاپ ---- */
+  .app-content .header-row,
+  .app-content main,
+  .app-content .app-footer { max-width: 1100px; }
+  .report-tiles { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .docs-links { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; align-items: stretch; }
+  .docs-links .btn { width: auto; }
+  .input-buttons { grid-template-columns: 1fr 1fr; }
+  .author-grid { grid-template-columns: 1fr 1fr; }
+  .response-actions { flex-wrap: wrap; }
+  .stages-hint, .stages-title { max-width: none; }
+}
+
+/* ===== html.dark — معادل دستی بلوک‌های prefers-color-scheme (v1.8.2) ===== */
+html.dark:root {
+    --teal: #3fb8bd;
+    --teal-dark: #1d6d71;
+    --teal-light: #123a3c;
+    --bg: #101a1b;
+    --card: #182627;
+    --text: #e2eeee;
+    --text-soft: #9cb5b6;
+    --border: #274042;
+    --ok: #6fd08c;
+    --ok-bg: #153a22;
+    --warn: #e6b755;
+    --warn-bg: #3a2f14;
+    --bad: #f28b85;
+    --bad-bg: #42201d;
+    --gray-bg: #1e2d2e;
+    --corrected: #6fd0c5;
+    --corrected-bg: #11393a;
+  }
+html.dark h2 { color: var(--teal); }
+html.dark .btn-secondary { color: var(--teal); }
+html.dark .sample-chip { color: var(--teal); }
+html.dark .help-btn { color: var(--teal); }
+html.dark .help-sec-title { color: var(--teal); }
+html.dark .reqs-box > summary { color: var(--teal); }
+html.dark .tab-bar { background: rgba(24, 38, 39, .96); }
+html.dark .report-tile { background: linear-gradient(160deg, #1d2f31, #182627); }
+html.dark .report-tile .rt-v { color: #c9f0f7; }
+html.dark .author-card { background: linear-gradient(160deg, #1d2f31, #182627); }

@@ -13,26 +13,57 @@
   var TESSERACT_JS_VERSION = '6.0.1';
   var TESSERACT_CORE_VERSION = '6.1.2';
   var CDN = 'https://cdn.jsdelivr.net/npm/';
+  var CDN_FALLBACK = 'https://unpkg.com/';
   var TESSDATA_CDN = 'https://tessdata.projectnaptha.com/4.0.0';
 
   var _worker = null;
   var _workerKey = null;
+  var _inlineUrls = null; // blob-URLهای موتور درون‌خطی (یک‌بار ساخته می‌شوند)
 
   function abs(path) {
     return new URL(path, (document.baseURI || location.href)).href;
+  }
+
+  // ---------- موتور درون‌خطی برای نسخهٔ تک‌فایلی (v1.8.2) ----------
+  // window.__LBR_OFFLINE__ = { v, prelude: <منبع پرلودِ کارگر — شامل همهٔ منابع به‌صورت data: URL>
+  // چون importScripts(blob:) در مبدا-ناشناس (file://) مسدود است ولی importScripts(data:)
+  // و new Worker(blob) مجازند: پرلود Blob می‌شود (با workerBlobURL:false) و داخل
+  // کارگر، هستهٔ WASM و دادهٔ زبان با data: URL تزریق می‌شوند.
+  function buildInlineUrls() {
+    if (_inlineUrls) return _inlineUrls;
+    var preludeUrl = URL.createObjectURL(
+      new Blob([root.__LBR_OFFLINE__.prelude], { type: 'text/javascript' }));
+    _inlineUrls = { workerPath: preludeUrl };
+    return _inlineUrls;
+  }
+
+  function cdnConfig(base) {
+    var c = base || CDN;
+    return {
+      mode: 'cdn',
+      workerPath: c + 'tesseract.js@' + TESSERACT_JS_VERSION + '/dist/worker.min.js',
+      corePath: c + 'tesseract.js-core@' + TESSERACT_CORE_VERSION + '/',
+      langPath: TESSDATA_CDN,
+      languages: 'fas+eng'
+    };
   }
 
   // پیکربندی بر اساس نحوه باز شدن صفحه (file:// یا http/https)
   function resolveConfig(langQuality) {
     var isFile = location.protocol === 'file:';
     if (isFile) {
-      return {
-        mode: 'cdn',
-        workerPath: CDN + 'tesseract.js@' + TESSERACT_JS_VERSION + '/dist/worker.min.js',
-        corePath: CDN + 'tesseract.js-core@' + TESSERACT_CORE_VERSION + '/',
-        langPath: TESSDATA_CDN,
-        languages: 'fas+eng'
-      };
+      // v1.8.2: تک‌فایلی با موتور درون‌خطی → کاملاً آفلاین
+      if (root.__LBR_OFFLINE__) {
+        var u = buildInlineUrls();
+        return {
+          mode: 'inline',
+          workerPath: u.workerPath,
+          corePath: 'inline://core/',
+          langPath: 'inline://lang/',
+          languages: 'fas+eng'
+        };
+      }
+      return cdnConfig();
     }
     return {
       mode: 'local',
@@ -55,11 +86,8 @@
     };
   }
 
-  // ساخت/استفاده مجدد کارگر OCR
-  function getWorker(settings, langQuality, onProgress) {
-    var cfg = resolveConfig(langQuality);
-    var key = [cfg.mode, cfg.langPath, settings.ocr_languages].join('|');
-    if (_worker && _workerKey === key) return Promise.resolve({ worker: _worker, cfg: cfg });
+  // ساخت کارگر با یک پیکربندی مشخص
+  function createWith(cfg, settings, onProgress) {
     if (typeof Tesseract === 'undefined') {
       return Promise.reject(new Error('کتابخانه OCR بارگیری نشده است.'));
     }
@@ -68,12 +96,19 @@
       corePath: cfg.corePath,
       langPath: cfg.langPath,
       gzip: true,
-      logger: getLogger(onProgress),
+      // بدون رابط هم باید تابع باشد؛ undefined باعث خطای تکراری
+      // «m is not a function» در onmessage می‌شد (v1.8.2)
+      logger: getLogger(onProgress) || function () { /* پیام پیشرفت نادیده */ },
       // خطاهای خروجی تمیزتر
       errorHandler: function (e) {
         if (root.console && root.console.warn) root.console.warn('OCR worker:', e);
       }
     };
+    if (cfg.mode === 'inline') {
+      // پرلود خودش Blob کامل است — نباید دوباره در Blob «importScripts» پیچیده شود
+      // (importScripts(blob:) در مبدا-ناشناس file:// توسط مرورگر مسدود است)
+      opts.workerBlobURL = false;
+    }
     return Tesseract.createWorker(settings.ocr_languages, 1, opts)
       .then(function (worker) {
         // آزادسازی کارگر قبلی در صورت تغییر پیکربندی
@@ -81,9 +116,31 @@
           try { _worker.terminate(); } catch (e) { /* نادیده */ }
         }
         _worker = worker;
-        _workerKey = key;
+        _workerKey = [cfg.mode, cfg.langPath, settings.ocr_languages].join('|');
         return { worker: worker, cfg: cfg };
       });
+  }
+
+  // ساخت/استفاده مجدد کارگر OCR — با زنجیرهٔ بازگشت: درون‌خطی → jsdelivr → unpkg
+  function getWorker(settings, langQuality, onProgress) {
+    var cfg = resolveConfig(langQuality);
+    var key = [cfg.mode, cfg.langPath, settings.ocr_languages].join('|');
+    if (_worker && _workerKey === key) return Promise.resolve({ worker: _worker, cfg: cfg });
+    var chain = createWith(cfg, settings, onProgress);
+    if (cfg.mode === 'inline') {
+      chain = chain.catch(function (err) {
+        if (root.console && root.console.warn) {
+          root.console.warn('موتور درون‌خطی OCR شکست خورد؛ بازگشت به CDN:', err);
+        }
+        return createWith(cdnConfig(), settings, onProgress);
+      }).catch(function (err) {
+        if (root.console && root.console.warn) {
+          root.console.warn('CDN اول در دسترس نیست؛ CDN پشتیبان:', err);
+        }
+        return createWith(cdnConfig(CDN_FALLBACK), settings, onProgress);
+      });
+    }
+    return chain;
   }
 
   // اجرای OCR روی یک نسخه تصویر با یک PSM؛ خروجی: آرایه کلمه‌های خام

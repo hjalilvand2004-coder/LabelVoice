@@ -35,7 +35,7 @@ rm -rf build/assets && mkdir -p build/assets
   find . -type f \
     ! -name 'شروع-در-ویندوز.bat' ! -name 'START-WINDOWS.bat' \
     ! -name 'شروع-در-لینوکس-مک.sh' ! -name 'server-windows.ps1' \
-    ! -name 'README-MOBILE-fa.md' \
+    ! -name 'README-MOBILE-fa.md' ! -name 'label-reader-singlefile.html' \
     -exec cp --parents {} ../android/build/assets/ \;
 )
 

@@ -936,7 +936,10 @@
 
     // یادداشت حالت اجرا
     var modeNote = $('mode-note');
-    if (location.protocol === 'file:') {
+    if (location.protocol === 'file:' && window.__LBR_OFFLINE__) {
+      modeNote.textContent = 'حالت تک‌فایلی کاملاً آفلاین: موتور OCR (WASM) و دادهٔ زبان فارسی/انگلیسی ' +
+        'داخل همین فایل ذخیره شده‌اند؛ بدون اینترنت هم کار می‌کند.';
+    } else if (location.protocol === 'file:') {
       modeNote.textContent = 'حالت بدون سرور: موتور OCR و داده زبان از CDN بارگیری می‌شود ' +
         '(نیازمند اینترنت در بار اول). برای اجرای کاملاً آفلاین، برنامه را با لانچر (شروع) باز کنید.';
     } else {
@@ -991,22 +994,32 @@
       if (document.visibilityState === 'hidden') LBR.camera.close();
     });
 
-    // ---------- ناوبری تب‌بار (v1.8.0) ----------
-    var tabBtns = document.querySelectorAll('.tab-btn');
-    tabBtns.forEach(function (btn) {
+    // ---------- ناوبری تب‌بار موبایل + سایدبار دسکتاپ (v1.8.0 → v1.8.2) ----------
+    var navBtns = document.querySelectorAll('.tab-btn, .snav-btn');
+    navBtns.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var pageId = btn.getAttribute('data-page');
         document.querySelectorAll('.page').forEach(function (p) {
           p.classList.toggle('hidden', p.id !== pageId);
           p.classList.toggle('active', p.id === pageId);
         });
-        tabBtns.forEach(function (b) {
-          b.classList.toggle('active', b === btn);
+        navBtns.forEach(function (b) {
+          b.classList.toggle('active', b.getAttribute('data-page') === pageId);
         });
         window.scrollTo({ top: 0, behavior: 'smooth' });
         if (pageId === 'page-reports') refreshReportsPage();
       });
     });
+
+    // ---------- کلید حالت تاریک سایدبار (v1.8.2 — معادل نسخهٔ دسکتاپ) ----------
+    var darkToggle = document.getElementById('dark-toggle');
+    if (darkToggle) {
+      darkToggle.checked = document.documentElement.classList.contains('dark');
+      darkToggle.addEventListener('change', function () {
+        document.documentElement.classList.toggle('dark', darkToggle.checked);
+        try { localStorage.setItem('lbr_dark', darkToggle.checked ? '1' : '0'); } catch (e) { /* نادیده */ }
+      });
+    }
   }
 
   // ---------- صفحهٔ گزارش‌ها: ارزیابی آخرین پردازش (v1.8.0) ----------
