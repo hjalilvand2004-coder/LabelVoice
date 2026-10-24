@@ -38,8 +38,8 @@ from label_reader.stages import (
 )
 from label_reader.tts import TtsError, make_tts_provider, synthesize_with_fallback
 from label_reader.ui_helpers import (
-    PRODUCT_TYPE_FA, STATUS_FA, draw_ocr_boxes, editable_fields,
-    fields_to_rows, inject_rtl, pil_to_bytes,
+    PRODUCT_TYPE_FA, STATUS_FA, draw_boxes_from_dicts, draw_ocr_boxes,
+    editable_fields, fields_to_rows, inject_rtl, pil_to_bytes,
 )
 from label_reader.ui_theme import (
     DARK_THEME_CSS,
@@ -322,6 +322,9 @@ if page == "read":
         stage_records: list[dict] = []
         stage_images: dict[str, object] = {}
         current_stage: dict[str, str | None] = {"key": None}
+        # v2.6.0: مسیر گام‌به‌گام OpenCV و خوانش خام OCR — هر پردازش از صفر
+        st.session_state["opencv_trace"] = []
+        st.session_state["ocr_readings"] = []
 
         timeline_slot = st.empty()
         status_slot = st.empty()
@@ -339,6 +342,22 @@ if page == "read":
             if img_bgr is not None:
                 stage_images[key] = Image.fromarray(
                     cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+            # v2.6.0: خروجی گام‌به‌گام OpenCV (تصویر هر عملیات) و خوانش
+            # خام هر نسخهٔ پردازشی در session نگه‌داری می‌شود تا بخش
+            # «دیدن کار OpenCV و خوانش خام OCR» پس از پردازش رندر شود.
+            trace = payload.pop("opencv_trace", None)
+            if trace:
+                conv_trace = []
+                for entry in trace:
+                    t_img = entry.pop("image_bgr", None)
+                    entry["image"] = (
+                        Image.fromarray(cv2.cvtColor(t_img, cv2.COLOR_BGR2RGB))
+                        if t_img is not None else None)
+                    conv_trace.append(entry)
+                st.session_state["opencv_trace"] = conv_trace
+            readings = payload.pop("variant_readings", None)
+            if readings is not None:
+                st.session_state["ocr_readings"] = readings
             current_stage["key"] = None
             render_timeline()
 
@@ -500,6 +519,85 @@ if page == "read":
                     "این جدول در زمان اجرا از `label_reader/models_info.py` ساخته "
                     "می‌شود؛ هر فیلد استخراج‌شده به شناسهٔ شاهد (ocr_* از موتورهای "
                     "OCR یا vlm-* از دستیار بینایی) متصل است.")
+
+        # v2.6.0 — بخش «دیدن کار OpenCV و خوانش خام OCR»: خروجی تصویری هر
+        # عملیات پیش‌پردازش + متن/کادر خوانش هر نسخه، قبل از ادغام و رأی‌گیری
+        _opencv_trace = get_state("opencv_trace") or []
+        _ocr_readings = get_state("ocr_readings") or []
+        if _opencv_trace or _ocr_readings:
+            st.divider()
+            st.subheader("🔬 دیدن کار OpenCV و خوانش خام OCR (گام‌به‌گام)")
+            tech_help("trace", "🧩 چرا چند نسخه ساخته می‌شود و این بخش چیست؟", "tr")
+            st.caption(
+                "هر تغییری که OpenCV روی تصویر شما می‌دهد، گام‌به‌گام با توضیح "
+                "عین عملیات (نام تابع cv2 و پارامترها) نمایش داده می‌شود؛ سپس "
+                "خوانش خام هر نسخهٔ پردازشی را می‌بینید — یعنی OCR دقیقاً از کجای "
+                "تصویر چه متنی خوانده، قبل از آنکه نتایج ادغام و رأی‌گیری شوند. "
+                "این بخش فقط برای شفافیت است و تغییری در نتیجه ایجاد نمی‌کند.")
+
+            if _opencv_trace:
+                st.markdown("**۱) مسیر تصویر در پیش‌پردازش — خروجی هر عملیات:**")
+                _tcols = st.columns(2)
+                for _i, _entry in enumerate(_opencv_trace):
+                    with _tcols[_i % 2]:
+                        st.markdown(
+                            f'<div style="font-weight:700;color:#0d47a1;'
+                            f'font-size:1.02rem;">{_i + 1}. '
+                            f'{_entry.get("title_fa", "")}</div>',
+                            unsafe_allow_html=True)
+                        st.caption(_entry.get("desc_fa", ""))
+                        if _entry.get("image") is not None:
+                            st.image(_entry["image"], use_container_width=True)
+                        _m = _entry.get("metrics") or {}
+                        st.caption(
+                            f"📊 تیزی {_m.get('sharpness', '—')} · "
+                            f"کنتراست {_m.get('contrast', '—')} · "
+                            f"روشنایی {_m.get('brightness', '—')}")
+
+            if _ocr_readings:
+                st.markdown("**۲) خوانش خام هر نسخه — OCR دقیقاً چه خواند؟**")
+                st.caption(
+                    "به‌ازای هر نسخهٔ پردازشی، قطعه‌های نگه‌داشته‌شده پس از گیت "
+                    "کیفیت (و شمار قطعه‌های ردشده) با کادر سبز روی همان تصویر "
+                    "نشان داده می‌شود؛ این همان خوانشی است که بعداً با رأی "
+                    "اجماعی ادغام می‌شود.")
+                _variant_img = {
+                    e.get("step"): e.get("image")
+                    for e in _opencv_trace if e.get("image") is not None}
+                for _r in _ocr_readings:
+                    _name = _r.get("variant", "؟")
+                    _engs = " + ".join(_r.get("engines") or []) or "—"
+                    _pieces = _r.get("pieces") or []
+                    _dropped = _r.get("dropped", 0)
+                    with st.expander(
+                            f"🔤 نسخهٔ «{_name}» — موتور {_engs} — "
+                            f"{len(_pieces)} قطعه نگه‌داشته‌شده · "
+                            f"{_dropped} قطعه ردشده"):
+                        _vimg = _variant_img.get(_name)
+                        if _vimg is not None and _pieces:
+                            st.image(
+                                draw_boxes_from_dicts(_vimg, _pieces),
+                                caption=(f"کادر سبز = نواحی خوانده‌شده روی "
+                                         f"نسخهٔ {_name}"),
+                                use_container_width=True)
+                        if _pieces:
+                            _joined = " / ".join(p["text"] for p in _pieces)
+                            st.markdown(
+                                '<div class="lv-scope">📄 متن پیوستهٔ خوانش '
+                                f'این نسخه: {_joined}</div>',
+                                unsafe_allow_html=True)
+                            st.dataframe(
+                                [{"متن خام": p["text"],
+                                  "اطمینان": ("—" if p.get("confidence") is None
+                                              else f"{round(p['confidence'] * 100)}٪"),
+                                  "موتور": p.get("engine") or "—",
+                                  "مکان (x,y)": f"({p.get('x', 0)}, {p.get('y', 0)})",
+                                  "اندازه (w×h)": f"{p.get('w', 0)}×{p.get('h', 0)}"}
+                                 for p in _pieces],
+                                hide_index=True, use_container_width=True)
+                        else:
+                            st.caption("این نسخه قطعهٔ قابل‌قبولی تولید نکرد "
+                                       "(همه توسط گیت کیفیت رد شدند).")
 
         left_col, right_col = st.columns([3, 2])
 

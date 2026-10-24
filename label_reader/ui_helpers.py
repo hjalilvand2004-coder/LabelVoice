@@ -68,6 +68,36 @@ def draw_ocr_boxes(pil_image: Image.Image, pieces: list[OcrPiece]) -> Image.Imag
     return out
 
 
+def draw_boxes_from_dicts(
+    pil_image: Image.Image, pieces: list[dict],
+    color=(13, 121, 62), label_color=(13, 82, 44),
+) -> Image.Image:
+    """کادر سبز روی خوانش خام هر نسخهٔ پردازشی (v2.6.0).
+
+    pieces همان dictهای «variant_readings» خط لوله است:
+    {"text", "confidence", "x", "y", "w", "h", "engine"}.
+    برچسب هر کادر = متن خام خوانده‌شده + درصد اطمینان؛ تا کاربر ببیند
+    موتور OCR دقیقاً از کجای تصویر چه چیزی خوانده است.
+    """
+    out = pil_image.copy()
+    draw = ImageDraw.Draw(out)
+    for p in pieces:
+        try:
+            x0, y0 = int(p.get("x", 0)), int(p.get("y", 0))
+            x1 = x0 + int(p.get("w", 0))
+            y1 = y0 + int(p.get("h", 0))
+        except (TypeError, ValueError):
+            continue
+        draw.rectangle([x0, y0, x1, y1], outline=color, width=3)
+        conf = p.get("confidence")
+        conf_txt = f" {int(conf * 100)}%" if isinstance(conf, (int, float)) else ""
+        text = (p.get("text") or "").strip()
+        if text:
+            draw.text((x0 + 2, max(0, y0 - 16)), f"{text}{conf_txt}",
+                      fill=label_color)
+    return out
+
+
 def fields_to_rows(fields: dict[str, FieldRecord]) -> list[dict]:
     rows = []
     for f in fields.values():

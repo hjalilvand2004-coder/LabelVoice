@@ -140,12 +140,91 @@ def build_variants(bgr: np.ndarray, settings: Settings) -> dict[str, np.ndarray]
     واریانت white_on_dark برای متن روشن روی جعبه‌های تیره (v1.7.0) و
     ink_isolated برای جوهر رنگی روی زمینه روشن (v1.8.0) اضافه شده‌اند.
     """
+    variants, _trace = build_variants_traced(bgr, settings, collect_trace=False)
+    return variants
+
+
+def build_variants_traced(
+    bgr: np.ndarray, settings: Settings, collect_trace: bool = True,
+) -> tuple[dict[str, np.ndarray], list[dict]]:
+    """نسخهٔ ردیابی‌شدهٔ build_variants (v2.6.0) — برای نمایش گام‌به‌گام.
+
+    خروجی دوم، فهرست گام‌های OpenCV است: هر گام شامل کلید، عنوان و توضیح
+    فارسیِ عین عملیات انجام‌شده با cv2 و خودِ تصویر حاصل از همان گام، تا
+    کاربر «تغییراتی که OpenCV روی تصویر ایجاد می‌کند» را ببیند.
+    تصاویر اشاره‌گرِ همان آرایه‌های در حال پردازش‌اند (بدون کپی اضافی)؛
+    با collect_trace=False فقط واریانت‌ها ساخته می‌شود.
+    """
+    trace: list[dict] = []
+
+    def _add(step: str, title_fa: str, desc_fa: str, image: np.ndarray) -> None:
+        if collect_trace:
+            trace.append({"step": step, "title_fa": title_fa,
+                          "desc_fa": desc_fa, "image_bgr": image})
+
+    # ---- گام ۱: بزرگ‌نمایی کنترل‌شده ----
+    min_side = min(bgr.shape[:2])
     base = upscale_if_needed(bgr, settings.target_min_side)
+    if base.shape[0] != bgr.shape[0] or base.shape[1] != bgr.shape[1]:
+        _add(
+            VARIANT_ORIGINAL, "بزرگ‌نمایی کنترل‌شده (cv2.resize)",
+            f"کوتاه‌ترین ضلع تصویر {min_side} پیکسل بود؛ برای موتورهای OCR "
+            f"تا رسیدن به ~{settings.target_min_side} پیکسل با درون‌یابی "
+            "مکعبی (INTER_CUBIC، حداکثر ۳ برابر) بزرگ شد. تصاویر بزرگ‌تر "
+            "از این آستانه دست نمی‌خورند.",
+            base)
+    else:
+        _add(
+            VARIANT_ORIGINAL, "تصویر اصلی (بدون بزرگ‌نمایی)",
+            f"کوتاه‌ترین ضلع تصویر {min_side} پیکسل است و از آستانهٔ "
+            f"{settings.target_min_side} بیشتر است؛ بنابراین تغییر مقیاسی "
+            "اعمال نشد — نسخهٔ «original» همان تصویر ورودی مرحله OpenCV است.",
+            base)
+
+    # ---- گام ۲: خاکستری + نویز‌گیری دوطرفه + CLAHE ----
     variants: dict[str, np.ndarray] = {VARIANT_ORIGINAL: base}
     variants[VARIANT_GRAY_CLAHE] = to_gray_clahe(base, settings)
+    _add(
+        VARIANT_GRAY_CLAHE, "خاکستری + حذف نویز + CLAHE",
+        "۱) cv2.cvtColor به خاکستری؛ ۲) cv2.bilateralFilter (d=5) برای نرم‌کردن "
+        "نویز بدون له‌کردن لبهٔ حروف؛ ۳) cv2.createCLAHE + apply برای تقویت "
+        "کنتراست موضعی (clip="
+        f"{settings.clahe_clip_limit}، شبکهٔ {settings.clahe_tile_size}×"
+        f"{settings.clahe_tile_size}). متن محو/کم‌کنتراست واضح‌تر می‌شود.",
+        variants[VARIANT_GRAY_CLAHE])
+
+    # ---- گام ۳: آستانه‌گذاری تطبیقی (اختیاری) ----
     if settings.use_binarized_variant:
         variants[VARIANT_BINARIZED] = binarize(base)
+        _add(
+            VARIANT_BINARIZED, "آستانه‌گذاری تطبیقی (دودویی)",
+            "cv2.adaptiveThreshold گاوسی (بلوک ۳۱، C=۱۵): هر پیکسل نسبت به "
+            "میانگین همسایگی‌اش سیاه/سفید می‌شود. این نسخه فقط برای «مقایسهٔ "
+            "خوانش» است — اگر خوانش نسخه‌های اصلی خوب باشد، به OCR داده "
+            "نمی‌شود چون آستانهٔ تهاجمی می‌تواند شکل نویسه را تغییر دهد.",
+            variants[VARIANT_BINARIZED])
+
+    # ---- گام ۴: متن روشن روی زمینهٔ تیره ----
     variants[VARIANT_WHITE_ON_DARK] = white_on_dark(base)
+    _add(
+        VARIANT_WHITE_ON_DARK, "متن روشن روی زمینهٔ تیره (معکوس‌سازی تطبیقی)",
+        "GaussianBlur(3×3) + cv2.adaptiveThreshold با THRESH_BINARY_INV "
+        "(بلوک ۵۱، C=۱۲) + medianBlur(3) و در پایان bitwise_not. برای نام‌های "
+        "سفید روی جعبهٔ آبی/سبز: پیکسل‌های روشن‌تر از همسایگی (متن سفید) "
+        "علامت می‌خورند و سپس معکوس می‌شوند تا OCR ورودی استاندارد "
+        "(متن تیره روی زمینهٔ روشن) ببیند.",
+        variants[VARIANT_WHITE_ON_DARK])
+
+    # ---- گام ۵: جداسازی جوهر رنگی ----
     if getattr(settings, "use_ink_isolated_variant", True):
         variants[VARIANT_INK_ISOLATED] = ink_isolated(base)
-    return variants
+        _add(
+            VARIANT_INK_ISOLATED, "جداسازی جوهر رنگی (255 − max(B,G,R))",
+            "بیشینهٔ سه کانال رنگی گرفته می‌شود و از ۲۵۵ کم می‌شود: هر جوهر "
+            "رنگی (آبی/بنفش/قرمز/سبز) که در خاکستری کم‌کنتراست می‌شود، به "
+            "جوهر تیره روی زمینهٔ روشن تبدیل می‌شود؛ زمینهٔ سفید در هر سه "
+            "کانال بالاست و روشن می‌ماند. سپس GaussianBlur ملایم. کمک‌خوان "
+            "متن رنگی روی جعبهٔ سفید.",
+            variants[VARIANT_INK_ISOLATED])
+
+    return variants, trace

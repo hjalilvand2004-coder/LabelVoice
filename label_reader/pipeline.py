@@ -20,7 +20,7 @@ from .ocr import make_provider
 from .ocr.base import OcrProvider, OcrUnavailableError
 from .ocr.easyocr_provider import EasyOcrProvider
 from .ocr.tesseract_provider import TesseractProvider
-from .preprocess import auto_deskew, build_variants, crop_fraction
+from .preprocess import auto_deskew, build_variants, build_variants_traced, crop_fraction
 from .preprocess import (
     VARIANT_BINARIZED, VARIANT_GRAY_CLAHE, VARIANT_INK_ISOLATED, VARIANT_ORIGINAL,
 )
@@ -85,6 +85,18 @@ class LabelReaderPipeline:
         orig_w, orig_h = bgr.shape[1], bgr.shape[0]
 
         # ---- مرحله ۱: OpenCV (کیفیت، برش، اصلاح زاویه، بهبود وضوح) ----
+        # v2.6.0: مسیر گام‌به‌گام OpenCV — خروجی هر عملیات با توضیح فارسی
+        # برای بخش «دیدن کار OpenCV» در رابط کاربری جمع می‌شود.
+        opencv_trace: list[dict] = []
+
+        def _trace_add(step: str, title_fa: str, desc_fa: str,
+                       image: np.ndarray) -> None:
+            opencv_trace.append({
+                "step": step, "title_fa": title_fa, "desc_fa": desc_fa,
+                "metrics": image_quality_metrics(image),
+                "image_bgr": image,
+            })
+
         t_stage = time.perf_counter()
         t0 = time.perf_counter()
         metrics, quality_issues = assess_quality(bgr, self.settings)
@@ -94,11 +106,24 @@ class LabelReaderPipeline:
             "contrast": round(float(cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY).std()), 2),
             "brightness": metrics.mean_brightness,
         }
+        _trace_add(
+            "input", "تصویر ورودی مرحله OpenCV (پس از اعتبارسنجی)",
+            "این همان تصویری است که کاربر بارگذاری/گرفت؛ magic bytes و سقف حجم "
+            "و ابعاد آن در مرحلهٔ اعتبارسنجی تأیید شد. هنوز هیچ تغییری اعمال "
+            "نشده و مبنای مقایسهٔ قبل/بعد همه گام‌های بعدی است.",
+            bgr)
 
         # ۲) برش دستی (اختیاری)
         crop_applied = crop is not None
         if crop is not None:
             bgr = crop_fraction(bgr, crop)
+            _trace_add(
+                "crop", "برش ناحیهٔ برچسب (crop_fraction)",
+                "کادر دستی کاربر به کسری از ابعاد تصویر تبدیل و با برش numpy "
+                "اعمال شد؛ پس‌زمینهٔ اضافی حذف و پردازش و OCR فقط روی ناحیهٔ "
+                "انتخاب‌شده انجام می‌شود. برای تصاویر چندمحصولی لازم است تا "
+                "اطلاعات چند بسته در یک خروجی ادغام نشود.",
+                bgr)
 
         # ۳) صاف‌کردن چرخش کم‌زاویه
         deskew_applied, deskew_angle = False, None
@@ -108,9 +133,22 @@ class LabelReaderPipeline:
                 deskew_applied, deskew_angle = True, round(angle, 2)
                 warnings_fa.append(
                     f"چرخش کم‌زاویه تصویر ({deskew_angle} درجه) اصلاح شد.")
+                _trace_add(
+                    "deskew", "صاف‌کردن چرخش کم‌زاویه (Deskew)",
+                    f"زاویهٔ سطرهای متن با آستانه‌گذاری تطبیقی معکوس + مورفولوژی "
+                    f"اتصال حروف سطر و cv2.minAreaRect برآورد شد: {deskew_angle} "
+                    f"درجه؛ سپس چرخش با cv2.warpAffine (INTER_CUBIC، حاشیهٔ "
+                    f"تکراری) اصلاح شد. زاویه‌های بزرگ‌تر از "
+                    f"{self.settings.deskew_max_angle_deg} درجه قابل اعتماد "
+                    "نیستند و دست نمی‌خورند.",
+                    bgr)
 
-        # ۴) نسخه‌های پردازشی
-        variants = build_variants(bgr, self.settings)
+        # ۴) نسخه‌های پردازشی (با ردیابی گام‌به‌گام v2.6.0)
+        variants, variant_trace = build_variants_traced(
+            bgr, self.settings, collect_trace=True)
+        for _entry in variant_trace:
+            _entry["metrics"] = image_quality_metrics(_entry["image_bgr"])
+            opencv_trace.append(_entry)
         durations["opencv_ms"] = int((time.perf_counter() - t_stage) * 1000)
         issues_note = ""
         issue_codes = [i.code for i in quality_issues if i.code != "ok"]
@@ -126,6 +164,8 @@ class LabelReaderPipeline:
             "deskew_applied": deskew_applied,
             "deskew_angle_deg": deskew_angle,
             "variants": list(variants.keys()),
+            "opencv_steps": [e["title_fa"] for e in opencv_trace],
+            "opencv_trace": opencv_trace,
             "issues_note": issues_note,
             "duration_ms": durations["opencv_ms"],
             "image_bgr": bgr,
@@ -138,6 +178,7 @@ class LabelReaderPipeline:
         # (پیش‌فرض: original,gray_clahe)؛ «original» همیشه حاضر است.
         # v2.3.0: qwen3-vl هم کل تصویر را یکجا می‌خواند — فقط «original».
         restricted_variant_set: set[str] | None = None
+        variant_drop_counts: dict[str, int] = {}
         if provider.name == "surya":
             _sv = str(getattr(self.settings, "surya_variants",
                               "original,gray_clahe"))
@@ -160,10 +201,14 @@ class LabelReaderPipeline:
             if (restricted_variant_set is not None
                     and name not in restricted_variant_set):
                 continue
-            by_variant[name] = self._filter_pieces(
-                provider.run(image, name),
+            _raw = provider.run(image, name)
+            _kept = self._filter_pieces(
+                _raw,
                 image_area=int(variants[VARIANT_ORIGINAL].shape[0]) *
                 int(variants[VARIANT_ORIGINAL].shape[1]))
+            by_variant[name] = _kept
+            variant_drop_counts[name] = variant_drop_counts.get(name, 0) + \
+                (len(_raw) - len(_kept))
 
         # ۵-ب) موتور دوم مکمل (v1.8.0): EasyOCR فقط نواحی‌ای را پر می‌کند که
         # تسراکت ضعیف خوانده؛ در نبود کتابخانه/مدل، بی‌صدا رد می‌شود.
@@ -182,11 +227,15 @@ class LabelReaderPipeline:
                                     "original,gray_clahe")).split(",")
                         if n.strip() in variants]
                     for name in easy_names:
-                        by_variant.setdefault(f"{name}", []).extend(
-                            self._filter_pieces(
-                                easy.run(variants[name], name),
-                                image_area=int(variants[VARIANT_ORIGINAL].shape[0]) *
-                                int(variants[VARIANT_ORIGINAL].shape[1])))
+                        _raw_e = easy.run(variants[name], name)
+                        _kept_e = self._filter_pieces(
+                            _raw_e,
+                            image_area=int(variants[VARIANT_ORIGINAL].shape[0]) *
+                            int(variants[VARIANT_ORIGINAL].shape[1]))
+                        by_variant.setdefault(name, []).extend(_kept_e)
+                        variant_drop_counts[name] = \
+                            variant_drop_counts.get(name, 0) + \
+                            (len(_raw_e) - len(_kept_e))
                     engines_used.append("easyocr")
                     easy_used = True
             except Exception:  # noqa: BLE001 — موتور دوم هرگز پردازش را نمی‌شکند
@@ -203,6 +252,24 @@ class LabelReaderPipeline:
                 "mean_confidence": (round(sum(vconfs) / len(vconfs), 3)
                                     if vconfs else None),
                 "score": round(self._score_variant(vps), 2),
+            })
+
+        # v2.6.0: خوانش خام هر واریانت — «OCR دقیقاً چه خواند؟» قبل از هر
+        # ادغام/رأی‌گیری، به‌ازای هر نسخهٔ پردازشی: متن، اطمینان و مختصات هر
+        # قطعهٔ نگه‌داشته‌شده + شمار قطعه‌های ردشدهٔ گیت کیفیت.
+        variant_readings: list[dict] = []
+        for name, vps in by_variant.items():
+            _plist = sorted(
+                ({"text": p.text, "confidence": p.confidence,
+                  "x": int(p.x), "y": int(p.y), "w": int(p.w), "h": int(p.h),
+                  "engine": getattr(p, "engine", "")} for p in vps),
+                key=lambda d: (d["y"], d["x"]))
+            variant_readings.append({
+                "variant": name,
+                "engines": sorted({getattr(p, "engine", "") for p in vps
+                                   if getattr(p, "engine", "")}),
+                "pieces": _plist,
+                "dropped": variant_drop_counts.get(name, 0),
             })
 
         # ۶) ادغام «بهترین-اول»: مبنا بهترین واریانت؛ بقیه فقط مکمل بدون همپوشانی
@@ -278,6 +345,7 @@ class LabelReaderPipeline:
             "vlm_note": vlm_note,
             "lines_preview": [ln.text for ln in raw_lines[:6]],
             "variant_results": variant_results,
+            "variant_readings": variant_readings,
             "duration_ms": durations["ocr_ms"],
         })
 

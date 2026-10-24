@@ -161,6 +161,12 @@ def build_stage_item(key: str, payload: dict) -> dict:
             else "لازم نبود", "ok"))
         metrics.append(_metric(
             "نسخه‌های پردازشی ساخته‌شده", "، ".join(payload["variants"]), "ok"))
+        # v2.6.0 — مسیر گام‌به‌گام OpenCV در خروجی مرحله اعلام می‌شود
+        _steps = payload.get("opencv_steps") or []
+        if _steps:
+            outputs.append(
+                "🔬 مسیر گام‌به‌گام OpenCV: " + " ← ".join(_steps) +
+                " — تصویر و توضیح هر گام در بخش «🔬 دیدن کار OpenCV و خوانش خام OCR» نمایش داده می‌شود.")
         outputs.append("🖼 خروجی این مرحله: تصویر بهبودیافته (پس از مقیاس، "
                        "CLAHE و تیزکردن) در بخش «مشاهده خروجی» نمایش داده می‌شود.")
         if payload["issues_note"]:
@@ -212,6 +218,19 @@ def build_stage_item(key: str, payload: dict) -> dict:
             outputs.append(
                 "🔀 مقایسه نسخه‌های پردازشی (ادغام بهترین-اول): " +
                 " | ".join(vr_lines))
+        # v2.6.0 — خوانش خام هر نسخه (قبل از ادغام) شفاف می‌شود
+        _readings = payload.get("variant_readings") or []
+        if _readings:
+            _total_dropped = sum(int(r.get("dropped", 0)) for r in _readings)
+            _read_bits = []
+            for r in _readings:
+                _eng = (" + ".join(r.get("engines") or []) or "—")
+                _read_bits.append(
+                    f"«{r['variant']}»: {len(r.get('pieces') or [])} قطعه ({_eng})")
+            outputs.append(
+                "🔍 خوانش خام هر نسخه (قبل از ادغام و رأی‌گیری): " +
+                " | ".join(_read_bits) +
+                f" — مجموع قطعه‌های ردشدهٔ گیت کیفیت: {_total_dropped} — جزئیات و تصویر کادرها در بخش «🔬 دیدن کار OpenCV و خوانش خام OCR».")
         if payload.get("vlm_lines_added"):
             outputs.append(
                 "🤖 " + (payload.get("vlm_note") or "دستیار بینایی سطرهای مکمل ارائه کرد")
