@@ -19,9 +19,16 @@ body {
 }
 .wrap { max-width: 780px; width: 100%; }
 .hero {
-  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 45%, #1e88e5 100%);
-  border-radius: 22px; padding: 30px 28px; color: #fff; text-align: center;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.82) 0%, rgba(247,252,255,.62) 50%, rgba(238,247,255,.38) 100%),
+    url('webapp/assets/header-bg-wide.jpg') center 70% / cover no-repeat,
+    linear-gradient(135deg, #0d47a1 0%, #1565c0 45%, #1e88e5 100%);
+  border-radius: 22px; padding: 30px 28px; color: #0d2b4e; text-align: center;
   box-shadow: 0 14px 34px rgba(13,71,161,.28); margin-bottom: 18px; position: relative; overflow: hidden;
+  border: 1px solid #c8ddf1;
+}
+html.dark-mode .hero, .hero.dark-hero {
+  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 45%, #1e88e5 100%); color: #fff;
 }
 /* v2.0.0: به‌جای واترمارک ایموجی درشت، هالهٔ نوری نرم (هماهنگ با تم مدرن v1.9.0) */
 .hero::after {
@@ -30,9 +37,9 @@ body {
   pointer-events: none;
 }
 .hero .pill-ic { width: 54px; height: 54px; margin: 0 auto 10px; display: block; opacity: .95; }
-.hero h1 { margin: 0 0 8px; font-size: 26px; font-weight: 900; }
-.hero p { margin: 0; color: #dbeafe; font-size: 14px; line-height: 2; }
-.hero .ver { display: inline-block; margin-top: 10px; padding: 3px 14px; border-radius: 999px; font-size: 12px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); }
+.hero h1 { margin: 0 0 8px; font-size: 26px; font-weight: 900; color: #0d47a1; }
+.hero p { margin: 0; color: #2c587f; font-size: 14px; line-height: 2; }
+.hero .ver { display: inline-block; margin-top: 10px; padding: 3px 14px; border-radius: 999px; font-size: 12px; background: rgba(13,71,161,.10); border: 1px solid rgba(13,71,161,.30); color: #0d47a1; font-weight: 700; }
 .lv-ribbon { height: 7px; border-radius: 999px; margin: 0 0 16px; background: linear-gradient(90deg, #0d47a1 0%, #1e88e5 22%, #e3f2fd 34%, #ffffff 44%, #e8f5e9 56%, #43a047 72%, #e53935 100%); border: 1px solid rgba(13,71,161,.18); box-shadow: 0 2px 8px rgba(13,71,161,.22); }
 .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 620px) { .cards { grid-template-columns: 1fr; } }
@@ -78,8 +85,8 @@ code { background:#eef2f7; border-radius:6px; padding:1px 6px; font-size:12px; d
     <svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6.3" y="2.9" width="11.5" height="18.2" rx="5.75" transform="rotate(45 12 12)"/><line x1="8.2" y1="15.8" x2="15.8" y2="8.2"/></svg>
     <h1>برچسب‌خوان هوشمند دارو و محصولات</h1>
     <p>تصویر بسته را می‌دهد و می‌گوید «روی آن چه نوشته شده» — بدون پایتون، بدون پای‌چارم، بدون نصب هیچ‌چیز.<br>
-    فقط یک مرورگر مدرن کافی است؛ موتور OCR و دادهٔ زبان فارسی/انگلیسی داخل همین بسته است.</p>
-    <span class="ver">نسخه ۲.۲.۰ · 👨‍💻 حمید جلیلوند و نوید بدری</span>
+    فقط یک مرورگر مدرن کافی است؛ موتور OCR و دادهٔ زبان فارسی/انگلیسی داخل همین بسته است و مدل خواننده را خودتان انتخاب می‌کنید.</p>
+    <span class="ver">نسخه ۲.۴.۰ · 👨‍💻 حمید جلیلوند و نوید بدری</span>
   </div>
   <div class="lv-ribbon" aria-hidden="true"></div>
 
@@ -110,17 +117,17 @@ code { background:#eef2f7; border-radius:6px; padding:1px 6px; font-size:12px; d
   <div class="models">
     <h3>🧠 مدل‌ها و موتورهای این بسته — شفافیت کامل</h3>
     <table>
-      <tr><td>خواندن متن (OCR)</td><td><code>Tesseract.js 6 (WebAssembly)</code> با دادهٔ زبان <code>fas+eng</code> — کاملاً داخل بسته، بدون اینترنت</td></tr>
+      <tr><td>خواندن متن (OCR) — وب/موبایل</td><td><code>Tesseract.js 6 (WebAssembly)</code> — مدل و زبان به انتخاب کاربر از انتخاب‌گر «موتور و مدل خوانش»: سریع/دقیق (LSTM) · <code>fas</code>/<code>eng</code>/<code>fas+eng</code> (v2.4.0) — کاملاً داخل بسته، بدون اینترنت</td></tr>
       <tr><td>پیش‌پردازش تصویر</td><td>پردازش تصویر با جاوااسکریپت (تیزکردن، صاف‌کردن زاویه، تشخیص جعبه) — همتای OpenCV در نسخهٔ دسکتاپ</td></tr>
       <tr><td>استخراج فیلدها</td><td>الگوها و قواعد فارسی (<code>js/patterns.js + extractor.js</code>) — بدون مدل زبانی ابری</td></tr>
       <tr><td>خوانش صوتی (TTS)</td><td><code>Web Speech API (speechSynthesis)</code> — صدای فارسی روی خود دستگاه</td></tr>
-      <tr><td>نسخهٔ دسکتاپ (Streamlit)</td><td>Tesseract 5 + EasyOCR + <b>Surya اختیاری</b> (موتور سوم — به انتخاب کاربر در سایدبار «موتور OCR»؛ v2.2.0) (+ دستیار اختیاری <code>Qwen/Qwen3-VL-2B-Instruct</code>) و صدای <code>edge-tts</code>/<code>gTTS</code> با رضایت صریح</td></tr>
+      <tr><td>نسخهٔ دسکتاپ (Streamlit)</td><td>چهار موتور به انتخاب کاربر از منوی «موتور OCR» سایدبار: <code>Tesseract 5</code> · <code>EasyOCR</code> · <code>Surya</code> · <code>Qwen/Qwen3-VL-2B-Instruct</code> (v2.3.0) (+ دستیار مکمل اختیاری) و صدای <code>edge-tts</code>/<code>gTTS</code> با رضایت صریح</td></tr>
     </table>
     <p style="margin:8px 0 0; font-size:11.5px; color:#64748b;">شرح کامل هر مدل، نسخهٔ در حال استفاده و جای تحقق آن در کد: بخش «راهنما» ← «مدل‌ها و موتورها» و فایل <code>webapp/documentation.html</code>.</p>
   </div>
 
   <div class="foot">
-    👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری · v2.2.0 — لانچر خودترمیم + شفافیت مدل‌ها + پالت داروخانه‌ای + موتور سوم اختیاری Surya (دسکتاپ)
+    👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری · v2.4.0 — انتخاب‌گر موتور/مدل خوانش در وب+موبایل + هدر تصویری اختصاصی + منوی ۵گزینه‌ای دسکتاپ (Tesseract 5 · EasyOCR · Surya · Qwen3-VL · خودکار)
   </div>
 </div>
 <script>

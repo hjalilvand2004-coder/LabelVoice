@@ -9,6 +9,23 @@
 """
 from __future__ import annotations
 
+import base64
+from pathlib import Path
+
+# ---------- v2.4.0: تصویر اختصاصی هدر (از هویت بصری پروژه) ----------
+# اگر تصویر موجود نباشد، هیرو به گرادیان قبلی برمی‌گردد (graceful fallback)
+def _hero_bg_data_uri() -> str:
+    try:
+        p = Path(__file__).resolve().parents[1] / "assets" / "header-bg-wide.jpg"
+        if p.exists():
+            return "data:image/jpeg;base64," + base64.b64encode(p.read_bytes()).decode("ascii")
+    except Exception:  # noqa: BLE001 — تصویر هدر حیاتی نیست
+        pass
+    return ""
+
+
+_HERO_BG = _hero_bg_data_uri()
+
 # ---------- رنگ اختصاصی هر مرحله ----------
 STAGE_COLORS: dict[str, str] = {
     "opencv": "#1E88E5",    # آبی اعتماد — پیش‌پردازش تصویر
@@ -93,12 +110,19 @@ section[data-testid="stSidebar"] .stRadio label:hover {
   border-radius: 999px; color: #d9f5de !important;
 }
 
-/* ---------- هیرو ---------- */
+/* ---------- هیرو — تصویر اختصاصی دارویی (v2.4.0) ----------
+   پس‌زمینه: تصویر هدر LabelVoice (بطری دارو + آیکون‌های هوش مصنوعی + امواج
+   آبی/قرمز) با پردهٔ روشن برای خوانایی متن سرمه‌ای؛ اگر تصویر موجود نباشد
+   گرادیان قبلی دیده می‌شود. در حالت تاریک، DARK_THEME_CSS گرادیان را برمی‌گرداند. */
 .lv-hero {
-  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 42%, #1e88e5 68%, #43a047 118%);
-  border-radius: 20px; padding: 26px 28px; color: #fff;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.88) 0%, rgba(248,252,255,.70) 50%, rgba(240,248,255,.45) 100%),
+    url(__HERO_BG__) center 72% / cover no-repeat,
+    linear-gradient(135deg, #0d47a1 0%, #1565c0 42%, #1e88e5 68%, #43a047 118%);
+  border-radius: 20px; padding: 26px 28px; color: #0d2b4e;
   box-shadow: 0 12px 30px rgba(13,71,161,.25); margin-bottom: 14px;
   position: relative; overflow: hidden;
+  border: 1px solid #c8ddf1;
 }
 /* نوار چهاررنگ بالای هیرو: سبز، سفید، قرمز، آبی */
 .lv-hero::before {
@@ -111,13 +135,22 @@ section[data-testid="stSidebar"] .stRadio label:hover {
   content: '💊'; position: absolute; left: 18px; top: 50%;
   transform: translateY(-50%); font-size: 84px; opacity: .16;
 }
-.lv-hero h1 { font-size: 26px; font-weight: 900; margin: 0 0 6px; }
-.lv-hero p { font-size: 14px; margin: 0; color: #dbeafe; max-width: 88%; }
+.lv-hero h1 { font-size: 26px; font-weight: 900; margin: 0 0 6px; color: #0d47a1; }
+.lv-hero p { font-size: 14px; margin: 0; color: #2c587f; max-width: 88%; }
 .lv-hero .authors {
   display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
-  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
-  padding: 5px 14px; border-radius: 999px; font-size: 12.5px;
+  background: rgba(13,71,161,.08); border: 1px solid rgba(13,71,161,.28);
+  padding: 5px 14px; border-radius: 999px; font-size: 12.5px; color: #0d47a1;
 }
+/* نشان «موتور خوانش فعال» — شفافیت انتخاب کاربر درست در بالای صفحه (v2.4.0) */
+.lv-engine-badge {
+  display: inline-flex; align-items: center; gap: 7px; margin: 0 0 12px;
+  padding: 6px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+  background: linear-gradient(90deg, #e3f2fd, #e8f5e9);
+  border: 1px solid #b7d6ee; color: #0d47a1;
+  box-shadow: 0 2px 8px rgba(13,71,161,.10);
+}
+.lv-engine-badge b { color: #1565c0; }
 
 /* ---------- کارت‌ها و چیپ‌ها ---------- */
 .lv-card {
@@ -228,7 +261,7 @@ section[data-testid="stSidebar"] .stRadio label:hover {
   }
 }
 </style>
-"""
+""".replace("__HERO_BG__", _HERO_BG)
 
 # ---------- حالت تاریک دسکتاپ (بند ۶ چارچوب: حالت روشن و تاریک) ----------
 # فقط وقتی کلید «حالت تاریک» سایدبار روشن باشد تزریق می‌شود؛
@@ -326,6 +359,23 @@ DARK_THEME_CSS = """
   background-color: #64b5f6 !important;
 }
 .stApp [data-testid="stSliderTrack"] > div { background: #2a5f96 !important; }
+/* v2.4.0: در حالت تاریک، هیرو به گرادیان سرمه‌ای قبلی برمی‌گردد (بدون تصویر روشن) */
+.lv-hero {
+  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 42%, #1e88e5 68%, #43a047 118%) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,.15) !important;
+}
+.lv-hero h1 { color: #fff !important; }
+.lv-hero p { color: #dbeafe !important; }
+.lv-hero .authors {
+  background: rgba(255,255,255,.12) !important;
+  border-color: rgba(255,255,255,.2) !important; color: #fff !important;
+}
+.lv-engine-badge {
+  background: linear-gradient(90deg, #0d2a4a, #12331a) !important;
+  border-color: #24507c !important; color: #90caf9 !important;
+}
+.lv-engine-badge b { color: #bbdefb !important; }
 /* سایدبار از قبل تیره است؛ دست‌نخورده */
 </style>
 """

@@ -3,13 +3,14 @@
  * - موتور OCR و داده زبان: cache-first پس از نخستین بارگیری (پشتیبانی آفلاین کامل)
  * - هیچ درخواستی به سرور خارجی از این سرویس‌کار صادر نمی‌شود.
  */
-var CACHE = 'lbr-mobile-v16'; /* v2.2.0: Surya در دسکتاپ + تجلی پررنگ‌تر پالت دارویی در پس‌زمینه/کارت‌ها */
+var CACHE = 'lbr-mobile-v17'; /* v2.4.0: انتخاب‌گر موتور/مدل OCR در وب+موبایل + هدر تصویری اختصاصی */
 
 var SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './css/style.css',
+  './assets/header-bg-wide.jpg',
   './js/textnorm.js',
   './js/patterns.js',
   './js/guard.js',

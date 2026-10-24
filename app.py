@@ -63,6 +63,15 @@ PAGES = {
     "about": ("👥", "دربارهٔ طراحان"),
 }
 
+# v2.4.0: برچسب فارسی موتور خوانش فعال برای نشان هیرو
+_ENGINE_LABELS_FA = {
+    "tesseract": "Tesseract 5 (fas+eng) — پیش‌فرض",
+    "easyocr": "EasyOCR — CRNN",
+    "surya": "Surya OCR — ترنسفورمری",
+    "qwen3-vl": "Qwen/Qwen3-VL-2B-Instruct — مدل زبانی-بینایی",
+    "auto": "خودکار (اولین موتور در دسترس)",
+}
+
 try:
     @st.dialog("🧩 فناوری‌ها، ابزارها و کتابخانه‌های این بخش", width="large")
     def show_help(key: str):
@@ -194,6 +203,12 @@ if page == "read":
           <span class="authors">👨‍💻 توسعه و طراحی: {APP_AUTHORS_FA}</span>
         </div>
         <div class="lv-ribbon"></div>
+        """, unsafe_allow_html=True)
+    # v2.4.0: نشان «موتور و مدل خوانش فعال» — شفافیت انتخاب کاربر در بالای صفحه
+    st.markdown(
+        f"""
+        <div class="lv-engine-badge">🧠 موتور و مدل خوانش فعال: <b>{_ENGINE_LABELS_FA.get(engine_choice, engine_choice)}</b>
+        &nbsp;·&nbsp; تغییر از منوی «موتور OCR» سایدبار — مدل/زبان وب و موبایل هم از انتخاب‌گر همان صفحه انتخاب می‌شود</div>
         """, unsafe_allow_html=True)
 
     st.markdown(

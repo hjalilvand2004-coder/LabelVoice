@@ -33,6 +33,31 @@
     dark_mean_brightness: 55
   };
 
+  // ---------- v2.4.0: انتخاب‌گر موتور و مدل خوانش (همیشه نمایان) ----------
+  // هر گزینه = موتور مرورگری Tesseract.js با دادهٔ زبان/کیفیت متفاوت؛
+  // همه از همان خط لولهٔ کیفیت/اجماع عبور می‌کنند.
+  var ENGINE_MAP = {
+    'tjs-integer-faseng': { langQuality: 'integer', langs: 'fas+eng', fa: 'Tesseract.js 6 — سریع (fas+eng)' },
+    'tjs-best-faseng':    { langQuality: 'best',    langs: 'fas+eng', fa: 'Tesseract.js LSTM — دقیق‌تر (fas+eng)' },
+    'tjs-integer-fas':    { langQuality: 'integer', langs: 'fas',     fa: 'Tesseract.js — فقط فارسی (fas)' },
+    'tjs-integer-eng':    { langQuality: 'integer', langs: 'eng',     fa: 'Tesseract.js — فقط انگلیسی (eng)' },
+    'tjs-best-fas':       { langQuality: 'best',    langs: 'fas',     fa: 'Tesseract.js LSTM — دقیق‌تر (fas)' }
+  };
+  var ENGINE_DEFAULT = 'tjs-integer-faseng';
+
+  function readEngineChoice() {
+    var sel = $('opt-engine');
+    var key = sel && sel.value ? sel.value : ENGINE_DEFAULT;
+    return ENGINE_MAP[key] || ENGINE_MAP[ENGINE_DEFAULT];
+  }
+
+  function restoreEngineChoice() {
+    try {
+      var saved = localStorage.getItem('lbr_engine');
+      if (saved && ENGINE_MAP[saved] && $('opt-engine')) $('opt-engine').value = saved;
+    } catch (e) { /* نادیده */ }
+  }
+
   var state = {
     imageSource: null,   // HTMLImageElement یا ImageBitmap
     imageW: 0,
@@ -439,7 +464,11 @@
     var settings = Object.assign({}, DEFAULT_SETTINGS);
     settings.use_binarized_variant = $('opt-binarized').checked;
     if (!$('opt-deskew').checked) settings.deskew_max_angle_deg = 0;
-    var langQuality = $('opt-lang-quality').value;
+    // v2.4.0: موتور و مدل خوانش از انتخاب‌گر نمایان + ذخیرهٔ انتخاب کاربر
+    var engChoice = readEngineChoice();
+    settings.ocr_languages = engChoice.langs;
+    var langQuality = engChoice.langQuality;
+    try { localStorage.setItem('lbr_engine', $('opt-engine').value); } catch (e) { /* نادیده */ }
 
     var qualityIssues = [], qualityMetrics = null;
     var deskewApplied = false, deskewAngle = 0.0;
@@ -506,7 +535,7 @@
         // ۴) گذر اصلی OCR
         // اعلام مرحله ۲ (OCR) — ملزومات استاد + شفافیت مدل (v2.0.0)
         stageRun('ocr');
-        setProgress(10, 'مرحله ۲ از ۵ — OCR با موتور Tesseract.js 6.0.1 (WASM، fas+eng): خواندن نام، اعداد و متن بسته‌بندی…');
+        setProgress(10, 'مرحله ۲ از ۵ — OCR با موتور ' + engChoice.fa + ' (WASM): خواندن نام، اعداد و متن بسته‌بندی…');
         durations.preprocess_ms = Math.round(performance.now() - t0);
         return runPass(baseCanvas, settings, langQuality)
           .then(function (pass1) {
@@ -930,6 +959,9 @@
 
   // ---------- راه‌اندازی ----------
   function init() {
+    // v2.4.0: بازگردانی انتخاب موتور/مدل خوانش کاربر
+    restoreEngineChoice();
+
     // ثبت Service Worker فقط در حالت http(s) (در file:// بی‌معناست)
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('./sw.js').catch(function () { /* نادیده */ });

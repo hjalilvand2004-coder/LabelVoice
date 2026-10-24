@@ -8,7 +8,7 @@ MOBILE = REPO / 'mobile-app'
 OUT = Path('/home/z/my-project/download')
 OUT.mkdir(parents=True, exist_ok=True)
 
-VERSION = '2.3.0'
+VERSION = '2.4.0'
 
 
 def is_ascii_name(name: str) -> bool:

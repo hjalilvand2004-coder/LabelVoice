@@ -255,13 +255,18 @@ html.dark .btn-ghost { color: var(--brand); }
 }
 .btn-small { min-height: var(--h-btn-sm); padding: .25rem .7rem; font-size: .79rem; font-weight: 600; }
 
-/* ---------- ۴) هدر — فشرده و مدرن، بدون شکل درشت ---------- */
+/* ---------- ۴) هدر — تصویر اختصاصی دارویی از هویت بصری LabelVoice (v2.4.0) ----------
+   پس‌زمینه: تصویر اختصاصی (بطری دارو + آیکون‌های هوش مصنوعی + امواج آبی/قرمز)
+   با پردهٔ روشن برای خوانایی متن؛ در حالت تاریک همان گرادیان سرمه‌ای قبلی. */
 .app-header {
-  background: var(--header-grad);
-  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(250, 253, 255, .90) 0%, rgba(246, 252, 255, .74) 50%, rgba(240, 248, 255, .48) 100%),
+    url('../assets/header-bg-wide.jpg') center 82% / cover no-repeat,
+    linear-gradient(135deg, #08234f 0%, #0d47a1 52%, #1565c0 100%);
+  color: #0d2b4e;
   padding: max(.85rem, env(safe-area-inset-top)) 1rem .95rem;
   position: relative; overflow: hidden;
-  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  border-bottom: 1px solid #c8ddf1;
 }
 /* تزئین: هاله‌های نوری پالت دارویی (آبی اعتماد + سبز سلامت) */
 .app-header::before,
@@ -270,11 +275,11 @@ html.dark .btn-ghost { color: var(--brand); }
 }
 .app-header::before {
   width: 300px; height: 300px; left: -90px; top: -150px;
-  background: radial-gradient(circle, rgba(100, 181, 246, .22) 0%, transparent 68%);
+  background: radial-gradient(circle, rgba(100, 181, 246, .30) 0%, transparent 68%);
 }
 .app-header::after {
   width: 260px; height: 260px; right: -70px; bottom: -140px;
-  background: radial-gradient(circle, rgba(102, 187, 106, .20) 0%, transparent 68%);
+  background: radial-gradient(circle, rgba(102, 187, 106, .26) 0%, transparent 68%);
 }
 .header-row {
   display: flex; align-items: center; gap: .7rem;
@@ -283,22 +288,61 @@ html.dark .btn-ghost { color: var(--brand); }
 .logo { width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; }
 .app-header h1 {
   font-size: 1.08rem; font-weight: 800; margin: 0; letter-spacing: -.2px;
-  background: linear-gradient(90deg, #ffffff, #bbdefb);
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  color: #0d47a1;
 }
-.subtitle { margin: .05rem 0 0; font-size: .78rem; opacity: .88; }
-.authors { margin: .05rem 0 0; font-size: .7rem; opacity: .78; font-weight: 600; }
+.subtitle { margin: .05rem 0 0; font-size: .78rem; opacity: .92; color: #2c587f; }
+.authors { margin: .05rem 0 0; font-size: .7rem; opacity: .85; font-weight: 700; color: #35618f; }
 
 .safety-banner {
   max-width: 760px; margin: .7rem auto 0; position: relative; z-index: 1;
-  background: rgba(255, 255, 255, .09);
-  border: 1px solid rgba(255, 255, 255, .22);
+  background: rgba(255, 255, 255, .62);
+  border: 1px solid rgba(13, 71, 161, .22);
+  color: #0d2b4e;
   border-radius: var(--r-md);
   padding: .45rem .75rem; font-size: .78rem; line-height: 1.8;
   display: flex; gap: .5rem; align-items: flex-start;
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
 }
 .safety-banner svg { margin-top: .2rem; }
+/* حالت تاریک: هدر سرمه‌ای بدون تصویر (خوانایی بالا) */
+html.dark .app-header {
+  background: var(--header-grad);
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+html.dark .app-header h1 {
+  background: linear-gradient(90deg, #ffffff, #bbdefb);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+html.dark .subtitle { color: #cfe3f7; }
+html.dark .authors { color: #b9d4ec; }
+html.dark .safety-banner {
+  background: rgba(255, 255, 255, .09);
+  border-color: rgba(255, 255, 255, .22);
+  color: #eaf4fc;
+}
+
+/* ---------- ۴-ب) انتخاب‌گر موتور و مدل OCR (v2.4.0) — همیشه نمایان ---------- */
+.engine-picker {
+  margin: .9rem 0 .2rem;
+  background: linear-gradient(135deg, var(--brand-soft), var(--accent-soft));
+  border: 1px solid var(--border-strong);
+  border-right: 5px solid var(--brand);
+  border-radius: var(--r-md);
+  padding: .75rem .9rem;
+}
+html.dark .engine-picker { border-color: var(--border); }
+.engine-picker > label {
+  display: block; font-weight: 800; font-size: .88rem;
+  color: var(--text); margin-bottom: .45rem;
+}
+.engine-picker select {
+  width: 100%; padding: .5rem .6rem; font-size: .85rem; font-family: inherit;
+  border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+  background: var(--card); color: var(--text);
+}
+.engine-picker select:focus { outline: 2px solid var(--brand-ring); outline-offset: 1px; }
+.engine-picker .hint { margin: .45rem 0 0; font-size: .72rem; color: var(--text-soft); line-height: 1.9; }
 
 /* ---------- ۵) سایدبار دسکتاپ ---------- */
 .sidebar { display: none; }
