@@ -85,7 +85,14 @@ while ($true) {
 
     # strip query string; block directory traversal
     $path = [Uri]::UnescapeDataString(($rawPath -split '\?')[0]) -replace '/', '\'
-    if ($path -eq '\' -or $path -eq '') { $path = '\index.html' }
+    if ($path -eq '\' -or $path -eq '') {
+      # v1.8.3 fix: root index may live in different layouts (portable ZIP = webapp/index.html)
+      $path = '\index.html'
+      foreach ($cand in @('\index.html', '\webapp\index.html', '\START-HERE.html')) {
+        $candFull = [IO.Path]::GetFullPath((Join-Path $root $cand.TrimStart('\')))
+        if (Test-Path -LiteralPath $candFull -PathType Leaf) { $path = $cand; break }
+      }
+    }
     $full = [IO.Path]::GetFullPath((Join-Path $root $path.TrimStart('\')))
     if (-not $full.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
       $hdr = $utf8.GetBytes("HTTP/1.1 403 Forbidden`r`nContent-Length: 0`r`nConnection: close`r`n`r`n")
@@ -102,8 +109,9 @@ while ($true) {
       $stream.Write($hdr, 0, $hdr.Length)
       if ($method -eq 'GET') { $stream.Write($bytes, 0, $bytes.Length) }
     } else {
-      $body = $utf8.GetBytes('404 Not Found')
-      $hdr = $utf8.GetBytes("HTTP/1.1 404 Not Found`r`nContent-Type: text/plain; charset=utf-8`r`nContent-Length: $($body.Length)`r`nConnection: close`r`n`r`n")
+      # v1.8.3 fix: friendly 404 page (pure ASCII per design note) with instant redirect
+      $body = $utf8.GetBytes('<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/webapp/index.html"><title>LabelVoice</title></head><body style="font-family:Tahoma,sans-serif;text-align:center;padding:48px;background:#f4f7fb;color:#1a2b3c"><h2>Page not found - redirecting to the app...</h2><p><a href="/webapp/index.html">Open the full app (webapp/index.html)</a> | <a href="/label-reader-singlefile.html">Open the single-file version</a></p></body></html>')
+      $hdr = $utf8.GetBytes("HTTP/1.1 404 Not Found`r`nContent-Type: text/html; charset=utf-8`r`nContent-Length: $($body.Length)`r`nCache-Control: no-cache`r`nConnection: close`r`n`r`n")
       $stream.Write($hdr, 0, $hdr.Length)
       $stream.Write($body, 0, $body.Length)
     }

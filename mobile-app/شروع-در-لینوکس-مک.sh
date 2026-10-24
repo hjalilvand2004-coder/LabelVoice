@@ -14,10 +14,16 @@ if command -v python3 >/dev/null 2>&1; then
     (xdg-open "http://127.0.0.1:$PORT/" 2>/dev/null || open "http://127.0.0.1:$PORT/" 2>/dev/null) || true
   ) &
   echo "اجرا روی http://127.0.0.1:$PORT/ — برای بستن Ctrl+C"
-  exec python3 -m http.server "$PORT" --bind 127.0.0.1
+  # v1.8.3 fix: در بستهٔ قابل حمل، صفحهٔ اصلی داخل webapp/ است
+  if [ -d webapp ]; then
+    exec python3 -m http.server "$PORT" --bind 127.0.0.1 --directory webapp
+  else
+    exec python3 -m http.server "$PORT" --bind 127.0.0.1
+  fi
 else
   echo "پایتون یافت نشد؛ نگران نباشید:"
   echo "فایل index.html را در مرورگر (Chrome/Firefox/Edge) باز کنید."
   echo "بار اول به اینترنت برای بارگیری موتور OCR نیاز دارد."
-  (xdg-open "$(pwd)/index.html" 2>/dev/null || open "$(pwd)/index.html" 2>/dev/null) || true
+  if [ -d webapp ]; then (xdg-open "$(pwd)/webapp/index.html" 2>/dev/null || open "$(pwd)/webapp/index.html" 2>/dev/null) || true
+  else (xdg-open "$(pwd)/index.html" 2>/dev/null || open "$(pwd)/index.html" 2>/dev/null) || true; fi
 fi

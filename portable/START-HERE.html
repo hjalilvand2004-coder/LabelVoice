@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LabelVoice — شروع اینجا</title>
+<title>LabelVoice — START-HERE · شروع اینجا</title>
 <style>
 @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
 * { box-sizing: border-box; }
@@ -51,6 +51,7 @@ body {
   border-radius: 14px; padding: 14px 18px; font-size: 13px; line-height: 2.1; color: #234;
 }
 .foot { text-align: center; color: #64748b; font-size: 12px; margin-top: 18px; line-height: 2.2; }
+code { background:#eef2f7; border-radius:6px; padding:1px 6px; font-size:12px; direction:ltr; display:inline-block; }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
 </style>
 </head>
@@ -59,36 +60,36 @@ body {
   <div class="hero">
     <h1>💊 برچسب‌خوان هوشمند دارو و محصولات</h1>
     <p>تصویر بسته را می‌دهد و می‌گوید «روی آن چه نوشته شده» — بدون پایتون، بدون پای‌چارم، بدون نصب هیچ‌چیز.<br>
-    فقط یک مرورگر مدرن کافی است؛ موتور OCR داخل خود مرورگر اجرا می‌شود.</p>
-    <span class="ver">نسخه ۱.۸.۲ · 👨‍💻 حمید جلیلوند و نوید بدری</span>
+    فقط یک مرورگر مدرن کافی است؛ موتور OCR و دادهٔ زبان فارسی/انگلیسی داخل همین بسته است.</p>
+    <span class="ver">نسخه ۱.۸.۳ · 👨‍💻 حمید جلیلوند و نوید بدری</span>
   </div>
 
   <div class="cards">
     <div class="card">
       <div class="ic">⚡</div>
       <h2>اجرای فوری — یک فایل (کامپیوتر و موبایل)</h2>
-      <p>فایل <b>label-reader-singlefile.html</b> را دوبار کلیک کنید و تمام. روی کامپیوتر، رابط کامل سایدباری (خواندن دارو / گزارشات و ارزیابی / راهنما / طراحان + حالت تاریک) را می‌بینید؛ موتور OCR و دادهٔ زبان فارسی/انگلیسی داخل همین فایل است.</p>
+      <p>فایل <code>label-reader-singlefile.html</code> را دوبار کلیک کنید و تمام. رابط کامل سایدباری دسکتاپ (خواندن دارو / گزارشات و ارزیابی / راهنما و مستندات / دربارهٔ طراحان + حالت تاریک) با موتور OCR و دادهٔ زبانِ تعبیه‌شده.</p>
       <span class="tag">کاملاً آفلاین — حتی بدون اینترنت · بدون پایتون</span>
       <a class="btn" href="label-reader-singlefile.html">🚀 باز کردن نسخه تک‌فایلی</a>
     </div>
     <div class="card">
       <div class="ic">📷</div>
       <h2>نسخه کامل PWA — با دوربین زنده</h2>
-      <p>پوشه <b>webapp</b>: همهٔ امکانات (دوربین زنده، تشخیص جعبه، حالت تاریک، مستندات). برای دوربین، یکی از اسکریپت‌های شروع را اجرا کنید یا از APK اندروید استفاده کنید.</p>
+      <p>پوشهٔ <code>webapp</code>: همهٔ امکانات (دوربین زنده، تشخیص جعبه، حالت تاریک، مستندات کامل). برای دسترسی به دوربین، یکی از لانچرهای سرور محلی را اجرا کنید یا از APK اندروید استفاده کنید.</p>
       <span class="tag">پردازش ۱۰۰٪ روی دستگاه شما</span>
       <a class="btn alt" href="webapp/index.html">✨ باز کردن نسخه کامل</a>
     </div>
   </div>
 
   <div class="note">
+    🖥️ <b>راه‌اندازی با سرور محلی (برای دوربین زنده):</b> در ویندوز <code>START-WINDOWS.bat</code> را دوبار کلیک کنید (سرور داخلی روی <code>http://127.0.0.1:8765/</code> اجرا و مرورگر خودکار باز می‌شود — این نسخه به‌طور خودکار صفحهٔ اصلی داخل <code>webapp</code> را باز می‌کند). در لینوکس/مک <code>start-linux-mac.sh</code> را اجرا کنید.<br>
+    📚 <b>مستندات کامل:</b> <a href="webapp/documentation.html">webapp/documentation.html</a> &nbsp;·&nbsp; 📱 نسخهٔ اندروید (APK) از صفحهٔ Releases گیت‌هاب<br>
     🔒 <b>حریم خصوصی:</b> تصویر و متن برچسب هرگز جایی ارسال یا ذخیره نمی‌شود؛ همه پردازش‌ها روی همین دستگاه انجام می‌شود.<br>
     ⚠️ <b>محدوده محصول:</b> این ابزار فقط می‌گوید «روی بسته چه نوشته شده است»؛ کاربرد دارو، مقدار مصرف یا توصیه پزشکی ارائه نمی‌دهد. «قدرت درج‌شده» هرگز به‌جای «دوز مصرف» نمی‌نشیند.
   </div>
 
   <div class="foot">
-    📚 مستندات کامل: <a href="webapp/documentation.html">documentation.html</a> ·
-    📱 نسخه اندروید (APK) از صفحه Releases گیت‌هاب ·
-    👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری
+    👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری · v1.8.3 — رفع کامل بستهٔ قابل حمل (۴۰۴ سرور محلی و نام‌فایل‌های استخراجی)
   </div>
 </div>
 </body>

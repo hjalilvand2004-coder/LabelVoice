@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ساخت نسخه تک‌فایل برچسب‌خوان (label-reader-singlefile.html) — v1.8.2
+"""ساخت نسخه تک‌فایل برچسب‌خوان (label-reader-singlefile.html) — v1.8.3
 
 همه فایل‌های محلی js/css به‌صورت inline در یک HTML قرار می‌گیرند و برخلاف
 نسخه‌های قبل، موتور OCR (worker + هسته WASM + داده زبان فارسی/انگلیسی)
@@ -59,7 +59,7 @@ prelude = (
 )
 
 offline_js = '<script>window.__LBR_OFFLINE__ = ' + json.dumps({
-    'v': '1.8.2',
+    'v': '1.8.3',
     'prelude': prelude,
 }) + ';</script>'
 tag = re.search(r'<script src="js/offline-engine\.js(?:\?v=[^"]*)?"></script>', html)
