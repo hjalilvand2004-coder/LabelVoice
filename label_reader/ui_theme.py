@@ -1,30 +1,13 @@
 # -*- coding: utf-8 -*-
-"""تم بصری LabelVoice — CSS حرفه‌ای، رنگ‌های مراحل و اجازهٔ HTML (v2.1.0).
+"""تم بصری LabelVoice — CSS حرفه‌ای، رنگ‌های مراحل و اجازهٔ HTML (v2.5.0).
 
-پالت داروخانه‌ای (روان‌شناسی رنگ برند دارویی — طرح‌باکس):
+پالت داروخانه‌ای (روان‌شناسی رنگ برند دارویی — طرح‌باکس + انتخاب کاربر):
   آبی اعتماد #1E88E5 (اعتماد و آرامش) · سبز سلامت #43A047 (سلامت و تعهد)
   سفید بهداشت #FFFFFF (پاکیزگی) · قرمز هشدار #E53935 (هشدار و توجه)
 هر مرحلهٔ پردازش رنگ اختصاصی دارد تا کاربر همیشه بداند الان
 کدام مرحله در حال انجام است.
 """
 from __future__ import annotations
-
-import base64
-from pathlib import Path
-
-# ---------- v2.4.0: تصویر اختصاصی هدر (از هویت بصری پروژه) ----------
-# اگر تصویر موجود نباشد، هیرو به گرادیان قبلی برمی‌گردد (graceful fallback)
-def _hero_bg_data_uri() -> str:
-    try:
-        p = Path(__file__).resolve().parents[1] / "assets" / "header-bg-wide.jpg"
-        if p.exists():
-            return "data:image/jpeg;base64," + base64.b64encode(p.read_bytes()).decode("ascii")
-    except Exception:  # noqa: BLE001 — تصویر هدر حیاتی نیست
-        pass
-    return ""
-
-
-_HERO_BG = _hero_bg_data_uri()
 
 # ---------- رنگ اختصاصی هر مرحله ----------
 STAGE_COLORS: dict[str, str] = {
@@ -110,26 +93,23 @@ section[data-testid="stSidebar"] .stRadio label:hover {
   border-radius: 999px; color: #d9f5de !important;
 }
 
-/* ---------- هیرو — تصویر اختصاصی دارویی (v2.4.0) ----------
-   پس‌زمینه: تصویر هدر LabelVoice (بطری دارو + آیکون‌های هوش مصنوعی + امواج
-   آبی/قرمز) با پردهٔ روشن برای خوانایی متن سرمه‌ای؛ اگر تصویر موجود نباشد
-   گرادیان قبلی دیده می‌شود. در حالت تاریک، DARK_THEME_CSS گرادیان را برمی‌گرداند. */
+/* ---------- هیرو — پالت سفارشی کاربر (v2.5.0) ----------
+   سفید + آبی کمرنگ + آبی پررنگ + سبز + قرمز (بدون تصویر — درخواست کاربر).
+   در حالت تاریک، DARK_THEME_CSS گرادیان سرمه‌ای را برمی‌گرداند. */
 .lv-hero {
   background:
-    linear-gradient(180deg, rgba(255,255,255,.88) 0%, rgba(248,252,255,.70) 50%, rgba(240,248,255,.45) 100%),
-    url(__HERO_BG__) center 72% / cover no-repeat,
-    linear-gradient(135deg, #0d47a1 0%, #1565c0 42%, #1e88e5 68%, #43a047 118%);
+    linear-gradient(160deg, #ffffff 0%, #f2f8ff 42%, #e3f0fd 78%, #dcebfd 100%);
   border-radius: 20px; padding: 26px 28px; color: #0d2b4e;
   box-shadow: 0 12px 30px rgba(13,71,161,.25); margin-bottom: 14px;
   position: relative; overflow: hidden;
   border: 1px solid #c8ddf1;
 }
-/* نوار چهاررنگ بالای هیرو: سبز، سفید، قرمز، آبی */
+/* نوار چهاررنگ بالای هیرو — هماهنگ با موبایل و START-HERE */
 .lv-hero::before {
   content: ''; position: absolute; top: 0; right: 0; left: 0; height: 5px;
   background: linear-gradient(90deg,
-    #43a047 0%, #ffffff 25%, #e53935 50%, #ffffff 75%, #1e88e5 100%);
-  opacity: .95;
+    #0d47a1 0%, #1e88e5 22%, #90caf9 40%, #ffffff 52%,
+    #e8f5e9 64%, #43a047 82%, #e53935 100%);
 }
 .lv-hero::after {
   content: '💊'; position: absolute; left: 18px; top: 50%;
@@ -261,7 +241,7 @@ section[data-testid="stSidebar"] .stRadio label:hover {
   }
 }
 </style>
-""".replace("__HERO_BG__", _HERO_BG)
+"""
 
 # ---------- حالت تاریک دسکتاپ (بند ۶ چارچوب: حالت روشن و تاریک) ----------
 # فقط وقتی کلید «حالت تاریک» سایدبار روشن باشد تزریق می‌شود؛

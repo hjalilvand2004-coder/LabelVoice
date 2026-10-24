@@ -148,8 +148,8 @@ Vazirmatn (موبایل) — pytest، Node test runner (آزمون).
 | پردازش متن و فیلدها | **الگوها و قواعد فارسی** (بدون مدل زبانی) | regex دو زبانه + گیت کیفیت + رأی اجماعی |
 | تولید پاسخ فارسی | **قالب‌ساز قاعده‌محور + نگهبان ایمنی** | بدون مدل ابری؛ (اختیاری) LLM سازگار با OpenAI API با تنظیم `LBR_LLM_*` |
 | خوانش صوتی | **edge-tts** — صدای `fa-IR-FaridNeural` / `fa-IR-DilaraNeural` | فقط متن پاسخ، با رضایت صریح؛ جایگزین: gTTS |
-| وب / PWA / تک‌فایل | **Tesseract.js 6 (WASM)** + Web Speech API | همان خط پردازش داخل مرورگر، کاملاً آفلاین |
-| اپ موبایل | PWA با HTML/CSS/JS خالص + Tesseract.js WASM + Service Worker + Web App Manifest + WebView اندروید | جزئیات کامل در documentation.html (بخش فناوری) |
+| وب / PWA / تک‌فایل | **Tesseract.js 6 (WASM)** + Web Speech API | همان خط پردازش داخل مرورگر، کاملاً آفلاین؛ انتخاب‌گر ۸گزینه‌ای (v2.5.0): ۵ گزینهٔ مرورگری + ۳ موتور سنگین با «پل OCR» دسکتاپ |
+| اپ موبایل | PWA با HTML/CSS/JS خالص + Tesseract.js WASM + Service Worker + Web App Manifest + WebView اندروید | در APK: پل بومی TextToSpeech اندروید (LabelVoiceTts) برای پخش صوتی مطمئن (v2.5.0)؛ جزئیات کامل در documentation.html (بخش فناوری) |
 
 فعال‌سازی دستیار Qwen3-VL (اختیاری): `pip install "transformers>=4.57" accelerate`
 سپس در سایدبار «دستیار خوانش Qwen3-VL» را روشن کنید؛ مدل در نخستین اجرا از

@@ -37,13 +37,14 @@
     return _inlineUrls;
   }
 
-  function cdnConfig(base) {
+  function cdnConfig(base, langQuality) {
     var c = base || CDN;
+    // v2.5.0: کیفیت داده روی CDN هم واقعاً انتخابی شد — integer یا best (LSTM)
     return {
       mode: 'cdn',
       workerPath: c + 'tesseract.js@' + TESSERACT_JS_VERSION + '/dist/worker.min.js',
       corePath: c + 'tesseract.js-core@' + TESSERACT_CORE_VERSION + '/',
-      langPath: TESSDATA_CDN,
+      langPath: TESSDATA_CDN + (langQuality === 'best' ? '_best' : ''),
       languages: 'fas+eng'
     };
   }
@@ -63,7 +64,7 @@
           languages: 'fas+eng'
         };
       }
-      return cdnConfig();
+      return cdnConfig(null, langQuality);
     }
     return {
       mode: 'local',

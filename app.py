@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -47,6 +48,7 @@ from label_reader.ui_theme import (
     THEME_CSS,
     stage_timeline_html,
 )
+from label_reader.bridge import DEFAULT_PORT, lan_ip, start_bridge_server
 from label_reader.validation import ImageValidationError
 
 st.set_page_config(page_title=APP_NAME_FA, page_icon="💊", layout="wide")
@@ -171,6 +173,59 @@ with st.sidebar:
     elif vlm_on and engine_choice == "qwen3-vl":
         st.caption("ℹ️ چون Qwen3-VL را به‌عنوان موتور اصلی خوانش انتخاب کرده‌اید، "
                    "دستیار مکمل اجرای دوباره نمی‌شود — کل تصویر یکجا با همین مدل خوانده شده است.")
+
+    st.subheader("🛰️ پل OCR برای موبایل/وب (v2.5.0)")
+    st.caption(
+        "انتخاب موتور در رابط وب/موبایل واقعی است: Tesseract.js داخل مرورگر "
+        "اجرا می‌شود؛ موتورهای سنگین (EasyOCR، Surya، Qwen3-VL) از طریق این "
+        "پل روی همین رایانه خوانده می‌شوند. تصویر فقط بین دستگاه شما و همین "
+        "رایانه در شبکهٔ محلی رد و بدل می‌شود؛ ذخیره‌سازی یا لاگ محتوایی وجود ندارد.")
+    bridge_port_sb = st.number_input(
+        "پورت پل", min_value=1024, max_value=65535,
+        value=DEFAULT_PORT, step=1, key="bridge_port_input")
+    bridge_on = st.toggle(
+        "🚀 شروع پل OCR در این رایانه",
+        value=bool(st.session_state.get("bridge_running", False)),
+        key="bridge_toggle",
+        help="سرور کوچک محلی (پیش‌فرض پورت 8770) بالا می‌آید تا نسخهٔ وب/موبایل "
+             "بتواند با موتور انتخابیِ همین رایانه بخواند. برای توقف، همین "
+             "کلید را خاموش کنید (سرور در نخ پس‌زمینه متوقف می‌شود).")
+    if bridge_on:
+        if "bridge_server" not in st.session_state or \
+                st.session_state.get("bridge_port") != bridge_port_sb:
+            try:
+                if st.session_state.get("bridge_server") is not None:
+                    try:
+                        st.session_state["bridge_server"].shutdown()
+                    except Exception:  # noqa: BLE001
+                        pass
+                st.session_state["bridge_server"] = start_bridge_server(
+                    port=bridge_port_sb, host="0.0.0.0", settings=settings)
+                st.session_state["bridge_server_thread"] = threading.Thread(
+                    target=st.session_state["bridge_server"].serve_forever,
+                    daemon=True)
+                st.session_state["bridge_server_thread"].start()
+                st.session_state["bridge_port"] = bridge_port_sb
+            except OSError as exc:
+                st.session_state["bridge_server"] = None
+                st.error(f"راه‌اندازی پل ناموفق بود: {exc}")
+        if st.session_state.get("bridge_server") is not None:
+            st.session_state["bridge_running"] = True
+            st.success(
+                f"پل فعال است — از گوشی/مرورگر دیگر این آدرس را در انتخاب‌گر "
+                f"«موتور OCR» وارد کنید:  \n"
+                f"`http://{lan_ip()}:{bridge_port_sb}`  \n"
+                f"روی همین رایانه: `http://127.0.0.1:{bridge_port_sb}/ping`")
+    else:
+        st.session_state["bridge_running"] = False
+        _srv = st.session_state.get("bridge_server")
+        if _srv is not None:
+            try:
+                _srv.shutdown()
+            except Exception:  # noqa: BLE001
+                pass
+            st.session_state["bridge_server"] = None
+            st.caption("پل متوقف شد.")
 
     st.subheader("🎨 نمایش")
     if st.toggle("🌙 حالت تاریک", key="dark_mode",

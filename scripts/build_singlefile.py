@@ -85,16 +85,9 @@ html = html.replace(
     "Promise.reject(new Error('singlefile: no sw'))"
 )
 
-# ---- v2.4.0: تعبیهٔ تصویر هدر به‌صورت data URI (CSS درون‌خطی به assets اشاره می‌کند) ----
-_header = ROOT / 'assets/header-bg-wide.jpg'
-if _header.exists():
-    _hb64 = 'data:image/jpeg;base64,' + base64.b64encode(_header.read_bytes()).decode('ascii')
-    html = re.sub(
-        r"url\('(?:\.\./)?assets/header-bg-wide\.jpg'\)",
-        "url('" + _hb64 + "')",
-        html)
-else:
-    raise SystemExit('assets/header-bg-wide.jpg یافت نشد — تصویر هدر حیاتی است')
+# v2.5.0: هدر پالتی (بدون تصویر) — نیازی به تعبیهٔ assets/header-bg-wide.jpg نیست
+if "assets/header-bg-wide.jpg" in html or "header-bg-wide.jpg" in html:
+    raise SystemExit('ارجاع به تصویر هدر قدیمی در index.html باقی مانده — باید حذف شود')
 
 OUT.write_text(html, encoding='utf-8')
 print(f'OK: {OUT} ({OUT.stat().st_size // (1024*1024)} MB / {OUT.stat().st_size // 1024} KB)')

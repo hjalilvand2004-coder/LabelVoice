@@ -12,7 +12,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>برچسب‌خوان هوشمند دارو و محصولات</title>
-<link rel="stylesheet" href="css/style.css?v=2.4.0">
+<link rel="stylesheet" href="css/style.css?v=2.5.0">
 <script>
 /* اعمال زودهنگام حالت تاریک دستی (قبل از اولین رندر) — v1.8.2 */
 try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.classList.add('dark'); } catch (e) { /* نادیده */ }
@@ -51,7 +51,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     </label>
   </div>
   <div class="sb-foot">
-    <div class="sb-ver">نسخهٔ وب ۲.۴.۰</div>
+    <div class="sb-ver">نسخهٔ وب ۲.۵.۰</div>
     <div>حمید جلیلوند و نوید بدری</div>
     <div>همه پردازش‌ها روی همین دستگاه</div>
   </div>
@@ -108,19 +108,37 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     <div id="quality-box" class="quality-box hidden" aria-live="polite"></div>
     <button type="button" class="btn btn-ghost btn-small" data-help="quality">کیفیت تصویر چطور سنجیده می‌شود؟</button>
 
-    <!-- v2.4.0: انتخاب‌گر موتور و مدل خوانش — همیشه نمایان (خواستهٔ کاربر) -->
+    <!-- v2.5.0: انتخاب‌گر موتور و مدل خوانش — همیشه نمایان و واقعاً مؤثر (خواستهٔ کاربر) -->
     <div class="engine-picker" id="engine-picker">
       <label for="opt-engine">🧠 موتور و مدل خوانش (OCR) — انتخاب شما:</label>
       <select id="opt-engine">
-        <option value="tjs-integer-faseng" selected>Tesseract.js 6 — سریع · فارسی + انگلیسی (پیش‌فرض)</option>
-        <option value="tjs-best-faseng">Tesseract.js LSTM — دقیق‌تر (کندتر) · فارسی + انگلیسی</option>
-        <option value="tjs-integer-fas">Tesseract.js — فقط فارسی (fas)</option>
-        <option value="tjs-integer-eng">Tesseract.js — فقط انگلیسی (eng)</option>
-        <option value="tjs-best-fas">Tesseract.js LSTM — دقیق‌تر · فقط فارسی (fas)</option>
+        <optgroup label="روی همین دستگاه (داخل مرورگر — WASM)">
+          <option value="tjs-integer-faseng" selected>Tesseract.js 6 — سریع · فارسی + انگلیسی (پیش‌فرض)</option>
+          <option value="tjs-best-faseng">Tesseract.js LSTM — دقیق‌تر (کندتر) · فارسی + انگلیسی</option>
+          <option value="tjs-integer-fas">Tesseract.js — فقط فارسی (fas)</option>
+          <option value="tjs-integer-eng">Tesseract.js — فقط انگلیسی (eng)</option>
+          <option value="tjs-best-fas">Tesseract.js LSTM — دقیق‌تر · فقط فارسی (fas)</option>
+        </optgroup>
+        <optgroup label="موتورهای سنگین — خوانش روی رایانهٔ دسکتاپ شما (پل OCR)">
+          <option value="bridge-easyocr">EasyOCR — CRNN (پل دسکتاپ)</option>
+          <option value="bridge-surya">Surya OCR — ترنسفورمری (پل دسکتاپ)</option>
+          <option value="bridge-qwen">Qwen3-VL-2B-Instruct — مدل زبانی-بینایی (پل دسکتاپ)</option>
+          <option value="bridge-tesseract">Tesseract 5 — LSTM (پل دسکتاپ)</option>
+        </optgroup>
       </select>
-      <p class="hint" id="engine-note">موتور و دادهٔ زبانِ انتخابی داخل مرورگر (WASM) و کاملاً روی همین دستگاه اجرا می‌شود.
-      موتورهای سنگین‌تر — <b>EasyOCR</b>، <b>Surya</b> و <b>Qwen3-VL-2B-Instruct</b> — به‌عنوان گزینه‌های انتخابی در منوی «موتور OCR» نسخهٔ دسکتاپ (Streamlit) در دسترس‌اند.
-      در نسخهٔ تک‌فایلی همیشه دادهٔ دقیقِ تعبیه‌شده استفاده می‌شود.</p>
+      <p class="hint" id="engine-note">گزینه‌های گروه اول داخل مرورگر (WASM) و کاملاً روی همین دستگاه اجرا می‌شوند.
+      موتورهای سنگین — <b>EasyOCR</b>، <b>Surya</b> و <b>Qwen3-VL-2B-Instruct</b> — پایتونی‌اند و داخل مرورگر اجرا نمی‌شوند؛
+      با «پل OCR» واقعاً قابل انتخاب‌اند: در نرم‌افزار دسکتاپ بخش «🛰️ پل OCR برای موبایل/وب» را روشن کنید
+      (یا <code>START-BRIDGE.bat</code> را اجرا کنید) و آدرس نمایش‌داده‌شده را در کادر زیر وارد کنید.
+      تصویر فقط بین دستگاه شما و رایانهٔ خودتان رد و بدل می‌شود.</p>
+      <div class="bridge-row hidden" id="bridge-row">
+        <label for="bridge-host">آدرس پل OCR روی رایانهٔ دسکتاپ:</label>
+        <div class="bridge-inline">
+          <input type="text" id="bridge-host" placeholder="http://192.168.1.5:8770" dir="ltr" inputmode="url" autocomplete="off">
+          <button type="button" class="btn btn-ghost btn-small" id="btn-bridge-ping">بررسی اتصال</button>
+        </div>
+        <span class="bridge-status" id="bridge-status">—</span>
+      </div>
     </div>
 
     <details class="settings-box" id="settings-box">
@@ -292,7 +310,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
         <thead><tr><th>مرحله</th><th>مدل / موتور</th><th>نقش</th></tr></thead>
         <tbody>
           <tr><td>پیش‌پردازش تصویر</td><td>پردازش تصویر جاوااسکریپتی (همتای OpenCV)</td><td>تیزکردن، صاف‌کردن زاویه، تشخیص جعبه</td></tr>
-          <tr><td>خواندن متن (OCR)</td><td><code>Tesseract.js 6.0.1 (WebAssembly)</code> — مدل و زبان به انتخاب کاربر: سریع/دقیق (LSTM) · <code>fas</code>/<code>eng</code>/<code>fas+eng</code> (v2.4.0)</td><td>خوانش چندگذری داخل مرورگر، کاملاً آفلاین</td></tr>
+          <tr><td>خواندن متن (OCR)</td><td><code>Tesseract.js 6.0.1 (WebAssembly)</code> — مدل و زبان به انتخاب کاربر: سریع/دقیق (LSTM) · <code>fas</code>/<code>eng</code>/<code>fas+eng</code> (v2.5.0 — ۹ گزینه: ۵ مرورگری + ۴ پل دسکتاپ)</td><td>خوانش چندگذری داخل مرورگر، کاملاً آفلاین</td></tr>
           <tr><td>پردازش متن و فیلدها</td><td>الگوها و قواعد فارسی (<code>patterns.js + extractor.js</code>)</td><td>استخراج نام، قدرت، تعداد — بدون مدل زبانی</td></tr>
           <tr><td>تولید پاسخ فارسی</td><td>قالب‌ساز قاعده‌محور + نگهبان ایمنی (<code>responder.js + guard.js</code>)</td><td>پاسخ فقط از شواهد OCR</td></tr>
           <tr><td>خوانش صوتی</td><td><code>Web Speech API (speechSynthesis)</code></td><td>صدای فارسی روی خود دستگاه</td></tr>
@@ -355,7 +373,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
 </nav>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخهٔ وب ۲.۴.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخهٔ وب ۲.۵.۰</p>
   <p>توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="stages">اعلام مراحل پردازش و ارزیابی مرحله‌ای</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
@@ -398,20 +416,20 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
   <div style="padding:1rem;text-align:center">این برنامه به جاوااسکریپت نیاز دارد. لطفاً جاوااسکریپت مرورگر را فعال کنید.</div>
 </noscript>
 
-<script src="js/textnorm.js?v=2.4.0"></script>
-<script src="js/patterns.js?v=2.4.0"></script>
-<script src="js/guard.js?v=2.4.0"></script>
-<script src="js/extractor.js?v=2.4.0"></script>
-<script src="js/responder.js?v=2.4.0"></script>
-<script src="js/pipeline.js?v=2.4.0"></script>
-<script src="js/preprocess.js?v=2.4.0"></script>
-<script src="js/boxdetect.js?v=2.4.0"></script>
+<script src="js/textnorm.js?v=2.5.0"></script>
+<script src="js/patterns.js?v=2.5.0"></script>
+<script src="js/guard.js?v=2.5.0"></script>
+<script src="js/extractor.js?v=2.5.0"></script>
+<script src="js/responder.js?v=2.5.0"></script>
+<script src="js/pipeline.js?v=2.5.0"></script>
+<script src="js/preprocess.js?v=2.5.0"></script>
+<script src="js/boxdetect.js?v=2.5.0"></script>
 <script src="js/samples-data.js"></script>
-<script src="js/offline-engine.js?v=2.4.0"></script>
+<script src="js/offline-engine.js?v=2.5.0"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
-<script src="js/ocr.js?v=2.4.0"></script>
-<script src="js/camera.js?v=2.4.0"></script>
-<script src="js/help.js?v=2.4.0"></script>
-<script src="js/app.js?v=2.4.0"></script>
+<script src="js/ocr.js?v=2.5.0"></script>
+<script src="js/camera.js?v=2.5.0"></script>
+<script src="js/help.js?v=2.5.0"></script>
+<script src="js/app.js?v=2.5.0"></script>
 </body>
 </html>

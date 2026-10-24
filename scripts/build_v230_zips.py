@@ -8,7 +8,7 @@ MOBILE = REPO / 'mobile-app'
 OUT = Path('/home/z/my-project/download')
 OUT.mkdir(parents=True, exist_ok=True)
 
-VERSION = '2.4.0'
+VERSION = "2.5.0"
 
 
 def is_ascii_name(name: str) -> bool:
@@ -42,6 +42,8 @@ with zipfile.ZipFile(mobile_zip, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as 
     # لانچرهای ASCII با نام استاندارد
     add_file(zf, MOBILE / 'START-WINDOWS.bat', 'LabelVoice-Mobile-PWA/START-WINDOWS.bat')
     add_file(zf, MOBILE / 'server-windows.ps1', 'LabelVoice-Mobile-PWA/server-windows.ps1')
+    add_file(zf, MOBILE / 'START-BRIDGE.bat', 'LabelVoice-Mobile-PWA/START-BRIDGE.bat')
+    add_file(zf, MOBILE / 'START-BRIDGE.sh', 'LabelVoice-Mobile-PWA/START-BRIDGE.sh')
     add_file(zf, MOBILE / 'شروع-در-لینوکس-مک.sh', 'LabelVoice-Mobile-PWA/start-linux-mac.sh')
 print(f'OK {mobile_zip} ({mobile_zip.stat().st_size/1e6:.1f} MB)')
 

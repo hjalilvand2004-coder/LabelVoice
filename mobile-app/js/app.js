@@ -33,17 +33,25 @@
     dark_mean_brightness: 55
   };
 
-  // ---------- v2.4.0: انتخاب‌گر موتور و مدل خوانش (همیشه نمایان) ----------
-  // هر گزینه = موتور مرورگری Tesseract.js با دادهٔ زبان/کیفیت متفاوت؛
-  // همه از همان خط لولهٔ کیفیت/اجماع عبور می‌کنند.
+  // ---------- v2.5.0: انتخاب‌گر موتور و مدل خوانش (همیشه نمایان و واقعاً مؤثر) ----------
+  // گروه ۱: موتور مرورگری Tesseract.js با دادهٔ زبان/کیفیت متفاوت؛
+  // گروه ۲ (bridge): موتورهای سنگین پایتونی — خوانش روی رایانهٔ دسکتاپِ کاربر
+  // از طریق «پل OCR» (label_reader/bridge.py)؛ بقیهٔ خط لوله همان مسیر محلی
+  // مرورگر می‌ماند و موتور فقط «خواننده» است (بدون میان‌بر از گیت‌های کیفیت).
   var ENGINE_MAP = {
     'tjs-integer-faseng': { langQuality: 'integer', langs: 'fas+eng', fa: 'Tesseract.js 6 — سریع (fas+eng)' },
     'tjs-best-faseng':    { langQuality: 'best',    langs: 'fas+eng', fa: 'Tesseract.js LSTM — دقیق‌تر (fas+eng)' },
     'tjs-integer-fas':    { langQuality: 'integer', langs: 'fas',     fa: 'Tesseract.js — فقط فارسی (fas)' },
     'tjs-integer-eng':    { langQuality: 'integer', langs: 'eng',     fa: 'Tesseract.js — فقط انگلیسی (eng)' },
-    'tjs-best-fas':       { langQuality: 'best',    langs: 'fas',     fa: 'Tesseract.js LSTM — دقیق‌تر (fas)' }
+    'tjs-best-fas':       { langQuality: 'best',    langs: 'fas',     fa: 'Tesseract.js LSTM — دقیق‌تر (fas)' },
+    // پل دسکتاپ — واقعاً مؤثر: تصویر به رایانهٔ خود کاربر می‌رود
+    'bridge-easyocr':     { bridge: 'easyocr',  langs: 'fas+eng', fa: 'EasyOCR — CRNN (پل دسکتاپ)' },
+    'bridge-surya':       { bridge: 'surya',    langs: 'fas+eng', fa: 'Surya OCR — ترنسفورمری (پل دسکتاپ)' },
+    'bridge-qwen':        { bridge: 'qwen3-vl', langs: 'fas+eng', fa: 'Qwen3-VL-2B-Instruct (پل دسکتاپ)' },
+    'bridge-tesseract':   { bridge: 'tesseract', langs: 'fas+eng', fa: 'Tesseract 5 — LSTM (پل دسکتاپ)' }
   };
   var ENGINE_DEFAULT = 'tjs-integer-faseng';
+  var BRIDGE_DEFAULT_HOST = 'http://127.0.0.1:8770';
 
   function readEngineChoice() {
     var sel = $('opt-engine');
@@ -434,12 +442,127 @@
     setProgress(pct, fa);
   }
 
+  // v2.5.0: گزارش پیشرفت مسیر پل (پیام فارسی + درصد مستقیم)
+  function bridgeProgress(m) {
+    setProgress(m && typeof m.pct === 'number' ? m.pct : 30, (m && m.fa) || 'در حال خوانش با پل…');
+  }
+
+  // ---------- v2.5.0: کلاینت «پل OCR» — خوانش با موتورهای سنگین روی دسکتاپ ----------
+  function bridgeHost() {
+    var inp = $('bridge-host');
+    var h = (inp && inp.value ? inp.value : '').trim();
+    if (!h) {
+      try { h = localStorage.getItem('lbr_bridge_host') || ''; } catch (e) { h = ''; }
+    }
+    if (!h) h = BRIDGE_DEFAULT_HOST;
+    return h.replace(/\/+$/, '');
+  }
+
+  function setBridgeStatus(text, cls) {
+    var el = $('bridge-status');
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'bridge-status' + (cls ? ' ' + cls : '');
+  }
+
+  function normalizeBridgeHost(raw) {
+    var h = (raw || '').trim().replace(/\/+$/, '');
+    if (h && !/^https?:\/\//i.test(h)) h = 'http://' + h;
+    return h;
+  }
+
+  // نمایش/پنهان‌کردن کادر پل بر اساس انتخاب موتور (v2.5.0)
+  function syncBridgeRow() {
+    var row = $('bridge-row');
+    if (!row) return;
+    var ch = readEngineChoice();
+    if (ch.bridge) {
+      row.classList.remove('hidden');
+      setBridgeStatus('برای خوانش با «' + ch.fa + '» ابتدا اتصال پل را بررسی کنید.', '');
+    } else {
+      row.classList.add('hidden');
+    }
+  }
+
+  // ping: وضعیت پل + موتورهای آمادهٔ رایانهٔ دسکتاپ را می‌گیرد
+  function pingBridge() {
+    var host = normalizeBridgeHost(bridgeHost());
+    if ($('bridge-host')) $('bridge-host').value = host;
+    try { localStorage.setItem('lbr_bridge_host', host); } catch (e) { /* نادیده */ }
+    setBridgeStatus('در حال بررسی اتصال به پل…', '');
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 6000) : null;
+    fetch(host + '/ping', { method: 'GET', signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (timer) clearTimeout(timer);
+        if (!j || !j.ok) { setBridgeStatus('⛔ پاسخ پل معتبر نبود.', 'bad'); return; }
+        var ready = (j.engines || []).filter(function (e) { return e.available; });
+        var names = ready.map(function (e) { return e.id; }).join('، ');
+        setBridgeStatus('✅ پل متصل است (نسخه ' + j.version + ') — موتورهای آمادهٔ رایانه: ' +
+          (names || 'هیچ') + '. اگر موتور انتخابی در فهرست نیست، در رایانه نصب/راه‌اندازی شود.', 'ok');
+      })
+      .catch(function () {
+        if (timer) clearTimeout(timer);
+        setBridgeStatus('⛔ پل در دسترس نیست. در دسکتاپ: بخش «🛰️ پل OCR برای موبایل/وب» را روشن کنید یا START-BRIDGE.bat را اجرا کنید و همان آدرس را وارد کنید.', 'bad');
+      });
+  }
+
+  // خوانش یک بوم با موتور انتخابی روی پل دسکتاپ — خروجی هم‌شکل runOcr
+  function runBridgePass(baseCanvas, engChoice, onProgress) {
+    var host = normalizeBridgeHost(bridgeHost());
+    if (onProgress) onProgress({ fa: 'ارسال تصویر به پل دسکتاپ (' + engChoice.fa + ')…', pct: 15 });
+    return new Promise(function (resolve, reject) {
+      baseCanvas.toBlob(function (blob) {
+        if (!blob) { reject(new Error('ساخت تصویر برای ارسال ناموفق بود.')); return; }
+        var url = host + '/ocr?engine=' + encodeURIComponent(engChoice.bridge);
+        if (onProgress) onProgress({ fa: 'خوانش روی رایانهٔ دسکتاپ با ' + engChoice.fa + '…', pct: 35 });
+        fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: blob })
+          .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
+          .then(function (res) {
+            if (onProgress) onProgress({ fa: 'دریافت خوانش از پل…', pct: 75 });
+            var j = res.j;
+            if (!j || !j.ok) {
+              reject(new Error((j && j.error_fa) ?
+                ('پل دسکتاپ: ' + j.error_fa) :
+                ('پل دسکتاپ پاسخ نامعتبر داد (کد ' + res.status + ').')));
+              return;
+            }
+            var pieces = (j.pieces || []).map(function (p) {
+              return {
+                text: p.text || '',
+                confidence: (p.confidence === null || p.confidence === undefined) ? null : p.confidence,
+                bbox: { x: p.x || 0, y: p.y || 0, w: p.w || 0, h: p.h || 0 },
+                variant: 'bridge',
+                engine: 'bridge:' + j.engine
+              };
+            });
+            resolve({
+              pieces: pieces,
+              byVariant: { bridge: pieces },
+              bridgeInfo: { engine: j.engine, engine_fa: j.engine_fa, duration_ms: j.duration_ms, count: j.count }
+            });
+          })
+          .catch(function () {
+            reject(new Error('اتصال به پل OCR برقرار نشد (' + host + '). در رایانهٔ دسکتاپ بخش «🛰️ پل OCR برای موبایل/وب» را روشن کنید یا START-BRIDGE.bat را اجرا کنید؛ سپس دوباره تلاش کنید.'));
+          });
+      }, 'image/png');
+    });
+  }
+
   // اجرای یک گذر کامل OCR روی یک بوم (نسخه‌ها + دو PSM + گذرهای کمکی)
   // توجه: buildVariants همگام است و شیء ساده برمی‌گرداند؛ فقط OCR وعده‌دار است.
   // v1.7.0: byVariant برای ادغام بهترین-اول برگردانده می‌شود.
-  function runPass(baseCanvas, settings, langQuality) {
+  // v2.5.0: مسیر پل — خوانش با موتور انتخابی روی دسکتاپ، بدون گذرهای چرخشی.
+  function runPass(baseCanvas, settings, langQuality, engChoice) {
     var built = LBR.preprocess.buildVariants(
       baseCanvas, baseCanvas.width, baseCanvas.height, settings);
+    if (engChoice && engChoice.bridge) {
+      return runBridgePass(built.variants.original || baseCanvas, engChoice, bridgeProgress)
+        .then(function (r) {
+          return { pieces: r.pieces, byVariant: r.byVariant, built: built, bridge: r.bridgeInfo };
+        });
+    }
     return LBR.ocr.runOcr(built.variants, settings, langQuality, ocrProgress)
       .then(function (r) {
         return { pieces: r.rawPieces, byVariant: r.byVariant || null, built: built };
@@ -464,7 +587,7 @@
     var settings = Object.assign({}, DEFAULT_SETTINGS);
     settings.use_binarized_variant = $('opt-binarized').checked;
     if (!$('opt-deskew').checked) settings.deskew_max_angle_deg = 0;
-    // v2.4.0: موتور و مدل خوانش از انتخاب‌گر نمایان + ذخیرهٔ انتخاب کاربر
+    // v2.5.0: موتور و مدل خوانش از انتخاب‌گر نمایان + ذخیرهٔ انتخاب کاربر
     var engChoice = readEngineChoice();
     settings.ocr_languages = engChoice.langs;
     var langQuality = engChoice.langQuality;
@@ -535,10 +658,19 @@
         // ۴) گذر اصلی OCR
         // اعلام مرحله ۲ (OCR) — ملزومات استاد + شفافیت مدل (v2.0.0)
         stageRun('ocr');
-        setProgress(10, 'مرحله ۲ از ۵ — OCR با موتور ' + engChoice.fa + ' (WASM): خواندن نام، اعداد و متن بسته‌بندی…');
+        setProgress(10, 'مرحله ۲ از ۵ — OCR با موتور ' + engChoice.fa +
+          (engChoice.bridge ? ' (پل دسکتاپ): خواندن نام، اعداد و متن بسته‌بندی…'
+                            : ' (WASM): خواندن نام، اعداد و متن بسته‌بندی…'));
         durations.preprocess_ms = Math.round(performance.now() - t0);
-        return runPass(baseCanvas, settings, langQuality)
+        return runPass(baseCanvas, settings, langQuality, engChoice)
           .then(function (pass1) {
+            if (engChoice.bridge) {
+              // پل دسکتاپ: خوانش سنگین یکجا — بدون گذرهای چرخشی (تصویر از قبل
+              // جهت‌یابی و برش شده؛ سه‌برابرکردن هزینهٔ موتور سنگین منطقی نیست)
+              return { pieces: pass1.pieces, byVariant: pass1.byVariant,
+                       built: pass1.built, bridge: pass1.bridge,
+                       attempts: 1, note: null };
+            }
             var y1 = LBR.pipeline.scoreOcrYield(pass1.pieces);
             if (!settings.auto_orientation_retry || !isWeakYield(y1)) {
               return { pieces: pass1.pieces, byVariant: pass1.byVariant, built: pass1.built, attempts: 1, note: null };
@@ -546,13 +678,13 @@
             // ۵) خوانش ضعیف → آزمون چرخش ۹۰ درجه (بسته‌های عکاسی‌شده از پهلو)
             setProgress(40, 'خوانش کم‌بازده بود؛ آزمایش جهت‌های دیگر…');
             var cw = LBR.preprocess.rotate90(baseCanvas, 1);
-            return runPass(cw, settings, langQuality).then(function (pass2) {
+            return runPass(cw, settings, langQuality, engChoice).then(function (pass2) {
               var y2 = LBR.pipeline.scoreOcrYield(pass2.pieces);
               if (y2.score <= y1.score + 8) {
                 // چرخش ساعتگرد بهتر نشد؛ پادساعتگرد را هم امتحان کن
                 setProgress(60, 'آزمایش جهت مخالف…');
                 var ccw = LBR.preprocess.rotate90(baseCanvas, -1);
-                return runPass(ccw, settings, langQuality).then(function (pass3) {
+                return runPass(ccw, settings, langQuality, engChoice).then(function (pass3) {
                   var y3 = LBR.pipeline.scoreOcrYield(pass3.pieces);
                   var best = y1; var pick = 1; var pieces = pass1.pieces;
                   var bv = pass1.byVariant;
@@ -595,12 +727,17 @@
           duration_ms: durations.ocr_ms,
           outputs: [
             'متن خام بسته‌بندی خوانده شد؛ قطعه‌های زباله فیلتر و نواحی تکراری با ادغام بهترین-اول یکسان شدند (v1.7.0).',
-            variantLine || 'نسخه‌های پردازشی: ' + Object.keys(winner.built.variants).join('، '),
+            winner.bridge ? ('خوانش با موتور سنگین روی رایانهٔ دسکتاپ شما انجام شد (پل OCR): ' +
+              (winner.bridge.engine_fa || winner.bridge.engine) + ' — ' +
+              (winner.bridge.duration_ms || '?') + ' میلی‌ثانیه، ' + (winner.bridge.count || st2.pieces) + ' قطعه.') :
+              (variantLine || 'نسخه‌های پردازشی: ' + Object.keys(winner.built.variants).join('، ')),
             winner.note ? winner.note : 'خوانش در جهت اصلی تصویر کافی بود.',
             'متن استخراج‌شده در بخش «شواهد OCR» قابل مشاهده است.'
           ],
           metrics: [
-            { n: 'موتور و مدل خوانش', v: 'Tesseract.js 6.0.1 (WASM) — fas+eng', status: 'ok' },
+            { n: 'موتور و مدل خوانش', v: winner.bridge ?
+                ('پل دسکتاپ: ' + (winner.bridge.engine_fa || winner.bridge.engine)) :
+                'Tesseract.js 6.0.1 (WASM) — ' + settings.ocr_languages, status: 'ok' },
             { n: 'قطعه‌های متنی خوانده‌شده', v: st2.pieces, status: st2.pieces > 0 ? 'ok' : 'fail' },
             { n: 'میانگین اطمینان موتور', v: st2.mean_conf === null ? '—' : Math.round(st2.mean_conf * 100) + '٪', status: (st2.mean_conf !== null && st2.mean_conf < 0.6) ? 'warn' : 'ok' },
             { n: 'مجموع نویسه‌ها', v: st2.chars, status: 'ok' },
@@ -877,15 +1014,55 @@
   }
 
   // ---------- عملکردهای پاسخ ----------
+  // v2.5.0: رفع «پخش صوتی در موبایل اپلیکیشن کار نمی‌کند»
+  // در APK (WebView اندروید) speechSynthesis روی بسیاری از دستگاه‌ها بی‌صداست؛
+  // پس اول پل بومی TTS اندروید (LabelVoiceTts از MainActivity) آزمایش می‌شود،
+  // بعد speechSynthesis مرورگر (PWA)، و در بدترین حالت پیام راهنمای شفاف.
+  function nativeTtsAvailable() {
+    var b = window.LabelVoiceTts;
+    return !!(b && typeof b.ready === 'function' && b.ready() === true);
+  }
+
+  function stopSpeaking() {
+    try {
+      if (window.LabelVoiceTts && typeof window.LabelVoiceTts.stop === 'function') {
+        window.LabelVoiceTts.stop();
+      }
+    } catch (e) { /* نادیده */ }
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) { /* نادیده */ }
+    }
+  }
+
   function speakResponse() {
     var note = $('tts-note');
-    if (!('speechSynthesis' in window)) {
-      note.textContent = 'مرورگر شما از پخش صوتی پشتیبانی نمی‌کند.';
-      return;
-    }
     var text = state.result ? state.result.response_fa : '';
     if (!text) return;
-    var voices = window.speechSynthesis.getVoices();
+    stopSpeaking();
+
+    // ۱) پل بومی اندروید (APK) — موتور صوتی خود دستگاه
+    if (window.LabelVoiceTts && typeof window.LabelVoiceTts.speak === 'function') {
+      if (!nativeTtsAvailable()) {
+        note.textContent = 'موتور صوتی اندروید هنوز آماده نشده است؛ یک لحظه بعد دوباره بزنید. ' +
+          'اگر تکرار شد، از تنظیمات سیستم بخش «موتور متن‌به‌گفتار» را بررسی کنید.';
+        return;
+      }
+      var okNative = false;
+      try { okNative = window.LabelVoiceTts.speak(text) === true; } catch (e) { okNative = false; }
+      if (okNative) {
+        note.textContent = 'پخش با موتور صوتی اندروید (TTS سیستم). ' +
+          'اگر صدای فارسی روی دستگاه نصب نباشد ممکن است با صدای پیش‌فرض خوانده شود. هیچ داده‌ای ارسال نمی‌شود.';
+        return;
+      }
+      // اگر پل بومی شکست خورد، ادامه با speechSynthesis
+    }
+
+    // ۲) speechSynthesis مرورگر (PWA/مرورگر موبایل)
+    if (!('speechSynthesis' in window)) {
+      note.textContent = 'این مرورگر پخش صوتی ندارد. در نسخهٔ اندروید (APK) پخش با موتور صوتی سیستم انجام می‌شود.';
+      return;
+    }
+    var voices = window.speechSynthesis.getVoices() || [];
     var faVoice = null;
     for (var i = 0; i < voices.length; i++) {
       if (voices[i].lang && voices[i].lang.toLowerCase().indexOf('fa') === 0) {
@@ -904,8 +1081,23 @@
         'برای صدای فارسی، بسته صوتی فارسی سیستم را نصب کنید. هیچ داده‌ای ارسال نمی‌شود.';
     }
     u.rate = 0.95;
-    window.speechSynthesis.cancel();
+    u.onerror = function (ev) {
+      note.textContent = 'پخش صوتی با خطا متوقف شد' + (ev && ev.error ? ' (' + ev.error + ').' : '.') +
+        ' اگر «not-allowed» بود، صفحه را یک بار لمس/اسکرول کنید و دوباره دکمه را بزنید.';
+    };
     window.speechSynthesis.speak(u);
+    // تشخیص سکوتِ بی‌خطا (WebViewهایی که utterance را بی‌صدا می‌خورند)
+    setTimeout(function () {
+      try {
+        if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending &&
+            !(window.LabelVoiceTts && typeof window.LabelVoiceTts.speak === 'function')) {
+          if (voices.length === 0) {
+            note.textContent = 'هیچ موتور صوتی‌ای روی این دستگاه فعال نیست. ' +
+              'در تنظیمات سیستم بخش «موتور متن‌به‌گفتار» (مثلاً Google TTS) را نصب/فعال کنید.';
+          }
+        }
+      } catch (e) { /* نادیده */ }
+    }, 700);
   }
 
   function copyResponse() {
@@ -1006,6 +1198,29 @@
     $('btn-copy').addEventListener('click', copyResponse);
     $('btn-share').addEventListener('click', shareResponse);
     $('btn-json').addEventListener('click', downloadJson);
+
+    // ---------- v2.5.0: رویدادهای انتخاب‌گر موتور + پل OCR ----------
+    var engineSel = $('opt-engine');
+    if (engineSel) {
+      engineSel.addEventListener('change', function () {
+        // ذخیرهٔ فوری انتخاب (نه فقط هنگام خواندن) — خواستهٔ رفتار انتظاری کاربر
+        try { localStorage.setItem('lbr_engine', engineSel.value); } catch (e) { /* نادیده */ }
+        syncBridgeRow();
+      });
+      syncBridgeRow();
+    }
+    var bridgeHostInp = $('bridge-host');
+    if (bridgeHostInp) {
+      try {
+        var savedHost = localStorage.getItem('lbr_bridge_host');
+        if (savedHost) bridgeHostInp.value = savedHost;
+      } catch (e) { /* نادیده */ }
+      bridgeHostInp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); pingBridge(); }
+      });
+    }
+    var pingBtn = $('btn-bridge-ping');
+    if (pingBtn) pingBtn.addEventListener('click', pingBridge);
 
     // پیش‌بارگیری صداهای دستگاه
     if ('speechSynthesis' in window) {

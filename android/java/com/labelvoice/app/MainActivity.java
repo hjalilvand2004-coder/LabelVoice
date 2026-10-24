@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
+import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -18,6 +20,7 @@ import android.webkit.ValueCallback;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -31,6 +34,11 @@ import java.util.Map;
  *
  * v1.2.0: پشتیبانی دوربین زنده (getUserMedia) — مجوز CAMERA در مانیفست +
  * پیاده‌سازی onPermissionRequest تا WebView اجازه video capture بدهد.
+ *
+ * v2.5.0: رفع «پخش صوتی پاسخ در موبایل اپلیکیشن کار نمی‌کند» —
+ * speechSynthesis داخل WebView اندروید روی بسیاری از دستگاه‌ها بی‌صداست؛
+ * پس پل بومی TextToSpeech اندروید با نام LabelVoiceTts به جاوااسکریپت
+ * معرفی می‌شود و صفحه اول همین پل را به کار می‌گیرد (speak/stop/ready).
  */
 public class MainActivity extends Activity {
 
@@ -43,6 +51,11 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> filePathCallback;
     /** درخواست دوربین WebView که منتظر تأیید کاربر است. */
     private PermissionRequest pendingCameraRequest;
+
+    /** v2.5.0: موتور متن‌به‌گفتار بومی اندروید + وضعیت آماده‌سازی/زبان. */
+    private TextToSpeech ttsEngine;
+    private volatile boolean ttsReady = false;
+    private volatile boolean ttsFaOk = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -59,6 +72,10 @@ public class MainActivity extends Activity {
         s.setAllowContentAccess(false);
         // پخش زنده پیش‌نمایش دوربین بدون نیاز به حرکت کاربر
         s.setMediaPlaybackRequiresUserGesture(false);
+
+        // v2.5.0: پل TTS بومی — صفحه (app.js) اول LabelVoiceTts را امتحان می‌کند
+        initNativeTts();
+        webView.addJavascriptInterface(new TtsBridge(), "LabelVoiceTts");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -216,5 +233,90 @@ public class MainActivity extends Activity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    // ================= v2.5.0: پل TTS بومی اندروید =================
+
+    /** راه‌اندازی موتور متن‌به‌گفتار سیستم؛ اولویت با صدای فارسی (fa-IR). */
+    private void initNativeTts() {
+        try {
+            ttsEngine = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+                @Override
+                public void onInit(int status) {
+                    if (status != TextToSpeech.SUCCESS) {
+                        ttsReady = false;
+                        return;
+                    }
+                    ttsReady = true;
+                    try {
+                        int r = ttsEngine.setLanguage(new Locale("fa", "IR"));
+                        ttsFaOk = !(r == TextToSpeech.LANG_MISSING_DATA
+                                || r == TextToSpeech.LANG_NOT_SUPPORTED);
+                        if (!ttsFaOk) {
+                            // فارسی نصب نیست؛ صدای پیش‌فرض دستگاه بهتر از هیچ است
+                            ttsEngine.setLanguage(Locale.getDefault());
+                        }
+                    } catch (Exception ignored) {
+                        ttsFaOk = false;
+                    }
+                }
+            });
+        } catch (Exception ignored) {
+            ttsReady = false;
+        }
+    }
+
+    /** پل جاوااسکریپت ↔ TextToSpeech (v2.5.0) — فقط متدهای مشخص و ایمن. */
+    private class TtsBridge {
+        /** خواندن متن با موتور صوتی سیستم؛ true یعنی فرمان پخش پذیرفته شد. */
+        @JavascriptInterface
+        public boolean speak(String text) {
+            if (!ttsReady || ttsEngine == null || text == null || text.trim().isEmpty()) {
+                return false;
+            }
+            try {
+                ttsEngine.stop();
+                int r = ttsEngine.speak(text, TextToSpeech.QUEUE_FLUSH, null,
+                        "lv-" + System.currentTimeMillis());
+                return r == TextToSpeech.SUCCESS;
+            } catch (Exception ignored) {
+                return false;
+            }
+        }
+
+        /** توقف فوری پخش جاری. */
+        @JavascriptInterface
+        public void stop() {
+            try {
+                if (ttsReady && ttsEngine != null) ttsEngine.stop();
+            } catch (Exception ignored) {
+            }
+        }
+
+        /** آیا موتور صوتی سیستم آماده است؟ (صفحه قبل از speak بررسی می‌کند) */
+        @JavascriptInterface
+        public boolean ready() {
+            return ttsReady;
+        }
+
+        /** «fa» اگر صدای فارسی دستگاه پشتیبانی شود؛ در غیر این صورت «default». */
+        @JavascriptInterface
+        public String langStatus() {
+            return ttsFaOk ? "fa" : "default";
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (ttsEngine != null) {
+            try {
+                ttsEngine.stop();
+                ttsEngine.shutdown();
+            } catch (Exception ignored) {
+            }
+            ttsEngine = null;
+            ttsReady = false;
+        }
+        super.onDestroy();
     }
 }

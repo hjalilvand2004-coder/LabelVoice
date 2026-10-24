@@ -19,13 +19,20 @@ body {
 }
 .wrap { max-width: 780px; width: 100%; }
 .hero {
+  /* v2.5.0: هدر پالتی به درخواست کاربر — سفید + آبی کمرنگ + آبی پررنگ + سبز + قرمز (بدون تصویر) */
   background:
-    linear-gradient(180deg, rgba(255,255,255,.82) 0%, rgba(247,252,255,.62) 50%, rgba(238,247,255,.38) 100%),
-    url('webapp/assets/header-bg-wide.jpg') center 70% / cover no-repeat,
-    linear-gradient(135deg, #0d47a1 0%, #1565c0 45%, #1e88e5 100%);
+    linear-gradient(160deg, #ffffff 0%, #f2f8ff 42%, #e3f0fd 78%, #dcebfd 100%);
   border-radius: 22px; padding: 30px 28px; color: #0d2b4e; text-align: center;
   box-shadow: 0 14px 34px rgba(13,71,161,.28); margin-bottom: 18px; position: relative; overflow: hidden;
   border: 1px solid #c8ddf1;
+}
+/* نوار چهاررنگ بالای هیرو — هماهنگ با موبایل و دسکتاپ */
+.hero::before {
+  content: ''; position: absolute; top: 0; right: 0; left: 0; height: 5px;
+  background: linear-gradient(90deg,
+    #0d47a1 0%, #1e88e5 22%, #90caf9 40%, #ffffff 52%,
+    #e8f5e9 64%, #43a047 82%, #e53935 100%);
+  pointer-events: none;
 }
 html.dark-mode .hero, .hero.dark-hero {
   background: linear-gradient(135deg, #0d47a1 0%, #1565c0 45%, #1e88e5 100%); color: #fff;
@@ -86,7 +93,7 @@ code { background:#eef2f7; border-radius:6px; padding:1px 6px; font-size:12px; d
     <h1>برچسب‌خوان هوشمند دارو و محصولات</h1>
     <p>تصویر بسته را می‌دهد و می‌گوید «روی آن چه نوشته شده» — بدون پایتون، بدون پای‌چارم، بدون نصب هیچ‌چیز.<br>
     فقط یک مرورگر مدرن کافی است؛ موتور OCR و دادهٔ زبان فارسی/انگلیسی داخل همین بسته است و مدل خواننده را خودتان انتخاب می‌کنید.</p>
-    <span class="ver">نسخه ۲.۴.۰ · 👨‍💻 حمید جلیلوند و نوید بدری</span>
+    <span class="ver">نسخه ۲.۵.۰ · 👨‍💻 حمید جلیلوند و نوید بدری</span>
   </div>
   <div class="lv-ribbon" aria-hidden="true"></div>
 
@@ -118,6 +125,8 @@ code { background:#eef2f7; border-radius:6px; padding:1px 6px; font-size:12px; d
     <h3>🧠 مدل‌ها و موتورهای این بسته — شفافیت کامل</h3>
     <table>
       <tr><td>خواندن متن (OCR) — وب/موبایل</td><td><code>Tesseract.js 6 (WebAssembly)</code> — مدل و زبان به انتخاب کاربر از انتخاب‌گر «موتور و مدل خوانش»: سریع/دقیق (LSTM) · <code>fas</code>/<code>eng</code>/<code>fas+eng</code> (v2.4.0) — کاملاً داخل بسته، بدون اینترنت</td></tr>
+      <tr><td>انتخاب موتورهای سنگین در وب/موبایل (v2.5.0)</td><td>«پل OCR» — <code>EasyOCR</code> · <code>Surya</code> · <code>Qwen3-VL-2B-Instruct</code> · <code>Tesseract 5</code> از انتخاب‌گر موتور در رابط وب/موبایل؛ خوانش روی رایانهٔ دسکتاپ شما (سایدبار Streamlit → «🛰️ پل OCR» یا <code>START-BRIDGE.bat</code>)</td></tr>
+      <tr><td>پخش صوتی اندروید (v2.5.0)</td><td>پل بومی <code>TextToSpeech</code> اندروید (LabelVoiceTts) + speechSynthesis مرورگر — رفع بی‌صدایی WebView</td></tr>
       <tr><td>پیش‌پردازش تصویر</td><td>پردازش تصویر با جاوااسکریپت (تیزکردن، صاف‌کردن زاویه، تشخیص جعبه) — همتای OpenCV در نسخهٔ دسکتاپ</td></tr>
       <tr><td>استخراج فیلدها</td><td>الگوها و قواعد فارسی (<code>js/patterns.js + extractor.js</code>) — بدون مدل زبانی ابری</td></tr>
       <tr><td>خوانش صوتی (TTS)</td><td><code>Web Speech API (speechSynthesis)</code> — صدای فارسی روی خود دستگاه</td></tr>
@@ -127,7 +136,7 @@ code { background:#eef2f7; border-radius:6px; padding:1px 6px; font-size:12px; d
   </div>
 
   <div class="foot">
-    👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری · v2.4.0 — انتخاب‌گر موتور/مدل خوانش در وب+موبایل + هدر تصویری اختصاصی + منوی ۵گزینه‌ای دسکتاپ (Tesseract 5 · EasyOCR · Surya · Qwen3-VL · خودکار)
+    👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری · v2.5.0 — انتخاب واقعی ۹موتوره در وب/موبایل (۵ مرورگری + ۳ موتور سنگین با «پل OCR» دسکتاپ) + رفع پخش صوتی اندروید (TTS بومی) + هدر پالتی سفید/آبی/سبز/قرمز به انتخاب کاربر
   </div>
 </div>
 <script>
