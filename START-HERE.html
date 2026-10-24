@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LabelVoice — START-HERE · شروع اینجا</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+* { box-sizing: border-box; }
+:root { --navy:#0d47a1; --teal:#1e88e5; --violet:#43a047; --bg:#f3f9fe; }
+body {
+  font-family: 'Vazirmatn', Tahoma, sans-serif; margin: 0; min-height: 100vh;
+  background:
+    radial-gradient(900px 320px at 85% -60px, rgba(30,136,229,.18), transparent),
+    radial-gradient(800px 300px at 5% -50px, rgba(67,160,71,.15), transparent),
+    radial-gradient(700px 300px at 50% 110%, rgba(229,57,53,.08), transparent),
+    var(--bg);
+  color: #1a2b3c; display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.wrap { max-width: 780px; width: 100%; }
+.hero {
+  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 45%, #1e88e5 100%);
+  border-radius: 22px; padding: 30px 28px; color: #fff; text-align: center;
+  box-shadow: 0 14px 34px rgba(13,71,161,.28); margin-bottom: 18px; position: relative; overflow: hidden;
+}
+/* v2.0.0: به‌جای واترمارک ایموجی درشت، هالهٔ نوری نرم (هماهنگ با تم مدرن v1.9.0) */
+.hero::after {
+  content: ''; position: absolute; left: -40px; top: -40px; width: 220px; height: 220px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(144,202,249,.30), transparent 70%);
+  pointer-events: none;
+}
+.hero .pill-ic { width: 54px; height: 54px; margin: 0 auto 10px; display: block; opacity: .95; }
+.hero h1 { margin: 0 0 8px; font-size: 26px; font-weight: 900; }
+.hero p { margin: 0; color: #dbeafe; font-size: 14px; line-height: 2; }
+.hero .ver { display: inline-block; margin-top: 10px; padding: 3px 14px; border-radius: 999px; font-size: 12px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); }
+.lv-ribbon { height: 7px; border-radius: 999px; margin: 0 0 16px; background: linear-gradient(90deg, #0d47a1 0%, #1e88e5 22%, #e3f2fd 34%, #ffffff 44%, #e8f5e9 56%, #43a047 72%, #e53935 100%); border: 1px solid rgba(13,71,161,.18); box-shadow: 0 2px 8px rgba(13,71,161,.22); }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 620px) { .cards { grid-template-columns: 1fr; } }
+.card {
+  background: #fff; border-radius: 18px; padding: 22px; border: 1px solid #d8e7f6;
+  box-shadow: 0 6px 18px rgba(13,71,161,.07); display: flex; flex-direction: column; gap: 10px;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgba(13,71,161,.12); }
+.card .ic { width: 34px; height: 34px; color: var(--teal); }
+.card h2 { margin: 0; font-size: 17px; font-weight: 900; color: var(--navy); }
+.card p { margin: 0; font-size: 13px; color: #46586b; line-height: 2; flex: 1; }
+.btn {
+  display: block; text-align: center; text-decoration: none; font-weight: 800; font-size: 14px;
+  padding: 12px 16px; border-radius: 13px; color: #fff;
+  background: linear-gradient(135deg, var(--teal), var(--violet));
+  box-shadow: 0 6px 16px rgba(30,136,229,.35);
+}
+.btn.alt { background: linear-gradient(135deg, #1565c0, var(--teal)); }
+.card .tag { font-size: 11px; color: var(--teal); font-weight: 700; }
+.note {
+  margin-top: 16px; background: linear-gradient(90deg, #e8f4fd, #eaf6ec);
+  border: 1px solid #c4ddf4; border-right: 5px solid var(--violet);
+  border-radius: 14px; padding: 14px 18px; font-size: 13px; line-height: 2.1; color: #234;
+}
+.models {
+  margin-top: 14px; background: #fff; border: 1px solid #d8e7f6; border-radius: 14px;
+  padding: 14px 18px; font-size: 12.5px; line-height: 2.1; color: #234;
+}
+.models h3 { margin: 0 0 6px; font-size: 14px; color: var(--navy); font-weight: 900; }
+.models table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.models td { padding: 5px 8px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+.models td:first-child { font-weight: 800; color: var(--navy); white-space: nowrap; }
+.models code { direction: ltr; display: inline-block; }
+.foot { text-align: center; color: #64748b; font-size: 12px; margin-top: 18px; line-height: 2.2; }
+code { background:#eef2f7; border-radius:6px; padding:1px 6px; font-size:12px; direction:ltr; display:inline-block; }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6.3" y="2.9" width="11.5" height="18.2" rx="5.75" transform="rotate(45 12 12)"/><line x1="8.2" y1="15.8" x2="15.8" y2="8.2"/></svg>
+    <h1>برچسب‌خوان هوشمند دارو و محصولات</h1>
+    <p>تصویر بسته را می‌دهد و می‌گوید «روی آن چه نوشته شده» — بدون پایتون، بدون پای‌چارم، بدون نصب هیچ‌چیز.<br>
+    فقط یک مرورگر مدرن کافی است؛ موتور OCR و دادهٔ زبان فارسی/انگلیسی داخل همین بسته است.</p>
+    <span class="ver">نسخه ۲.۲.۰ · 👨‍💻 حمید جلیلوند و نوید بدری</span>
+  </div>
+  <div class="lv-ribbon" aria-hidden="true"></div>
+
+  <div class="cards">
+    <div class="card">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <h2>اجرای فوری — یک فایل (کامپیوتر و موبایل)</h2>
+      <p>فایل <code>label-reader-singlefile.html</code> را دوبار کلیک کنید و تمام. رابط کامل سایدباری دسکتاپ (خواندن دارو / گزارشات و ارزیابی / راهنما و مستندات / دربارهٔ طراحان + حالت تاریک) با موتور OCR و دادهٔ زبانِ تعبیه‌شده.</p>
+      <span class="tag">کاملاً آفلاین — حتی بدون اینترنت · بدون پایتون</span>
+      <a class="btn" href="label-reader-singlefile.html">باز کردن نسخه تک‌فایلی</a>
+    </div>
+    <div class="card">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <h2>نسخه کامل PWA — با دوربین زنده</h2>
+      <p>پوشهٔ <code>webapp</code>: همهٔ امکانات (دوربین زنده، تشخیص جعبه، حالت تاریک، مستندات کامل). برای دسترسی به دوربین، یکی از لانچرهای سرور محلی را اجرا کنید یا از APK اندروید استفاده کنید.</p>
+      <span class="tag">پردازش ۱۰۰٪ روی دستگاه شما</span>
+      <a class="btn alt" href="webapp/index.html">باز کردن نسخه کامل</a>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>راه‌اندازی با سرور محلی (برای دوربین زنده):</b> در ویندوز <code>START-WINDOWS.bat</code> را دوبار کلیک کنید (سرور داخلی روی <code>http://127.0.0.1:8765/</code> اجرا و مرورگر خودکار باز می‌شود — در نسخهٔ ۲.۰.۰ صفحهٔ شروع همین صفحه است و از همین‌جا هر دو نسخه را باز کنید). در لینوکس/مک <code>start-linux-mac.sh</code> را اجرا کنید.<br>
+    📚 <b>مستندات کامل:</b> <a href="webapp/documentation.html">webapp/documentation.html</a> &nbsp;·&nbsp; 📱 نسخهٔ اندروید (APK) از صفحهٔ Releases گیت‌هاب<br>
+    🔒 <b>حریم خصوصی:</b> تصویر و متن برچسب هرگز جایی ارسال یا ذخیره نمی‌شود؛ همه پردازش‌ها روی همین دستگاه انجام می‌شود.<br>
+    ⚠️ <b>محدوده محصول:</b> این ابزار فقط می‌گوید «روی بسته چه نوشته شده است»؛ کاربرد دارو، مقدار مصرف یا توصیه پزشکی ارائه نمی‌دهد. «قدرت درج‌شده» هرگز به‌جای «دوز مصرف» نمی‌نشیند.
+  </div>
+
+  <div class="models">
+    <h3>🧠 مدل‌ها و موتورهای این بسته — شفافیت کامل</h3>
+    <table>
+      <tr><td>خواندن متن (OCR)</td><td><code>Tesseract.js 6 (WebAssembly)</code> با دادهٔ زبان <code>fas+eng</code> — کاملاً داخل بسته، بدون اینترنت</td></tr>
+      <tr><td>پیش‌پردازش تصویر</td><td>پردازش تصویر با جاوااسکریپت (تیزکردن، صاف‌کردن زاویه، تشخیص جعبه) — همتای OpenCV در نسخهٔ دسکتاپ</td></tr>
+      <tr><td>استخراج فیلدها</td><td>الگوها و قواعد فارسی (<code>js/patterns.js + extractor.js</code>) — بدون مدل زبانی ابری</td></tr>
+      <tr><td>خوانش صوتی (TTS)</td><td><code>Web Speech API (speechSynthesis)</code> — صدای فارسی روی خود دستگاه</td></tr>
+      <tr><td>نسخهٔ دسکتاپ (Streamlit)</td><td>Tesseract 5 + EasyOCR + <b>Surya اختیاری</b> (موتور سوم — به انتخاب کاربر در سایدبار «موتور OCR»؛ v2.2.0) (+ دستیار اختیاری <code>Qwen/Qwen3-VL-2B-Instruct</code>) و صدای <code>edge-tts</code>/<code>gTTS</code> با رضایت صریح</td></tr>
+    </table>
+    <p style="margin:8px 0 0; font-size:11.5px; color:#64748b;">شرح کامل هر مدل، نسخهٔ در حال استفاده و جای تحقق آن در کد: بخش «راهنما» ← «مدل‌ها و موتورها» و فایل <code>webapp/documentation.html</code>.</p>
+  </div>
+
+  <div class="foot">
+    👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری · v2.2.0 — لانچر خودترمیم + شفافیت مدل‌ها + پالت داروخانه‌ای + موتور سوم اختیاری Surya (دسکتاپ)
+  </div>
+</div>
+<script>
+/* v2.0.0 — خودترمیم: اگر روی این آدرس (127.0.0.1:8765) سرویس‌ورکرِ نسخهٔ قدیمی
+   (مثلاً از استخراج v1.8.x) باقی مانده باشد، رابط کهنه را از کش سرو می‌کند و
+   صفحه به‌هم‌ریخته دیده می‌شود. این اسکریپت فقط «یک بار در هر مرورگر» همهٔ
+   سرویس‌ورکرها و کش‌های قدیمی همین آدرس را پاک می‌کند تا همیشه نسخهٔ تازه
+   از دیسک خوانده شود. localStorage برنامه دست‌نخورده می‌ماند. */
+(function () {
+  try {
+    var FLAG = 'lv_launcher_cleaned_for_v2';
+    if (localStorage.getItem(FLAG)) { return; }
+    var jobs = [];
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+        rs.forEach(function (r) { try { r.unregister(); } catch (e) {} });
+        return rs.length;
+      }).catch(function () { return 0; }));
+    }
+    if (window.caches && caches.keys && caches.delete) {
+      jobs.push(caches.keys().then(function (keys) {
+        return Promise.all(keys.map(function (k) { return caches.delete(k).catch(function () {}); }));
+      }).catch(function () {}));
+    }
+    Promise.all(jobs).then(function () {
+      try { localStorage.setItem(FLAG, '1'); } catch (e) {}
+    });
+  } catch (e) { /* هرگز صفحهٔ شروع را نمی‌شکند */ }
+})();
+</script>
+</body>
+</html>

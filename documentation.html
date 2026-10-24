@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a2242">
+<meta name="description" content="مستندات فنی کامل «برچسب‌خوان هوشمند دارو و محصولات» (LabelVoice) — معماری، نحوه کارکرد، تک‌تک فایل‌ها، کتابخانه‌ها و فناوری‌ها">
+<title>مستندات فنی — برچسب‌خوان هوشمند دارو و محصولات (LabelVoice)</title>
+<style>
+/* ===== فونت محلی (آفلاین) ===== */
+@font-face { font-family: Vazirmatn; src: url("assets/fonts/Vazirmatn-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: Vazirmatn; src: url("assets/fonts/Vazirmatn-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+
+:root {
+  --bg0: #071322;
+  --bg1: #0c2340;
+  --card: rgba(255, 255, 255, .045);
+  --card2: rgba(255, 255, 255, .07);
+  --stroke: rgba(120, 180, 250, .16);
+  --teal: #42a5f5;
+  --teal2: #1e88e5;
+  --cyan: #22d3ee;
+  --gold: #fbbf24;
+  --violet: #a78bfa;
+  --rose: #fb7185;
+  --blue: #60a5fa;
+  --green: #66bb6a;
+  --text: #e7f0fa;
+  --muted: #93aecb;
+  --code: #0a2438;
+  --radius: 18px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  background:
+    radial-gradient(1100px 600px at 85% -5%, rgba(30, 136, 229, .16), transparent 60%),
+    radial-gradient(900px 500px at 5% 12%, rgba(34, 211, 238, .10), transparent 55%),
+    radial-gradient(800px 600px at 50% 110%, rgba(102, 187, 106, .10), transparent 60%),
+    linear-gradient(180deg, var(--bg0), var(--bg1) 55%, var(--bg0));
+  color: var(--text);
+  font-family: Vazirmatn, Tahoma, "Segoe UI", "Noto Sans Arabic", sans-serif;
+  font-size: 16px; line-height: 2;
+  overflow-x: hidden;
+}
+::selection { background: rgba(30, 136, 229, .4); }
+
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, .path {
+  font-family: Consolas, Menlo, "Courier New", monospace;
+  background: var(--code); color: #9fe8dd;
+  border: 1px solid rgba(120, 220, 220, .18);
+  border-radius: 7px; padding: .06em .45em;
+  font-size: .84em; direction: ltr; unicode-bidi: embed;
+  display: inline-block;
+}
+
+/* ===== نوار پیشرفت + ناوبری ===== */
+#readbar {
+  position: fixed; top: 0; right: 0; height: 3.5px; width: 0%;
+  background: linear-gradient(90deg, var(--cyan), var(--teal), var(--gold));
+  z-index: 99; transition: width .1s linear;
+  border-radius: 0 0 0 4px;
+}
+nav.topnav {
+  position: sticky; top: 0; z-index: 90;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  background: rgba(7, 26, 28, .78);
+  border-bottom: 1px solid var(--stroke);
+}
+.topnav-inner {
+  max-width: 1080px; margin: 0 auto; padding: .55rem 1rem;
+  display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: .55rem; font-weight: 700; font-size: .95rem; }
+.brand .dot {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--teal), #1565c0);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.05rem; box-shadow: 0 4px 14px rgba(30, 136, 229, .35);
+}
+.navlinks { display: flex; gap: .15rem; flex-wrap: wrap; margin-inline-start: auto; }
+.navlinks a {
+  color: var(--muted); font-size: .84rem; padding: .3rem .6rem;
+  border-radius: 9px; transition: all .18s ease;
+}
+.navlinks a:hover { color: var(--text); background: var(--card2); text-decoration: none; }
+.navlinks a.active { color: #06282a; background: var(--teal); font-weight: 700; }
+
+/* ===== قهرمان ===== */
+header.hero {
+  position: relative; overflow: hidden;
+  max-width: 1080px; margin: 0 auto; padding: 4.2rem 1rem 3rem;
+  text-align: center;
+}
+.orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .5; pointer-events: none; animation: float 9s ease-in-out infinite; }
+.orb.o1 { width: 300px; height: 300px; background: rgba(30, 136, 229, .30); top: -60px; right: -80px; }
+.orb.o2 { width: 260px; height: 260px; background: rgba(102, 187, 106, .22); bottom: -80px; left: -60px; animation-delay: -3s; }
+.orb.o3 { width: 200px; height: 200px; background: rgba(251, 191, 36, .14); top: 30%; left: 12%; animation-delay: -6s; }
+@keyframes float { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-26px) scale(1.06); } }
+
+.hero .kicker {
+  display: inline-flex; align-items: center; gap: .45rem;
+  border: 1px solid var(--stroke); background: var(--card);
+  color: var(--cyan); border-radius: 999px;
+  padding: .3rem .95rem; font-size: .84rem; margin-bottom: 1.2rem;
+  animation: rise .7s ease backwards;
+}
+.hero h1 {
+  font-size: clamp(1.7rem, 4.6vw, 3rem); font-weight: 700; line-height: 1.55;
+  animation: rise .7s .08s ease backwards;
+}
+.hero h1 .grad {
+  background: linear-gradient(120deg, var(--cyan) 10%, var(--teal) 45%, var(--gold) 90%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero .lede {
+  max-width: 720px; margin: 1.1rem auto 0; color: var(--muted);
+  font-size: 1.02rem; animation: rise .7s .16s ease backwards;
+}
+.badges { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; margin-top: 1.4rem; animation: rise .7s .24s ease backwards; }
+.badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  border: 1px solid var(--stroke); background: var(--card);
+  border-radius: 999px; padding: .32rem .85rem; font-size: .82rem; color: var(--text);
+}
+.badge b { color: var(--teal); }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+.cta-row { display: flex; gap: .7rem; justify-content: center; flex-wrap: wrap; margin-top: 1.7rem; animation: rise .7s .3s ease backwards; }
+.cta {
+  display: inline-flex; align-items: center; gap: .5rem;
+  border-radius: 13px; padding: .68rem 1.3rem; font-size: .95rem; font-weight: 700;
+  transition: transform .15s ease, box-shadow .15s ease; cursor: pointer; font-family: inherit;
+}
+.cta.primary { background: linear-gradient(120deg, var(--teal), #1e88e5); color: #fff; border: none; box-shadow: 0 8px 26px rgba(30, 136, 229, .35); }
+.cta.ghost { background: transparent; color: var(--cyan); border: 1.5px solid var(--stroke); }
+.cta:hover { transform: translateY(-2px); text-decoration: none; box-shadow: 0 12px 30px rgba(30, 136, 229, .3); }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; max-width: 820px; margin: 2.6rem auto 0; }
+.stat {
+  border: 1px solid var(--stroke); background: var(--card);
+  border-radius: var(--radius); padding: 1rem .6rem;
+  animation: rise .7s ease backwards;
+}
+.stat:nth-child(2) { animation-delay: .1s; } .stat:nth-child(3) { animation-delay: .18s; } .stat:nth-child(4) { animation-delay: .26s; }
+.stat .num { font-size: 1.5rem; font-weight: 700; color: var(--teal); }
+.stat .lbl { font-size: .78rem; color: var(--muted); }
+@media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+/* ===== بخش‌های عمومی ===== */
+main { max-width: 1080px; margin: 0 auto; padding: 0 1rem 4rem; }
+section.block { padding: 3.2rem 0 0; }
+.block-head { margin-bottom: 1.6rem; }
+.block-head .eyebrow { color: var(--teal); font-size: .82rem; font-weight: 700; letter-spacing: .04em; }
+.block-head h2 { font-size: clamp(1.3rem, 3vw, 1.8rem); margin-top: .2rem; }
+.block-head p.sub { color: var(--muted); font-size: .95rem; max-width: 780px; margin-top: .4rem; }
+
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.in { opacity: 1; transform: none; }
+
+/* --- نمودارهای میله‌ای ارزیابی (CSS خالص) --- */
+.chart-title { margin: 1.2rem 0 .6rem; font-size: 1rem; }
+.chart { display: flex; flex-direction: column; gap: .55rem; }
+.bar-row { display: grid; grid-template-columns: minmax(110px, 180px) 1fr 58px; gap: .65rem; align-items: center; }
+.bar-row .bar-label { font-size: .84rem; font-weight: 600; opacity: .94; }
+.bar-track { height: 13px; border-radius: 999px; background: rgba(148,163,184,.16); overflow: hidden; }
+.bar-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #64b5f6, #1e88e5); transition: width 1.1s cubic-bezier(.2,.7,.2,1) .1s; }
+.bar-fill.alt { background: linear-gradient(90deg, #60a5fa, #2563eb); }
+.bar-fill.warn { background: linear-gradient(90deg, #fbbf24, #d97706); }
+.bar-fill.vio { background: linear-gradient(90deg, #c084fc, #7c3aed); }
+.reveal.in .bar-fill { width: var(--w); }
+.bar-val { font-size: .78rem; font-weight: 700; color: #5eead4; text-align: left; white-space: nowrap; }
+.bar-row:nth-child(odd) .bar-val.alt { color: #93c5fd; }
+.hero .authors-line { margin-top: 1.1rem; font-size: 1.02rem; letter-spacing: .2px; }
+.hero .authors-line b { color: #5eead4; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+@media (max-width: 860px) { .grid3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+.card {
+  border: 1px solid var(--stroke); background: var(--card);
+  border-radius: var(--radius); padding: 1.15rem 1.2rem;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.card:hover { transform: translateY(-4px); border-color: rgba(30, 136, 229, .45); box-shadow: 0 14px 34px rgba(0, 0, 0, .3); }
+.card h3 { font-size: 1.02rem; margin-bottom: .45rem; display: flex; align-items: center; gap: .5rem; }
+.card p { font-size: .9rem; color: var(--muted); }
+.card p b, .card li b { color: var(--text); }
+.card .icon { font-size: 1.3rem; }
+
+/* خطوط ایمنی */
+.redline { border-inline-start: 3px solid var(--rose); }
+.redline h3 .icon { filter: hue-rotate(0deg); }
+
+/* ===== معماری ===== */
+.arch-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 820px) { .arch-wrap { grid-template-columns: 1fr; } }
+.arch-box {
+  border: 1px solid var(--stroke); border-radius: var(--radius);
+  background: linear-gradient(160deg, rgba(30, 136, 229, .10), rgba(13, 71, 161, .05) 60%, transparent);
+  padding: 1.2rem;
+}
+.arch-box.mobile { background: linear-gradient(160deg, rgba(96, 165, 250, .10), rgba(30, 64, 175, .06) 60%, transparent); }
+.arch-box h3 { display: flex; align-items: center; gap: .5rem; font-size: 1.05rem; margin-bottom: .6rem; }
+.arch-box .tag { font-size: .72rem; color: #06282a; background: var(--teal); border-radius: 999px; padding: .1rem .55rem; font-weight: 700; }
+.arch-box.mobile .tag { background: var(--blue); color: #04131f; }
+.arch-box ul { list-style: none; }
+.arch-box li { position: relative; padding: .18rem 1.15rem .18rem 0; font-size: .88rem; color: var(--muted); }
+.arch-box li::before { content: '◆'; position: absolute; right: 0; color: var(--teal); font-size: .6rem; top: .55rem; }
+.arch-box.mobile li::before { color: var(--blue); }
+
+.bridge {
+  text-align: center; margin: 1rem auto; position: relative;
+  border: 1px dashed rgba(251, 191, 36, .5); border-radius: 14px;
+  background: rgba(251, 191, 36, .06); color: var(--gold);
+  padding: .6rem 1rem; font-size: .86rem; max-width: 760px;
+}
+
+/* ===== خط پردازش (گام‌ها) ===== */
+.steps { position: relative; margin-top: .5rem; }
+.steps::before {
+  content: ''; position: absolute; top: 10px; bottom: 10px; right: 21px;
+  width: 3px; border-radius: 3px;
+  background: linear-gradient(180deg, var(--cyan), var(--teal), var(--gold));
+  opacity: .55;
+}
+.step { position: relative; padding: 0 60px 1.3rem 0; }
+.step .n {
+  position: absolute; right: 6px; top: 0;
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .85rem;
+  background: var(--bg1); border: 2px solid var(--teal); color: var(--teal);
+  box-shadow: 0 0 0 5px rgba(30, 136, 229, .12);
+}
+.step h4 { font-size: .98rem; }
+.step h4 .chip {
+  display: inline-block; margin-inline-start: .4rem; font-size: .7rem; font-weight: 400;
+  color: var(--cyan); border: 1px solid var(--stroke); border-radius: 999px; padding: .02rem .5rem;
+  vertical-align: middle;
+}
+.step p { color: var(--muted); font-size: .87rem; }
+
+/* ===== فایل‌ها ===== */
+.filecat { border: 1px solid var(--stroke); border-radius: var(--radius); background: var(--card); margin-bottom: .9rem; overflow: hidden; }
+.filecat summary {
+  cursor: pointer; list-style: none; padding: .95rem 1.15rem;
+  display: flex; align-items: center; gap: .6rem; font-weight: 700; font-size: .95rem;
+  transition: background .15s ease;
+}
+.filecat summary::-webkit-details-marker { display: none; }
+.filecat summary:hover { background: var(--card2); }
+.filecat summary .cnt { margin-inline-start: auto; color: var(--muted); font-size: .8rem; font-weight: 400; }
+.filecat summary .arrow { transition: transform .2s ease; color: var(--teal); }
+.filecat[open] summary .arrow { transform: rotate(90deg); }
+.filetable { width: 100%; border-collapse: collapse; }
+.filetable td { padding: .5rem 1.15rem; border-top: 1px solid rgba(120, 220, 220, .09); vertical-align: top; }
+.filetable td.p { width: 44%; font-size: .82rem; }
+.filetable td.d { font-size: .87rem; color: var(--muted); }
+@media (max-width: 620px) {
+  .filetable td { display: block; width: 100%; border-top: none; padding-bottom: .1rem; }
+  .filetable tr { display: block; border-top: 1px solid rgba(120, 220, 220, .09); padding: .45rem 1rem; }
+  .filetable tr:first-child { border-top: none; }
+}
+
+/* ===== فناوری‌ها ===== */
+.techgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .9rem; }
+@media (max-width: 900px) { .techgrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .techgrid { grid-template-columns: 1fr; } }
+.techcard {
+  border: 1px solid var(--stroke); border-radius: var(--radius);
+  background: var(--card); padding: 1rem; position: relative; overflow: hidden;
+  transition: transform .2s ease, border-color .2s ease;
+}
+.techcard:hover { transform: translateY(-4px); border-color: var(--tc, var(--teal)); }
+.techcard::after {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 3px;
+  background: var(--tc, var(--teal)); opacity: .8;
+}
+.techcard .glyph {
+  width: 44px; height: 44px; border-radius: 12px; margin-bottom: .6rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem; font-weight: 700; color: #04211f;
+  background: var(--tc, var(--teal));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--tc, var(--teal)) 40%, transparent);
+}
+.techcard h4 { font-size: .93rem; }
+.techcard .role { font-size: .8rem; color: var(--muted); margin-top: .2rem; }
+.techcard .where { display: inline-block; margin-top: .5rem; font-size: .74rem; color: var(--cyan); border: 1px solid var(--stroke); border-radius: 999px; padding: .05rem .55rem; }
+
+/* نسخه‌ها */
+.timeline { position: relative; padding-right: 24px; }
+.timeline::before { content: ''; position: absolute; right: 7px; top: 6px; bottom: 6px; width: 2px; background: var(--stroke); }
+.tl-item { position: relative; padding: 0 0 1.1rem 0; }
+.tl-item::before {
+  content: ''; position: absolute; right: -22px; top: 10px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--bg1); border: 3px solid var(--teal);
+}
+.tl-item h4 { font-size: .95rem; }
+.tl-item h4 .ver { color: var(--gold); font-size: .8rem; margin-inline-start: .4rem; }
+.tl-item p { font-size: .87rem; color: var(--muted); }
+
+/* فوتر */
+footer.docfoot { border-top: 1px solid var(--stroke); margin-top: 3rem; padding: 2rem 1rem 3rem; text-align: center; color: var(--muted); font-size: .85rem; }
+footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin: .6rem 0; }
+
+.notice {
+  border: 1px solid rgba(251, 113, 133, .35); background: rgba(251, 113, 133, .07);
+  border-radius: var(--radius); padding: 1rem 1.2rem; font-size: .9rem;
+}
+.notice b { color: var(--rose); }
+@media print {
+  body { background: #fff; color: #000; }
+  nav.topnav, #readbar, .orb, .cta-row { display: none !important; }
+  .card, .arch-box, .techcard, .filecat { border-color: #ccc; background: #fff; }
+}
+</style>
+</head>
+<body>
+<div id="readbar"></div>
+<nav class="topnav">
+  <div class="topnav-inner">
+    <span class="brand"><span class="dot">💊</span> برچسب‌خوان هوشمند — مستندات فنی</span>
+    <div class="navlinks" id="navlinks">
+      <a href="#overview">نمای کلی</a>
+      <a href="#architecture">معماری</a>
+      <a href="#considerations">ملزومات استاد</a>
+      <a href="#pipeline">چگونه کار می‌کند</a>
+      <a href="#files">فایل‌ها</a>
+      <a href="#tech">فناوری‌ها</a>
+      <a href="#models">مدل‌ها</a>
+      <a href="#safety">ایمنی</a>
+      <a href="#evaluation">ارزیابی</a>
+      <a href="#install">نصب</a>
+      <a href="#history">نسخه‌ها</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
+  <span class="kicker">📘 سند فنی رسمی — نسخه ۲.۲.۰</span>
+  <h1>برچسب‌خوان هوشمند دارو و محصولات<br><span class="grad">LabelVoice — معماری، کارکرد و فناوری</span></h1>
+  <p class="lede">
+    سامانه‌ای دو زیرسیستمی (دسکتاپ + موبایل) که فقط «متن روی بسته» را با OCR می‌خواند،
+    فیلدها را با شواهد قابل ردیابی استخراج می‌کند و پاسخ فارسی ایمن تولید می‌کند —
+    کاملاً روی دستگاه شما، بدون ارسال هیچ داده‌ای. این سند معماری، نحوه کارکرد،
+    تک‌تک فایل‌های پروژه و همه کتابخانه‌ها و فناوری‌های به‌کاررفته را توضیح می‌دهد.
+  </p>
+  <p class="authors-line">👨‍💻 توسعه و طراحی: <b>حمید جلیلوند</b> و <b>نوید بدری</b></p>
+  <div class="badges">
+    <span class="badge">🔒 <b>۱۰۰٪ محلی</b> بدون سرور</span>
+    <span class="badge">📴 <b>آفلاین</b> پس از بار اول</span>
+    <span class="badge">📱 <b>PWA</b> قابل نصب</span>
+    <span class="badge">🛡️ <b>نگهبان ایمنی</b> پاسخ</span>
+    <span class="badge">🧾 <b>شواهد</b> برای هر فیلد</span>
+  </div>
+  <div class="cta-row">
+    <a class="cta primary" href="index.html">🚀 باز کردن برنامه</a>
+    <a class="cta ghost" href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ مخزن GitHub</a>
+    <a class="cta ghost" href="https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest" target="_blank" rel="noopener">⬇️ نسخه PDF</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num">۲</div><div class="lbl">زیرسیستم هم‌منطق (دسکتاپ + موبایل)</div></div>
+    <div class="stat"><div class="num">۱۲۷+</div><div class="lbl">فایل در مخزن رسمی</div></div>
+    <div class="stat"><div class="num">۱۴۹</div><div class="lbl">آزمون خودکار (pytest + Node + E2E)</div></div>
+    <div class="stat"><div class="num">۸۵٫۷٪</div><div class="lbl">دقت فیلد روی مجموعه آزمون استاندارد</div></div>
+  </div>
+</header>
+
+<main>
+
+<!-- ================= نمای کلی ================= -->
+<section class="block" id="overview">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۱</div>
+    <h2>نمای کلی محصول</h2>
+    <p class="sub">برچسب‌خوان هوشمند (LabelVoice) ابزاری است برای خواندن متن روی بسته‌بندی دارو و محصولات با فناوری OCR و تبدیل آن به پاسخ فارسی مرتب، ساخت‌یافته و قابل پخش صوتی. مرز این ابزار بسیار روشن است: فقط می‌گوید «روی بسته چه نوشته شده»، نه یک کلمه بیشتر.</p>
+  </div>
+  <div class="grid3">
+    <div class="card reveal"><h3><span class="icon">🎯</span> هدف</h3>
+      <p>دسترسی سریع و دقیق به متن روی برچسب برای همه — مخصوصاً کاربرانی که خواندن متن ریز روی بسته برایشان دشوار است. پاسخ نهایی هم متنی است، هم گفتاری و هم فایل JSON ساخت‌یافته برای سیستم‌های دیگر.</p></div>
+    <div class="card reveal"><h3><span class="icon">🧠</span> رویکرد</h3>
+      <p>هیچ مدل زبانی ابری در حلقه نیست؛ پاسخ از قواعد و قالب‌های فارسی ساخته می‌شود و هر جمله به شواهد OCR گره خورده است. نتیجه: پاسخ «هذیان‌آلود» (توهم) در این معماری ممکن نیست — هر عدد باید در تصویر باشد.</p></div>
+    <div class="card reveal redline"><h3><span class="icon">⛔</span> خطوط قرمز</h3>
+      <p><b>هرگز</b> توصیه پزشکی، کاربرد دارو، مقدار مصرف یا تشخیص ارائه نمی‌شود. عبارت «قدرت درج‌شده» جایگزین اجباری «دوز مصرف» است و اطلاعات غایب از اینترنت یا حافظه تکمیل نمی‌شود.</p></div>
+  </div>
+</section>
+
+<!-- ================= معماری ================= -->
+<section class="block" id="architecture">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۲</div>
+    <h2>معماری سامانه</h2>
+    <p class="sub">دو زیرسیستم مستقل با منطق یکسان — یکی برای رایانه (Python) و یکی برای گوشی (JavaScript خالص) — که هر دو دقیقاً همان قواعد استخراج، تناقض‌یابی و نگهبان ایمنی را پیاده می‌کنند و خروجی JSON هم‌ساختار تولید می‌کنند.</p>
+  </div>
+
+  <div class="arch-wrap reveal">
+    <div class="arch-box">
+      <h3>🖥️ زیرسیستم دسکتاپ <span class="tag">Python</span></h3>
+      <ul>
+        <li><b>رابط:</b> Streamlit (RTL کامل، تم روشن/تاریک) — <code>app.py</code></li>
+        <li><b>پیش‌پردازش:</b> OpenCV — CLAHE، حذف نویز، تیزکردن، صاف‌کردن چرخش، سه نسخه خروجی</li>
+        <li><b>OCR:</b> Tesseract 5 (PSM 3+6، ادغام فازی) + EasyOCR اختیاری (lazy) + Surya اختیاری به انتخاب کاربر (v2.2.0) + Qwen3-VL-2B-Instruct اختیاری به انتخاب کاربر (v2.3.0)</li>
+        <li><b>مدل داده:</b> Pydantic v2 با وضعیت پنج‌گانه فیلد و ردیابی شواهد</li>
+        <li><b>گفتار:</b> edge-tts (اصلی) + gTTS (جایگزین) فقط با رضایت صریح</li>
+        <li><b>آزمون:</b> ۷۹ آزمون pytest</li>
+      </ul>
+    </div>
+    <div class="arch-box mobile">
+      <h3>📱 زیرسیستم موبایل / PWA <span class="tag">JavaScript</span></h3>
+      <ul>
+        <li><b>رابط:</b> HTML/CSS/JS خالص (ES5/IIFE) — بدون چارچوب سنگین، RTL کامل</li>
+        <li><b>دوربین زنده:</b> getUserMedia (دوربین پشتی) + انتخاب تیزترین فریم از ۳ فریم</li>
+        <li><b>تشخیص جعبه:</b> سوبل + آستانه درصدی + اتساع + بزرگ‌ترین جزء همبند</li>
+        <li><b>OCR:</b> Tesseract.js 6 روی WebAssembly (LSTM) با داده زبان محلی fas+eng</li>
+        <li><b>گفتار:</b> Web Speech API روی خود دستگاه</li>
+        <li><b>آزمون:</b> ۵۴ آزمون Node + ۱۶ آزمون E2E مرورگر</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="bridge reveal">🔗 <b>پل هم‌منطقی:</b> قواعد نرمال‌سازی، الگوهای regex، ادغام فازی (شباهت ≥ ۰٫۸)، محافظ مقدار صفر، تشخیص تناقض، نگهبان ایمنی و ساختار خروجی JSON — همگی به‌صورت جفتی (Python ⇄ JS) پیاده و با آزمون‌های موازی هم‌راستا شده‌اند.</div>
+
+  <div class="grid3 reveal" style="margin-top:1rem">
+    <div class="card"><h3><span class="icon">🗄️</span> لایه داده</h3>
+      <p>بدون دیتابیس! تنها «داده»، مدل‌های Pydantic در حافظه و خروجی JSON اختیاری کاربر است. هیچ تصویر یا متنی لاگ یا ذخیره نمی‌شود — حذف کامل نگرانی حریم خصوصی.</p></div>
+    <div class="card"><h3><span class="icon">🧩</span> لایه منطق</h3>
+      <p>ماژول‌های مستقل: نرمال‌سازی نویسه، الگوها، استخراج، تناقض، نگهبان، قالب پاسخ — هرکدام به‌تنهایی آزمون‌پذیر و در دو زبان با رفتار یکسان.</p></div>
+    <div class="card"><h3><span class="icon">🎨</span> لایه نمایش</h3>
+      <p>Streamlit RTL با CSS سفارشی برای دسکتاپ؛ PWA نصب‌شدنی با Service Worker، مودال‌های راهنمای درون‌برنامه‌ای و تم خودکار برای موبایل.</p></div>
+  </div>
+</section>
+<!-- ================= ملزومات طرح‌شده توسط استاد ================= -->
+<section class="block" id="considerations">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۳ — ملزومات استاد</div>
+    <h2>ملزومات طرح‌شده توسط استاد (استاد قربانی) و محل تحقق هر الزام</h2>
+    <p class="sub">ملزومات پروژه در دو دسته («۱. تعریف مسئله» و «۲. نمودار معماری») به‌صورت عیناً نقل شده است. برای هر الزام، نحوه تحقق، فایل(های) دقیق پیاده‌سازی و آزمون ردیابی‌پذیر آن مشخص شده تا انطباق پیاده‌سازی با ملزومات استاد، قابل بررسی مستقیم باشد.</p>
+  </div>
+
+  <div class="card reveal" style="margin-bottom:1.1rem; border-inline-start:3px solid #fbbf24; background:rgba(251,191,36,.05)"><h3><span class="icon">📌</span> دسته ۱ — تعریف مسئله (عین ملزومات استاد)</h3>
+    <p style="color:#e7f4f4">«کاربر دوربین را به سمت جعبه دارو یا بسته‌بندی یک محصول می‌گیرد. سامانه نام، اطلاعات چاپ‌شده و سایر فیلدهای قابل خواندن را استخراج می‌کند و آن‌ها را به زبان فارسی می‌خواند. برای مثال، روی بسته دارو نام، قدرت درج‌شده و تعداد قرص‌ها وجود دارد. سامانه باید اطلاعات خوانده‌شده را از توصیه‌های پزشکی جدا نگه دارد.»</p>
+  </div>
+
+  <div class="card reveal" style="margin-bottom:1.1rem; border-inline-start:3px solid #fbbf24; background:rgba(251,191,36,.05)"><h3><span class="icon">🗺️</span> دسته ۲ — نمودار معماری (تصویر بسته‌بندی) (عین ملزومات استاد)</h3>
+    <p style="color:#e7f4f4">«OpenCV (تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح) ← OCR (استخراج نام، اعداد و متن بسته‌بندی) ← پردازش متن و کنترل فیلدها (نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده) ← تولید پاسخ فارسی (منطق استخراج اطلاعات یا LLM برای بازنویسی وفادار به متن) ← TTS + Streamlit (خواندن اطلاعات و نمایش متن استخراج‌شده)»</p>
+  </div>
+
+  <h3 class="chart-title reveal">✅ جدول انطباق دسته ۱ — تعریف مسئله: هر جمله الزام کجا تحقق یافته است؟</h3>
+  <div class="card reveal" style="overflow-x:auto">
+    <table style="width:100%; border-collapse:collapse; font-size:.88rem">
+      <thead><tr style="text-align:right; color:#5eead4">
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">الزام (عین ملزومات)</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">نحوه تحقق در سامانه</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل(های) پیاده‌سازی</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">آزمون / شاهد</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">وضعیت</th>
+      </tr></thead>
+      <tbody style="opacity:.94">
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">«کاربر دوربین را به سمت جعبه دارو یا بسته‌بندی یک محصول می‌گیرد»</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">دوربین زنده با انتخاب تیزترین فریم از ۳ فریم + جایگزین عکس با دوربین سیستم + بارگذاری از گالری</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/camera.js</code> + <code>js/app.js</code> ⇄ <code>app.py</code> (st.camera_input / st.file_uploader)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۱۶ آزمون E2E مرورگر (بازشدن دوربین، شاتر، تشخیص جعبه)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅ تحقق یافته</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">«سامانه نام، اطلاعات چاپ‌شده و سایر فیلدهای قابل خواندن را استخراج می‌کند»</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">OCR دوموتوره چند-PSM با ادغام فازی + استخراج ۷ فیلد ساخت‌یافته با regex دو زبانه و گره‌زدن هر مقدار به شواهد</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/ocr/*</code> + <code>extraction/*</code> ⇄ <code>mobile-app/js/ocr.js</code> + <code>js/extractor.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">tests/test_patterns_fields.py + tests-js/run_tests.js</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅ تحقق یافته</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">«آن‌ها را به زبان فارسی می‌خواند»</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">پاسخ فارسی قاعده‌محور + خوانش صوتی فارسی (edge-tts/gTTS با رضایت در دسکتاپ؛ speechSynthesis روی خود دستگاه در موبایل)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/response/builder.py</code> + <code>tts/*</code> ⇄ <code>mobile-app/js/responder.js</code> + <code>js/app.js</code> (speechSynthesis)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">tests/test_tts_llm.py + E2E پخش صوتی</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅ تحقق یافته</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">«روی بسته دارو نام، قدرت درج‌شده و تعداد قرص‌ها وجود دارد»</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">این سه فیلد هسته مدل داده‌اند (name، strength، count) با الگوهای اختصاصی قدرت (mg/µg/mL) و تعداد</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/extraction/patterns.py</code> + <code>extraction/fields.py</code> ⇄ <code>mobile-app/js/patterns.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۱۴ نمونه زمینه‌سنجی‌شده (manifest.json) هر سه فیلد را پوشش می‌دهند</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅ تحقق یافته</b></td></tr>
+        <tr><td style="padding:.55rem .6rem"><b>«سامانه باید اطلاعات خوانده‌شده را از توصیه‌های پزشکی جدا نگه دارد»</b></td><td style="padding:.55rem .6rem">نگهبان ایمنی: واژه ممنوع «دوز مصرف» (جایگزین اجباری: «قدرت درج‌شده»)، مسدودسازی ادعای کاربرد/تشخیص/مقدار مصرف، رد مقدار صفر، الزام حضور هر عدد در شواهد، تزریق سلب مسئولیت</td><td style="padding:.55rem .6rem"><code>label_reader/response/guard.py</code> ⇄ <code>mobile-app/js/guard.js</code></td><td style="padding:.55rem .6rem">آزمون‌های اختصاصی در tests/test_response_builder.py و tests/test_security.py (متن مخرب «توصیه بده» رد می‌شود)</td><td style="padding:.55rem .6rem; color:#5eead4"><b>✅ تحقق یافته</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="chart-title reveal">✅ جدول انطباق دسته ۲ — نمودار معماری: هر مرحله کجا و چگونه پیاده شده است؟</h3>
+  <div class="card reveal" style="overflow-x:auto">
+    <table style="width:100%; border-collapse:collapse; font-size:.88rem">
+      <thead><tr style="text-align:right; color:#5eead4">
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">مرحله ملزومات استاد</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">پیاده‌سازی واقعی</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل دسکتاپ</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل موبایل</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">وضعیت</th>
+      </tr></thead>
+      <tbody style="opacity:.94">
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">ورودی: تصویر بسته‌بندی</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">دریافت و اعتبارسنجی (magic bytes، حجم، ابعاد) + ارزیابی کیفیت</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>app.py</code> + <code>label_reader/validation.py</code> + <code>quality.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/app.js</code> + <code>js/camera.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">OpenCV — تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">لبه‌یابی سوبل + بزرگ‌ترین جزء همبند (برش جعبه)، deskew ±۱۵°، مقیاس هوشمند، CLAHE، تیزکردن Unsharp، نسخه دودویی</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/preprocess.py</code> + <code>quality.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/preprocess.js</code> + <code>js/boxdetect.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">OCR — استخراج نام، اعداد و متن بسته‌بندی</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">Tesseract 5 (PSM 3+6، ادغام فازی ≥ ۰٫۸) + EasyOCR اختیاری + Surya اختیاری + Qwen3-VL-2B-Instruct اختیاری — همه به انتخاب کاربر؛ در موبایل Tesseract.js روی WASM با PSM 11</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/ocr/tesseract_provider.py</code> + <code>easyocr_provider.py</code> + <code>surya_provider.py</code> + <code>vlm_provider.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/ocr.js</code> (Tesseract.js 6)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">پردازش متن و کنترل فیلدها — نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">نرمال‌سازی نویسه (ي→ی، ك→ک، ارقام فارسی)، regex دو زبانه، وضعیت پنج‌گانه فیلد، تناقض‌یابی و محافظ صفر</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/textnorm.py</code> + <code>extraction/patterns.py</code> + <code>extraction/extractor.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/textnorm.js</code> + <code>js/patterns.js</code> + <code>js/extractor.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅</b></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">تولید پاسخ فارسی — منطق استخراج یا LLM برای بازنویسی وفادار</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">مسیر اصلی: موتور قاعده‌محور (بدون توهم)؛ ماژول LLM اختیاری و پیش‌فرض خاموش پیاده شده و در صورت فعال‌سازی، خروجی دوباره از نگهبان عبور می‌کند — یعنی فقط «بازنویسی وفادار» ممکن است</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/response/builder.py</code> + <code>response/guard.py</code> + <code>llm/rewriter.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>mobile-app/js/responder.js</code> + <code>js/guard.js</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); color:#5eead4"><b>✅</b></td></tr>
+        <tr><td style="padding:.55rem .6rem"><b>TTS + Streamlit — خواندن اطلاعات و نمایش متن استخراج‌شده</b></td><td style="padding:.55rem .6rem">نمایش ساخت‌یافته + خوانش صوتی همان پاسخ تأییدشده؛ در دسکتاپ با رضایت صریح، در موبایل کاملاً روی دستگاه</td><td style="padding:.55rem .6rem"><code>label_reader/tts/*</code> + <code>app.py</code> (Streamlit RTL)</td><td style="padding:.55rem .6rem"><code>speechSynthesis</code> در <code>mobile-app/js/app.js</code> + <code>index.html</code></td><td style="padding:.55rem .6rem; color:#5eead4"><b>✅</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bridge reveal" style="margin-top:1rem">📋 <b>جمع‌بندی انطباق:</b> هر ۵ جمله الزام دسته ۱ و هر ۵ مرحله دسته ۲ پیاده‌سازی، آزمون و راستی‌آزمایی شده‌اند؛ «یا»ی ملزومات در مرحله پاسخ‌سازی به نفع مسیر امن‌تر (منطق استخراج قاعده‌محور) و LLM وفادار اختیاری/خاموش انتخاب شده است. همین نگاشت در سند PDF (بخش ۲) و در رابط دسکتاپ (بخش «ملزومات استاد» و مودال راهنمای آن) نیز آمده است.</div>
+
+  <h3 class="chart-title reveal" id="staged-processing">🧭 اعلام مرحله‌به‌مرحله پردازش، نمایش خروجی و ارزیابی مرحله‌ای (از v1.6.0)</h3>
+  <div class="card reveal" style="margin-bottom:1.1rem">
+    <p style="color:#e7f4f4">بر اساس همین ملزومات، پردازش دیگر «جعبه سیاه» نیست: در حین اجرا، سامانه به کاربر <b>اعلام می‌کند</b> که «الان کدام بخش از نیازمندی استاد انجام شد»؛ برای هر مرحله <b>خروجی واقعی</b> همان مرحله و <b>معیارهای ارزیابی کیفیت</b> آن با دکمه «خروجی و ارزیابی» نمایش داده می‌شود و در پایان، <b>گزارش ارزیابی مرحله‌ای (JSON)</b> قابل دانلود است. این رفتار در هر دو زیرسیستم (دسکتاپ Streamlit و موبایل PWA) پیاده شده است.</p>
+    <p style="color:#e7f4f4">پیام اعلام هر مرحله دقیقاً به همین شکل است: «✅ مرحله <i>n</i> از ۵ انجام شد: … — این بخش از نیازمندی استاد برآورده شد.» و پیش از شروع، «تعریف مسئله» (دسته ۱ ملزومات) نیز به کاربر اعلام می‌شود.</p>
+  </div>
+  <div class="card reveal" style="overflow-x:auto; margin-bottom:1.1rem">
+    <table style="width:100%; border-collapse:collapse; font-size:.88rem">
+      <thead><tr style="text-align:right; color:#5eead4">
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">مرحله (الزام استاد)</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">پیام اعلام به کاربر</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">خروجی نمایش‌داده‌شده</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">معیارهای ارزیابی کیفیت</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل دسکتاپ</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل موبایل</th>
+      </tr></thead>
+      <tbody style="opacity:.94">
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۱. OpenCV (تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">«مرحله ۱ از ۵ انجام شد — این بخش از نیازمندی استاد برآورده شد»</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">تصویر بهبودیافته + وضعیت برش/چرخش</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">تیزی (لاپلاسین) قبل←بعد، کنتراست، زاویه اصلاحی، نسخه‌های ساخته‌شده</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/stages.py</code> + <code>pipeline.py</code> (callback) + <code>preprocess.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>js/app.js</code> (خط‌زمان) + <code>js/boxdetect.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۲. OCR (استخراج نام، اعداد و متن)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">همان الگوی اعلام</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">متن خام سطربه‌سطر + نواحی شناسایی‌شده</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">تعداد قطعه/سطر، میانگین اطمینان ٪، نویسه‌ها، گذرها</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/ocr/*</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>js/ocr.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۳. پردازش متن و کنترل فیلدها</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">همان الگوی اعلام</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">جدول فیلدها با وضعیت پنج‌گانه و شواهد</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">تعداد وضعیت‌ها، پوشش شواهد (ردیابی‌پذیری ٪)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>extraction/*</code> + <code>textnorm.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>js/extractor.js</code> (onStage در <code>pipeline.js</code>)</td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">۴. تولید پاسخ فارسی (استخراج یا LLM وفادار)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">همان الگوی اعلام</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">پاسخ فارسی نهایی</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">عبور از نگهبان (بدون «دوز مصرف»/توصیه)، مسیر تولید، طول</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>response/builder.py</code> + <code>guard.py</code></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>js/responder.js</code> + <code>js/guard.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem">۵. TTS + رابط (خواندن و نمایش)</td><td style="padding:.55rem .6rem">همان الگوی اعلام</td><td style="padding:.55rem .6rem">متن آماده خوانش + پخش‌کننده صوتی</td><td style="padding:.55rem .6rem">موتور صوتی، آماده‌سازی تلفظ، وضعیت صوت (در دسکتاپ با رضایت)</td><td style="padding:.55rem .6rem"><code>label_reader/tts/*</code> + <code>app.py</code></td><td style="padding:.55rem .6rem"><code>speechSynthesis</code> در <code>js/app.js</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="bridge reveal">🧪 <b>آزمون این رفتار:</b> ۱۶ آزمون pytest جدید (<code>tests/test_stages.py</code> — ترتیب مراحل، پیام‌های اعلام، معیارها، گزارش JSON) و آزمون پاریتی Node برای اعلام مراحل ۳ و ۴ (<code>tests-js/run_tests.js</code>). فایل‌های رابط: <code>app.py</code> (بخش «اعلام مراحل پردازش و ارزیابی مرحله‌ای») و <code>mobile-app/index.html</code> (خط‌زمان <code>stages-box</code>).</div>
+
+  <h3 class="chart-title reveal">🧭 نمودار معماری مرجع — از تصویر بسته‌بندی تا خوانش فارسی</h3>
+  <div class="steps reveal">
+    <div class="step"><span class="n">۰</span>
+      <h4>تصویر بسته‌بندی (ورودی) <span class="chip">دوربین / فایل</span></h4>
+      <p>عکس جعبه دارو یا بسته محصول با دوربین زنده یا فایل گالری وارد می‌شود و اعتبارسنجی می‌گردد.<br>
+      <b>فایل دسکتاپ:</b> <code>app.py</code> + <code>label_reader/validation.py</code> &nbsp;|&nbsp; <b>موبایل:</b> <code>mobile-app/js/app.js</code> + <code>js/camera.js</code></p></div>
+    <div class="step"><span class="n">۱</span>
+      <h4>OpenCV — تشخیص ناحیه برچسب، اصلاح زاویه و بهبود وضوح <span class="chip">OpenCV / Canvas</span></h4>
+      <p>تشخیص ناحیه برچسب و جعبه (لبه‌یابی و بزرگ‌ترین جزء همبند)، صاف‌کردن چرخش، مقیاس‌گذاری، CLAHE و تیزکردن.<br>
+      <b>فایل دسکتاپ:</b> <code>label_reader/preprocess.py</code> + <code>quality.py</code> &nbsp;|&nbsp; <b>موبایل:</b> <code>mobile-app/js/preprocess.js</code> + <code>js/boxdetect.js</code></p></div>
+    <div class="step"><span class="n">۲</span>
+      <h4>OCR — استخراج نام، اعداد و متن بسته‌بندی <span class="chip">Tesseract 5 / Tesseract.js (WASM)</span></h4>
+      <p>خوانش چندنسخه‌ای و چند-PSM با ادغام فازی خوانش‌های مشابه؛ خروجی: قطعه‌های متنی با کادر و اطمینان.<br>
+      <b>فایل دسکتاپ:</b> <code>label_reader/ocr.py</code> &nbsp;|&nbsp; <b>موبایل:</b> <code>mobile-app/js/ocr.js</code></p></div>
+    <div class="step"><span class="n">۳</span>
+      <h4>پردازش متن و کنترل فیلدها <span class="chip">Regex دو زبانه + Pydantic</span></h4>
+      <p>نرمال‌سازی نام و ارقام فارسی، استخراج قدرت و تعداد درج‌شده، گره‌زدن هر مقدار به شواهد و تشخیص تناقض.<br>
+      <b>فایل دسکتاپ:</b> <code>label_reader/textnorm.py</code> + <code>extraction/patterns.py</code> + <code>extraction/extractor.py</code> &nbsp;|&nbsp; <b>موبایل:</b> <code>mobile-app/js/textnorm.js</code> + <code>js/patterns.js</code> + <code>js/extractor.js</code></p></div>
+    <div class="step"><span class="n">۴</span>
+      <h4>تولید پاسخ فارسی — وفادار به متن <span class="chip">موتور قاعده‌محور + نگهبان</span></h4>
+      <p>بازگویی وفادار به متن استخراج‌شده (بدون LLM ابری یا تکمیل از حافظه) و عبور اجباری از نگهبان ایمنی.<br>
+      <b>فایل دسکتاپ:</b> <code>label_reader/response/builder.py</code> + <code>response/guard.py</code> &nbsp;|&nbsp; <b>موبایل:</b> <code>mobile-app/js/responder.js</code> + <code>js/guard.js</code></p></div>
+    <div class="step"><span class="n">۵</span>
+      <h4>TTS + رابط کاربری — خواندن اطلاعات و نمایش متن استخراج‌شده <span class="chip">edge-tts / Web Speech API</span></h4>
+      <p>نمایش ساخت‌یافته فیلدها و خواندن همان پاسخ تأییدشده؛ در دسکتاپ با رضایت صریح، در موبایل کاملاً روی دستگاه.<br>
+      <b>فایل دسکتاپ:</b> <code>label_reader/tts.py</code> + <code>app.py</code> (Streamlit) &nbsp;|&nbsp; <b>موبایل:</b> <code>speechSynthesis</code> در <code>mobile-app/js/app.js</code></p></div>
+  </div>
+
+  <h3 class="chart-title reveal">🗂️ نگاشت ملاحظه‌های ایمنی و کیفیت به محل پیاده‌سازی (تکمیلی)</h3>
+  <div class="card reveal" style="overflow-x:auto">
+    <table style="width:100%; border-collapse:collapse; font-size:.88rem">
+      <thead><tr style="text-align:right; color:#5eead4">
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">ملاحظه</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">چگونه پیاده شده است</th>
+        <th style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.25)">فایل(ها)</th>
+      </tr></thead>
+      <tbody style="opacity:.94">
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><b>جداسازی اطلاعات از توصیه پزشکی</b></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">نگهبان پاسخ: ممنوع‌واژه‌ها (ازجمله «دوز مصرف»)، مسدودسازی ادعای کاربرد/تشخیص، سلب مسئولیت اجباری در پایان پاسخ</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/response/guard.py</code> ⇄ <code>mobile-app/js/guard.js</code> + آزمون‌ها در <code>tests/test_response_builder.py</code> و <code>tests-js/run_tests.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><b>وفاداری به شواهد (بدون توهم)</b></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">هر فیلد به شناسه قطعه‌های OCR (source_ids) گره می‌خورد و هر عدد در پاسخ باید در شواهد موجود باشد</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/extraction/extractor.py</code> + <code>response/builder.py</code> ⇄ <code>mobile-app/js/extractor.js</code> + <code>js/responder.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><b>«قدرت درج‌شده» ≠ «دوز مصرف»</b></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">واژه‌گزینی اجباری در قالب‌های پاسخ + رد قطعی واژه ممنوع در نگهبان (آزمون اختصاصی دارد)</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/response/builder.py</code> + <code>response/guard.py</code> ⇄ <code>mobile-app/js/responder.js</code> + <code>js/guard.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><b>شفافیت ناخوانا/متناقض</b></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">وضعیت‌های پنج‌گانه فیلد (extracted/uncertain/missing/conflicting/user_corrected) + اصلاح دستی کاربر</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/models.py</code> + <code>ui_helpers.py</code> ⇄ <code>mobile-app/js/pipeline.js</code> + <code>js/app.js</code></td></tr>
+        <tr><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><b>ورودی امن</b></td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)">بررسی امضای باینری (magic bytes) PNG/JPEG/WebP، سقف حجم ۱۰MB و حداقل ابعاد</td><td style="padding:.55rem .6rem; border-bottom:1px solid rgba(148,163,184,.12)"><code>label_reader/validation.py</code> ⇄ <code>mobile-app/js/app.js</code> (تابع اعتبارسنجی)</td></tr>
+        <tr><td style="padding:.55rem .6rem"><b>کیفیت تصویر پیش از OCR</b></td><td style="padding:.55rem .6rem">سنجش تاری (واریانس لاپلاسین)، تاریکی و انعکاس با هشدار شفاف به کاربر</td><td style="padding:.55rem .6rem"><code>label_reader/quality.py</code> ⇄ <code>mobile-app/js/app.js</code> (ارزیابی کیفیت)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= چگونه کار می‌کند ================= -->
+<section class="block" id="pipeline">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۴</div>
+    <h2>چگونه کار می‌کند؟ — خط پردازش ۹ مرحله‌ای</h2>
+    <p class="sub">این خط در هر دو زیرسیستم با همان ترتیب اجرا می‌شود؛ تفاوت فقط در پیاده‌سازی (OpenCV ⇄ Canvas) است، نه در قواعد. هر مرحله با فناوری واقعی‌اش مشخص شده است. <b>از نسخه ۱.۶.۰</b> تکمیل هر مرحله هنگام پردازش به کاربر اعلام و خروجی و ارزیابی کیفیت همان مرحله نمایش داده می‌شود (جدول کامل در بخش ۳ — <a href="#staged-processing" style="color:#5eead4">اعلام مرحله‌به‌مرحله</a>).</p>
+  </div>
+  <div class="steps">
+    <div class="step reveal"><span class="n">۱</span>
+      <h4>ورود و اعتبارسنجی تصویر <span class="chip">File API / magic bytes</span></h4>
+      <p>بررسی امضای باینری PNG/JPEG/WebP، سقف حجم ۱۰ مگابایت و حداقل ابعاد — فایل‌های غیرتصویری رد می‌شوند تا موتور OCR با ورودی مخرب روبه‌رو نشود.</p></div>
+    <div class="step reveal"><span class="n">۲</span>
+      <h4>ارزیابی کیفیت <span class="chip">واریانس لاپلاسین / هیستوگرام</span></h4>
+      <p>تاری، تاریکی و انعکاس نور سنجیده می‌شود؛ هشدارها به‌صورت چیپ رنگی نمایش داده می‌شوند تا کاربر در صورت نیاز عکس بهتری بگیرد.</p></div>
+    <div class="step reveal"><span class="n">۳</span>
+      <h4>پیش‌پردازش <span class="chip">OpenCV / Canvas</span></h4>
+      <p>مقیاس هوشمند تا ۱۲۰۰px کوتاه‌ترین ضلع، CLAHE (دسکتاپ)، تیزکردن Unsharp، صاف‌کردن چرخش ±۱۵° و ساخت نسخه‌های اصلی/تیزشده/دودویی.</p></div>
+    <div class="step reveal"><span class="n">۴</span>
+      <h4>تشخیص و برش جعبه دارو <span class="chip">سوبل + مورفولوژی</span></h4>
+      <p>ناحیه بسته با لبه‌یابی سوبل، آستانه درصدی، اتساع و بزرگ‌ترین جزء همبند پیدا و از پس‌زمینه برش داده می‌شود — نویز OCR به‌شدت کم می‌شود.</p></div>
+    <div class="step reveal"><span class="n">۵</span>
+      <h4>OCR چندنسخه‌ای و چند-PSM <span class="chip">Tesseract 5 / Tesseract.js (WASM LSTM)</span></h4>
+      <p>هر نسخه تصویر با دو حالت چیدمان (PSM 3 و 6؛ در موبایل همچنین PSM 11 پراکنده) خوانده می‌شود؛ <code>user_defined_dpi</code> برای دقت تنظیم شده است.</p></div>
+    <div class="step reveal"><span class="n">۶</span>
+      <h4>ادغام فازی خوانش‌ها <span class="chip">شباهت ترتیبی ≥ ۰٫۸</span></h4>
+      <p>خوانش‌های مشابه ادغام و تکرارها حذف می‌شوند؛ بازده هر خوانش امتیازدهی می‌شود و در خوانش ضعیف، چرخش‌های ۹۰° به‌طور خودکار آزموده می‌شوند.</p></div>
+    <div class="step reveal"><span class="n">۷</span>
+      <h4>استخراج فیلدها و تناقض‌یابی <span class="chip">Regex دو زبانه + Pydantic</span></h4>
+      <p>نام، قدرت درج‌شده، شکل دارویی، حجم/وزن، تاریخ، سری و سازنده استخراج می‌شود؛ هر مقدار به شناسه قطعه‌های شاهد گره می‌خورد و خوانش‌های متناقض شفاف اعلام می‌شوند.</p></div>
+    <div class="step reveal"><span class="n">۸</span>
+      <h4>تولید پاسخ فارسی <span class="chip">موتور قاعده‌محور</span></h4>
+      <p>مقدمه بر اساس نوع بسته (دارو/محصول) انتخاب و پاسخ از قالب‌های فارسی ساخته می‌شود — بدون هیچ مدل زبانی ابری و بدون تکمیل اطلاعات از حافظه.</p></div>
+    <div class="step reveal"><span class="n">۹</span>
+      <h4>نگهبان ایمنی و خروجی <span class="chip">Guard / TTS / JSON</span></h4>
+      <p>واژه‌های ممنوع (مانند «دوز مصرف») رد، اعداد خارج از شواهد مسدود و سلب مسئولیت تزریق می‌شود؛ سپس نمایش، پخش صوتی و دانلود JSON انجام می‌گیرد.</p></div>
+  </div>
+</section>
+
+<!-- ================= فایل‌های سامانه ================= -->
+<section class="block" id="files">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۵</div>
+    <h2>فایل‌های سامانه — مرجع کامل</h2>
+    <p class="sub">تک‌تک فایل‌های مخزن به تفکیک دسته، همراه با نقش هر فایل. پوشه‌های داده حجیم (مدل‌ها، نمونه‌ها، آیکون‌ها) به‌صورت گروهی معرفی شده‌اند.</p>
+  </div>
+
+  <details class="filecat reveal" open>
+    <summary><span class="arrow">▸</span> 🧠 هسته پایتون — <code>label_reader/</code> <span class="cnt">۲۳ فایل</span></summary>
+    <table class="filetable">
+      <tr><td class="p"><code>__init__.py</code></td><td class="d">متادیتا، نام فارسی محصول (APP_NAME_FA)، محدوده (SCOPE_FA) و نسخه</td></tr>
+      <tr><td class="p"><code>config.py</code></td><td class="d">تنظیمات با pydantic-settings: موتور OCR، آستانه‌های کیفیت، ابعاد مقیاس، سقف حجم</td></tr>
+      <tr><td class="p"><code>models.py</code></td><td class="d">مدل‌های Pydantic v2: OcrPiece، RawLine، Field (وضعیت پنج‌گانه + شواهد)، Metadata</td></tr>
+      <tr><td class="p"><code>textnorm.py</code></td><td class="d">نرمال‌سازی نویسه: ي→ی، ك→ک، ارقام فارسی/عربی→لاتین، فاصله‌ها</td></tr>
+      <tr><td class="p"><code>validation.py</code></td><td class="d">اعتبارسنجی: magic bytes، سقف حجم/ابعاد، ImageValidationError با پیام فارسی</td></tr>
+      <tr><td class="p"><code>quality.py</code></td><td class="d">تاری (لاپلاسین)، تاریکی، انعکاس؛ هیوریستیک پس‌زمینه‌آگاه و شدت‌ها</td></tr>
+      <tr><td class="p"><code>preprocess.py</code></td><td class="d">OpenCV: مقیاس هوشمند، CLAHE، حذف نویز، تیزکردن، deskew، سه نسخه خروجی</td></tr>
+      <tr><td class="p"><code>pipeline.py</code></td><td class="d">هماهنگ‌کننده کل خط: اعتبارسنجی→کیفیت→پیش‌پردازش→OCR→استخراج→پاسخ</td></tr>
+      <tr><td class="p"><code>ui_helpers.py</code></td><td class="d">کمک‌های رابط: RTL، جدول فیلدها، رسم کادرهای OCR روی تصویر، برچسب‌های فارسی</td></tr>
+      <tr><td class="p"><code>extraction/__init__.py</code></td><td class="d">امضای عمومی زیربسته استخراج</td></tr>
+      <tr><td class="p"><code>extraction/classify.py</code></td><td class="d">تشخیص نوع بسته: دارو / محصول عمومی (مبتنی بر واژگان و الگوها)</td></tr>
+      <tr><td class="p"><code>extraction/patterns.py</code></td><td class="d">الگوهای regex دو زبانه: قدرت (mg/µg/mL)، شکل دارویی، تاریخ، سری، سازنده</td></tr>
+      <tr><td class="p"><code>extraction/fields.py</code></td><td class="d">نقشه‌برداری قطعه‌ها به فیلدها + ساخت Field با شواهد و یادداشت فارسی</td></tr>
+      <tr><td class="p"><code>extraction/conflicts.py</code></td><td class="d">تشخیص تناقض میان خوانش‌ها (دو قدرت متفاوت و…) با محافظ مقدار صفر</td></tr>
+      <tr><td class="p"><code>ocr/__init__.py</code> · <code>base.py</code></td><td class="d">انتخاب موتور (factory) و کلاس پایه OCR با امضای مشترک</td></tr>
+      <tr><td class="p"><code>ocr/tesseract_provider.py</code></td><td class="d">Tesseract 5 با pytesseract: دو PSM (3 و 6)، ادغام فازی ≥ ۰٫۸، کادرها و اطمینان</td></tr>
+      <tr><td class="p"><code>ocr/easyocr_provider.py</code></td><td class="d">EasyOCR fa+en — بارگیری lazy، برای تصاویر سخت</td></tr>
+      <tr><td class="p"><code>ocr/surya_provider.py</code></td><td class="d">Surya OCR (v2.2.0) — موتور سوم اختیاری به انتخاب کاربر؛ تشخیص خط + بازشناسی ترنسفورمری؛ از همان گیت کیفیت عبور می‌کند</td></tr>
+      <tr><td class="p"><code>ocr/vlm_provider.py</code></td><td class="d">Qwen3-VL-2B-Instruct (v2.3.0) — موتور چهارم اختیاری به انتخاب کاربر + دستیار مکمل؛ مدل زبانی-بینایی کاملاً محلی؛ از همان گیت کیفیت عبور می‌کند</td></tr>
+      <tr><td class="p"><code>response/__init__.py</code></td><td class="d">امضای زیربسته پاسخ</td></tr>
+      <tr><td class="p"><code>response/builder.py</code></td><td class="d">قالب‌های فارسی پاسخ بر اساس نوع بسته و فیلدهای موجود</td></tr>
+      <tr><td class="p"><code>response/guard.py</code></td><td class="d">نگهبان ایمنی: واژه‌های ممنوع، نظارت اعداد خارج از شواهد، سلب مسئولیت</td></tr>
+      <tr><td class="p"><code>response/tts_prep.py</code></td><td class="d">آماده‌سازی متن برای تلفظ (اعداد/علائم) بدون تغییر معنا</td></tr>
+      <tr><td class="p"><code>tts/__init__.py</code> · <code>base.py</code></td><td class="d">انتخاب موتور گفتار و کلاس پایه + TtsError</td></tr>
+      <tr><td class="p"><code>tts/edge_provider.py</code> · <code>gtts_provider.py</code></td><td class="d">edge-tts (صداهای عصبی فارسی) و gTTS — با پیام وضعیت فارسی</td></tr>
+      <tr><td class="p"><code>llm/__init__.py</code> · <code>rewriter.py</code></td><td class="d">اسکلت بازنویسی اختیاری با LLM — پیش‌فرض خاموش؛ نگهبان همیشه فعال می‌ماند</td></tr>
+    </table>
+  </details>
+
+  <details class="filecat reveal">
+    <summary><span class="arrow">▸</span> 🖥️ رابط دسکتاپ و پیکربندی <span class="cnt">۳ فایل</span></summary>
+    <table class="filetable">
+      <tr><td class="p"><code>app.py</code></td><td class="d">رابط Streamlit RTL: ورودی فایل/دوربین، برش دستی، نتیجه، اصلاح دستی، صوت، JSON + مودال‌های راهنمای فناوری (@st.dialog)</td></tr>
+      <tr><td class="p"><code>.streamlit/config.toml</code></td><td class="d">پیکربندی تم و رفتار سرور Streamlit</td></tr>
+      <tr><td class="p"><code>.env.example</code></td><td class="d">نمونه متغیرهای محیطی (اختیاری، برای LLM خاموش)</td></tr>
+    </table>
+  </details>
+
+  <details class="filecat reveal">
+    <summary><span class="arrow">▸</span> 📱 نسخه موبایل / PWA — <code>mobile-app/</code> <span class="cnt">۲۰+ فایل</span></summary>
+    <table class="filetable">
+      <tr><td class="p"><code>index.html</code></td><td class="d">پوسته برنامه: هدر، دکمه‌ها، تنظیمات، نتیجه، اورلی دوربین زنده + دکمه‌های راهنما (data-help)</td></tr>
+      <tr><td class="p"><code>css/style.css</code></td><td class="d">استایل موبایل‌محور RTL، تم روشن/تاریک خودکار + استایل مودال‌های راهنما</td></tr>
+      <tr><td class="p"><code>manifest.webmanifest</code></td><td class="d">مانیفست PWA: نام، آیکون‌ها، display standalone، RTL</td></tr>
+      <tr><td class="p"><code>sw.js</code></td><td class="d">Service Worker cache-first: اجرای آفلاین کامل پس از بار اول</td></tr>
+      <tr><td class="p"><code>js/textnorm.js</code></td><td class="d">پورت نرمال‌سازی نویسه (یکسان با نسخه پایتون)</td></tr>
+      <tr><td class="p"><code>js/patterns.js</code></td><td class="d">پورت الگوهای regex دو زبانه</td></tr>
+      <tr><td class="p"><code>js/guard.js</code></td><td class="d">پورت نگهبان ایمنی (واژه‌های ممنوع + نظارت اعداد)</td></tr>
+      <tr><td class="p"><code>js/extractor.js</code></td><td class="d">استخراج فیلدها + تشخیص تناقض + محافظ مقدار صفر</td></tr>
+      <tr><td class="p"><code>js/responder.js</code></td><td class="d">قالب‌های پاسخ فارسی + مقدمه نوع محصول</td></tr>
+      <tr><td class="p"><code>js/pipeline.js</code></td><td class="d">ارزیابی کیفیت، امتیاز بازده OCR، ساخت نتیجه، اصلاح کاربر</td></tr>
+      <tr><td class="p"><code>js/preprocess.js</code></td><td class="d">Canvas: مقیاس، خاکستری، Unsharp، دودویی، deskew، rotate90، برش</td></tr>
+      <tr><td class="p"><code>js/boxdetect.js</code></td><td class="d">تشخیص جعبه دارو: سوبل + آستانه درصدی + اتساع + جزء همبند</td></tr>
+      <tr><td class="p"><code>js/ocr.js</code></td><td class="d">پوشش Tesseract.js: نسخه‌ها، دو PSM، PSM 11، ادغام فازی، پیشرفت</td></tr>
+      <tr><td class="p"><code>js/camera.js</code></td><td class="d">دوربین زنده getUserMedia: فلاش، زوم، تعویض دوربین، ۳ فریم و انتخاب تیزترین</td></tr>
+      <tr><td class="p"><code>js/help.js</code> <b>(جدید در ۱.۳.۰)</b></td><td class="d">مودال‌های راهنمای درون‌برنامه‌ای + معرفی فناوری هر بخش</td></tr>
+      <tr><td class="p"><code>js/samples-data.js</code></td><td class="d">نمونه‌های base64 تعبیه‌شده برای آزمایش آفلاین</td></tr>
+      <tr><td class="p"><code>js/app.js</code></td><td class="d">کنترل‌گر رابط: رویدادها، پیش‌نمایش، خط پردازش، نتیجه، TTS، JSON</td></tr>
+      <tr><td class="p"><code>label-reader-singlefile.html</code></td><td class="d">نسخه تک‌فایلی (۲۸۰KB) — حتی بدون سرور با دابل‌کلیک اجرا می‌شود</td></tr>
+      <tr><td class="p"><code>documentation.html</code> <b>(جدید در ۱.۳.۰)</b></td><td class="d">همین سند — مستندات فنی مصور و رسپانسیو</td></tr>
+      <tr><td class="p"><code>assets/fonts/</code></td><td class="d">فونت وزیرمتن (Regular/Bold) — آفلاین</td></tr>
+      <tr><td class="p"><code>vendor/</code> · <code>lang/</code></td><td class="d">Tesseract.js 6 (WASM) و داده زبان fas+eng (integer و best)</td></tr>
+      <tr><td class="p"><code>icons/</code></td><td class="d">آیکون‌های ۱۹۲/۵۱۲ و maskable</td></tr>
+      <tr><td class="p"><code>START-WINDOWS.bat</code> · <code>server-windows.ps1</code></td><td class="d">لانچر ویندوز ۱۰۰٪ ASCII + سرور TcpListener (بدون پایتون، با حفاظت مسیر)</td></tr>
+      <tr><td class="p"><code>شروع-در-ویندوز.bat</code> · <code>شروع-در-لینوکس-مک.sh</code></td><td class="d">لانچرهای فارسی برای شروع سریع</td></tr>
+      <tr><td class="p"><code>README-MOBILE-fa.md</code></td><td class="d">راهنمای نصب موبایل (PWA، اندروید، iOS) و رفع اشکال</td></tr>
+    </table>
+  </details>
+
+  <details class="filecat reveal">
+    <summary><span class="arrow">▸</span> 🤖 اندروید — <code>android/</code> <span class="cnt">۴ فایل</span></summary>
+    <table class="filetable">
+      <tr><td class="p"><code>java/…/MainActivity.java</code></td><td class="d">WebView با مجوز CAMERA، onPermissionRequest و پشتیبانی دوربین زنده</td></tr>
+      <tr><td class="p"><code>AndroidManifest.xml</code></td><td class="d">versionCode 4 / versionName 1.2.0، مجوزها و تنظیمات WebView</td></tr>
+      <tr><td class="p"><code>build_apk.sh</code></td><td class="d">اسکریپت ساخت APK با aapt2/d8/zipalign روی ماشین کاربر</td></tr>
+      <tr><td class="p"><code>README-ANDROID-fa.md</code></td><td class="d">راهنمای فارسی ساخت و نصب APK</td></tr>
+    </table>
+  </details>
+
+  <details class="filecat reveal">
+    <summary><span class="arrow">▸</span> 🧪 آزمون‌ها و اسکریپت‌ها <span class="cnt">۱۴ فایل</span></summary>
+    <table class="filetable">
+      <tr><td class="p"><code>tests/</code> (۸ فایل pytest)</td><td class="d">۷۹ آزمون: نرمال‌سازی، الگوها/فیلدها، پاسخ/نگهبان، امنیت، کیفیت/اعتبارسنجی، TTS/LLM، یکپارچگی خط</td></tr>
+      <tr><td class="p"><code>tests-js/run_tests.js</code></td><td class="d">۵۴ آزمون Node موازی با pytest (همه نگهبان‌ها + جعبه + بازده)</td></tr>
+      <tr><td class="p"><code>scripts/make_sample_images.py</code></td><td class="d">ساخت ۱۴ برچسب نمونه (فارسی/انگلیسی/مخرب/مبهم) با فونت وزیرمتن</td></tr>
+      <tr><td class="p"><code>scripts/evaluate.py</code></td><td class="d">سنجش دقت فیلد روی مجموعه نمونه (۸۵٫۷٪ با Tesseract)</td></tr>
+      <tr><td class="p"><code>scripts/run_demo_cli.py</code></td><td class="d">دموی خطی بدون رابط برای عیب‌یابی سریع</td></tr>
+      <tr><td class="p"><code>scripts/download_tessdata.py</code></td><td class="d">دانلود خودکار traineddata (integer/best)</td></tr>
+      <tr><td class="p"><code>scripts/build_singlefile.py</code></td><td class="d">ساخت نسخه تک‌فایلی از index.html</td></tr>
+      <tr><td class="p"><code>requirements*.txt</code></td><td class="d">وابستگی‌ها: اصلی، توسعه، EasyOCR اختیاری</td></tr>
+    </table>
+  </details>
+
+  <details class="filecat reveal">
+    <summary><span class="arrow">▸</span> 📚 مستندات و داده‌ها <span class="cnt">۱۶ فایل</span></summary>
+    <table class="filetable">
+      <tr><td class="p"><code>README.md</code></td><td class="d">راهنمای ریشه: اجرای دسکتاپ/موبایل، حریم خصوصی، لینک‌ها</td></tr>
+      <tr><td class="p"><code>docs/ARCHITECTURE.md</code></td><td class="d">معماری متنی (همان محتوای این سند به‌صورت Markdown)</td></tr>
+      <tr><td class="p"><code>docs/INSTALL.md</code></td><td class="d">نصب گام‌به‌گام روی ویندوز/لینوکس/مک</td></tr>
+      <tr><td class="p"><code>docs/LIMITATIONS.md</code></td><td class="d">محدودیت‌های شناخته‌شده (مثل ضعف ارقام فارسی در OCR)</td></tr>
+      <tr><td class="p"><code>docs/screenshots/</code></td><td class="d">تصاویر E2E موبایل و دوربین زنده</td></tr>
+      <tr><td class="p"><code>models/tessdata/</code></td><td class="d">fas + eng traineddata (دسکتاپ)</td></tr>
+      <tr><td class="p"><code>sample_images/</code></td><td class="d">۱۴ تصویر نمونه + manifest (شامل نمونه‌های تار، انعکاس، چرخیده، مخرب)</td></tr>
+      <tr><td class="p"><code>assets/fonts/</code></td><td class="d">وزیرمتن برای نمونه‌ساز و رابط</td></tr>
+    </table>
+  </details>
+</section>
+<!-- ================= فناوری‌ها ================= -->
+<section class="block" id="tech">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۶</div>
+    <h2>کتابخانه‌ها، ابزارها و فناوری‌ها</h2>
+    <p class="sub">همه چیزهایی که این سامانه روی آن ساخته شده — با نقش دقیق و محل استفاده در پروژه.</p>
+  <div class="note reveal" style="margin-top:.9rem">
+    <b>📱 اپ موبایل با چه رویکرد و ابزاری توسعه داده شده؟</b> رویکرد اصلی <b>PWA (Progressive Web App)</b> است: یک اپ وب تک‌صفحه‌ای با <b>HTML/CSS/JavaScript خالص</b> (بدون هیچ فریم‌ورک) که با <b>Web App Manifest</b> روی اندروید/iOS نصب می‌شود و با <b>Service Worker</b> (کش cache-first) کاملاً آفلاین اجرا می‌شود. OCR داخل مرورگر با <b>Tesseract.js 6 روی WebAssembly</b> و دادهٔ زبان fas+eng تعبیه‌شده انجام می‌شود؛ دوربین زنده با استاندارد <b>getUserMedia</b> (انتخاب تیزترین فریم از ۳ فریم)؛ پردازش تصویر با <b>Canvas API</b> (پورت عین قواعد OpenCV دسکتاپ)؛ خوانش صوتی با <b>Web Speech API</b> روی خود دستگاه؛ و بستهٔ اندروید (APK) همان PWA داخل <b>Android WebView</b> است (MainActivity.java + AndroidManifest، ساخت با اسکریپت <code>android/build_apk.sh</code>). نسخهٔ تک‌فایلیِ بدون پایتون نیز با اسکریپت <code>scripts/build_singlefile.py</code> ساخته می‌شود. نتیجه: یک پایگاه کد قاعده‌محور مشترک بین دسکتاپ (پایتون) و موبایل (جاوااسکریپت) با آزمون‌های پاریتی Node.</div>
+  </div>
+  <div class="techgrid">
+    <div class="techcard reveal" style="--tc:#3776ab"><div class="glyph">Py</div><h4>Python 3.12</h4><div class="role">زبان اصلی زیرسیستم دسکتاپ و همه اسکریپت‌ها و آزمون‌ها</div><span class="where">label_reader/ · scripts/ · tests/</span></div>
+    <div class="techcard reveal" style="--tc:#5fa04e"><div class="glyph">CV</div><h4>OpenCV (opencv-python)</h4><div class="role">پیش‌پردازش تصویر: CLAHE، حذف نویز، تیزکردن، deskew، مقیاس هوشمند</div><span class="where">preprocess.py · quality.py</span></div>
+    <div class="techcard reveal" style="--tc:#a4262c"><div class="glyph">TE</div><h4>Tesseract 5 + pytesseract</h4><div class="role">موتور OCR دسکتاپ (LSTM) با fas+eng، دو PSM و ادغام فازی</div><span class="where">ocr/tesseract_provider.py</span></div>
+    <div class="techcard reveal" style="--tc:#7d1142"><div class="glyph">EO</div><h4>EasyOCR (PyTorch)</h4><div class="role">موتور OCR عمیق اختیاری برای تصاویر سخت — بارگیری lazy</div><span class="where">ocr/easyocr_provider.py</span></div>
+    <div class="techcard reveal" style="--tc:#b45309"><div class="glyph">Su</div><h4>Surya OCR (اختیاری — v2.2.0)</h4><div class="role">موتور سوم خوانش به انتخاب کاربر: تشخیص خط + بازشناسی ترنسفورمری با پشتیبانی فارسی؛ نصب: pip install surya-ocr</div><span class="where">ocr/surya_provider.py</span></div>
+    <div class="techcard reveal" style="--tc:#615ced"><div class="glyph">Q3</div><h4>Qwen3-VL-2B-Instruct (اختیاری — v2.3.0)</h4><div class="role">موتور چهارم خوانش به انتخاب کاربر + دستیار مکمل: مدل زبانی-بینایی که کل تصویر را یکجا سطر به سطر می‌خواند — کاملاً محلی، پیش‌فرض خاموش، شناسهٔ شاهد vlm-*</div><span class="where">ocr/vlm_provider.py</span></div>
+    <div class="techcard reveal" style="--tc:#0e7c8f"><div class="glyph">MI</div><h4>رجیستری مدل‌ها (v2.0.0)</h4><div class="role">تک‌منبع حقیقت شفافیت: کدام مدل برای کدام بخش + تشخیص نسخهٔ زندهٔ دستگاه</div><span class="where">models_info.py</span></div>
+    <div class="techcard reveal" style="--tc:#e92063"><div class="glyph">Pd</div><h4>Pydantic v2 + pydantic-settings</h4><div class="role">مدل‌های داده با اعتبارسنجی + ردیابی شواهد؛ تنظیمات پروژه</div><span class="where">models.py · config.py</span></div>
+    <div class="techcard reveal" style="--tc:#ff4b4b"><div class="glyph">St</div><h4>Streamlit</h4><div class="role">رابط وب دسکتاپ RTL؛ مودال‌های راهنما با @st.dialog</div><span class="where">app.py</span></div>
+    <div class="techcard reveal" style="--tc:#4b8bbe"><div class="glyph">Pi</div><h4>Pillow (PIL)</h4><div class="role">باز/تبدیل تصویر در دسکتاپ و رسم نمونه‌های آزمون (raqm برای فارسی)</div><span class="where">app.py · make_sample_images.py</span></div>
+    <div class="techcard reveal" style="--tc:#0f9d58"><div class="glyph">edge</div><h4>edge-tts</h4><div class="role">گفتار عصبی فارسی (Farid/Dilara) — فقط با رضایت صریح کاربر</div><span class="where">tts/edge_provider.py</span></div>
+    <div class="techcard reveal" style="--tc:#4285f4"><div class="glyph">gT</div><h4>gTTS</h4><div class="role">جایگزین گفتار در نبود edge-tts</div><span class="where">tts/gtts_provider.py</span></div>
+    <div class="techcard reveal" style="--tc:#606ff8"><div class="glyph">Tj</div><h4>Tesseract.js 6 (WASM)</h4><div class="role">موتور OCR مرورگر (LSTM) — کاملاً محلی با vendor و lang محلی</div><span class="where">mobile-app/vendor/ · js/ocr.js</span></div>
+    <div class="techcard reveal" style="--tc:#22c55e"><div class="glyph">GUM</div><h4>getUserMedia (MediaDevices)</h4><div class="role">دوربین زنده پشتی، فلاش، زوم — استاندارد W3C</div><span class="where">js/camera.js</span></div>
+    <div class="techcard reveal" style="--tc:#f59e0b"><div class="glyph">CNV</div><h4>Canvas API</h4><div class="role">پردازش پیکسلی موبایل: مقیاس، تیزکردن، دودویی، تشخیص جعبه</div><span class="where">js/preprocess.js · js/boxdetect.js</span></div>
+    <div class="techcard reveal" style="--tc:#38bdf8"><div class="glyph">SPE</div><h4>Web Speech API</h4><div class="role">پخش صوتی پاسخ روی خود دستگاه (fa-IR)</div><span class="where">js/app.js</span></div>
+    <div class="techcard reveal" style="--tc:#f472b6"><div class="glyph">SW</div><h4>PWA + Service Worker</h4><div class="role">نصب روی گوشی (A2HS) و اجرای آفلاین cache-first</div><span class="where">manifest.webmanifest · sw.js</span></div>
+    <div class="techcard reveal" style="--tc:#0ea5a4"><div class="glyph">وز</div><h4>فونت وزیرمتن (Vazirmatn)</h4><div class="role">فونت فارسی متن‌باز — محلی و آفلاین در هر دو زیرسیستم</div><span class="where">assets/fonts/ · mobile-app/assets/fonts/</span></div>
+    <div class="techcard reveal" style="--tc:#84cc16"><div class="glyph">WV</div><h4>Android WebView</h4><div class="role">پوسته اپ اندروید با مجوز دوربین برای نسخه APK</div><span class="where">android/MainActivity.java</span></div>
+    <div class="techcard reveal" style="--tc:#16a34a"><div class="glyph">✓</div><h4>pytest</h4><div class="role">۱۱۷ آزمون دسکتاپ: امنیت، نگهبان، فیلدها، رجیستری مدل‌ها، دستیار VLM</div><span class="where">tests/</span></div>
+    <div class="techcard reveal" style="--tc:#68a063"><div class="glyph">Nd</div><h4>Node.js</h4><div class="role">۶۴ آزمون واحد موبایل + اجرای E2E مرورگر</div><span class="where">tests-js/</span></div>
+  </div>
+</section>
+
+<!-- ================= مدل‌ها و موتورها (شفافیت — v2.0.0) ================= -->
+<section class="block" id="models">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۶-ب</div>
+    <h2>🧠 مدل‌ها و موتورها — شفافیت کامل (از v2.0.0)</h2>
+    <p class="sub">کاربر همیشه باید بداند برای هر بخش از چه مدل یا موتوری استفاده می‌شود — این جدول رسمی سامانه است و در رابط کاربری (سایدبار دسکتاپ + بخش راهنمای وب) و حین مراحل پردازش نیز اعلام می‌شود. نسخه‌ها در زمان اجرا از دستگاه کاربر خوانده می‌شوند (تک‌منبع حقیقت: <code>label_reader/models_info.py</code>).</p>
+  </div>
+  <div class="table-wrap reveal">
+    <table>
+      <thead><tr><th>مرحله</th><th>مدل / موتور</th><th>نقش در سامانه</th><th>حریم خصوصی</th></tr></thead>
+      <tbody>
+        <tr><td>۱. پیش‌پردازش تصویر</td><td><b>OpenCV</b> (کلاسیک — بدون مدل یادگیری)</td><td>CLAHE، صاف‌کردن زاویه، پنج نسخهٔ پردازشی (original / gray_clahe / binarized / white_on_dark / ink_isolated)</td><td>کاملاً آفلاین</td></tr>
+        <tr><td>۲. خواندن متن — موتور اول</td><td><b>Tesseract 5</b> — دادهٔ زبان <code>fas+eng</code></td><td>گذرهای زبانی جداگانهٔ فارسی/انگلیسی + PSM 3/6/11</td><td>کاملاً آفلاین</td></tr>
+        <tr><td>۲. خواندن متن — موتور دوم مکمل</td><td><b>EasyOCR</b> — CRNN (fa+en)</td><td>پر کردن نواحی ضعیف تسراکت؛ مشارکت در رأی اجماعی — نصب اختیاری</td><td>آفلاین پس از دانلود اولیه</td></tr>
+        <tr><td>۲. خواندن متن — موتور سوم (به انتخاب کاربر)</td><td><b>Surya</b> — تشخیص خط + بازشناسی ترنسفورمری (چندزبانه شامل فارسی)</td><td>گزینهٔ سوم خوانش (v2.2.0)؛ خروجی با همان گیت کیفیت و رأی اجماعی ادغام می‌شود — فقط دسکتاپ</td><td>آفلاین پس از دانلود اولیه از Hugging Face</td></tr>
+        <tr><td>۲. خواندن متن — موتور چهارم (به انتخاب کاربر)</td><td><b>Qwen/Qwen3-VL-2B-Instruct</b> — مدل زبانی-بینایی</td><td>گزینهٔ چهارم خوانش (v2.3.0)؛ کل تصویر یکجا خوانده می‌شود؛ خروجی با همان گیت کیفیت و رأی اجماعی ادغام می‌شود — فقط دسکتاپ</td><td>اجرای کاملاً محلی (transformers) پس از دانلود اولیه</td></tr>
+        <tr><td>۲. دستیار خوانش دوم (اختیاری)</td><td><b>Qwen/Qwen3-VL-2B-Instruct</b> — مدل زبانی-بینایی</td><td>خوانش مکمل سطرهایی که OCR از دست داده؛ فقط سطرهای تازه با شناسهٔ شاهد <code>vlm-*</code>؛ پیش‌فرض خاموش</td><td>اجرای کاملاً محلی (transformers)</td></tr>
+        <tr><td>۳. پردازش متن و کنترل فیلدها</td><td><b>الگوها و قواعد فارسی/انگلیسی</b> — بدون مدل زبانی</td><td>regex دو زبانه + گیت کیفیت قطعه + رأی اجماعی + تشخیص تناقض</td><td>کاملاً آفلاین</td></tr>
+        <tr><td>۴. تولید پاسخ فارسی</td><td><b>قالب‌ساز قاعده‌محور + نگهبان ایمنی</b></td><td>پاسخ فقط از فیلدهای تأییدشده؛ (اختیاری) LLM سازگار OpenAI API با تنظیم LBR_LLM_* و عبور اجباری از نگهبان</td><td>آفلاین؛ مسیر LLM فقط با تنظیم صریح</td></tr>
+        <tr><td>۵. خوانش صوتی (TTS)</td><td><b>edge-tts</b> — صداهای fa-IR-FaridNeural / fa-IR-DilaraNeural</td><td>خواندن همان پاسخ تأییدشده؛ جایگزین خودکار: gTTS (گوگل)</td><td>فقط متن پاسخ، با رضایت صریح</td></tr>
+        <tr><td>وب / PWA / تک‌فایل</td><td><b>Tesseract.js 6.0.1 (WASM)</b> + Web Speech API</td><td>همان خط پردازش داخل مرورگر با دادهٔ fas+eng تعبیه‌شده؛ خوانش صوتی روی خود دستگاه</td><td>کاملاً آفلاین (تک‌فایل)</td></tr>
+        <tr><td>رابط کاربری دسکتاپ</td><td><b>Streamlit</b> + فونت وزیرمتن</td><td>رابط فارسی RTL، خط‌زمان مراحل رنگی، حالت تاریک</td><td>کاملاً محلی</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note reveal">
+    <b>فعال‌سازی Surya (اختیاری — v2.2.0):</b> <code>pip install surya-ocr</code> — سپس در سایدبار دسکتاپ، «موتور OCR» را روی گزینهٔ «Surya» بگذارید. وزن مدل‌ها در نخستین اجرا از Hugging Face دانلود و پس از آن کاملاً آفلاین اجرا می‌شود؛ نام آن حین پردازش در خط‌زمان مراحل اعلام می‌گردد. (در نسخهٔ مرورگر/تک‌فایل پشتیبانی نمی‌شود چون مرورگر فقط WASM اجرا می‌کند.)<br>
+    <b>انتخاب Qwen3-VL به‌عنوان موتور اصلی (v2.3.0):</b> <code>pip install "transformers>=4.57" accelerate</code> — سپس در سایدبار دسکتاپ، «موتور OCR» را روی گزینهٔ «Qwen3-VL-2B-Instruct» بگذارید؛ کل تصویر یکجا با همین مدل خوانده می‌شود و دستیار مکمل دیگر دوباره اجرا نمی‌شود.<br>
+    <b>فعال‌سازی دستیار Qwen3-VL (اختیاری):</b> <code>pip install "transformers>=4.57" accelerate</code> — سپس در سایدبار دسکتاپ «دستیار خوانش Qwen3-VL» را روشن کنید. مدل در نخستین اجرا از Hugging Face دانلود می‌شود (حدود ۴ تا ۵ گیگابایت) و پس از آن کاملاً آفلاین اجرا می‌شود. دستیار هرگز جایگزین موتورهای اصلی نیست، هرگز پردازش را نمی‌شکند و خروجی آن با شناسهٔ شاهد <code>vlm-*</code> جداگانه ردیابی می‌شود.
+  </div>
+</section>
+
+<!-- ================= ایمنی و حریم خصوصی ================= -->
+<section class="block" id="safety">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۷</div>
+    <h2>حریم خصوصی و خطوط ایمنی</h2>
+    <p class="sub">ایمنی در این پروژه ویژگی افزودنی نیست؛ ستون معماری است و با آزمون‌های اختصاصی (test_security.py و نگهبان JS) محافظت می‌شود.</p>
+  </div>
+  <div class="grid2">
+    <div class="card reveal"><h3><span class="icon">🔒</span> پردازش صددرصد محلی</h3>
+      <p>در هر دو زیرسیستم، OCR و استخراج روی دستگاه اجرا می‌شود. تنها استثنا، گفتار دسکتاپ است که فقط با رضایت صریح کاربر به سرویس TTS ارسال می‌شود و نسخه موبایل حتی آن را هم ندارد (گفتار روی خود گوشی).</p></div>
+    <div class="card reveal"><h3><span class="icon">🛡️</span> نگهبان پاسخ</h3>
+      <p>پاسخ پیش از نمایش بازبینی می‌شود: واژه‌های ممنوع (از جمله «دوز مصرف») رد می‌شوند، هر عدد باید در شواهد OCR موجود باشد و ادعای کاربرد/تشخیص/توصیه مسدود است. سلب مسئولیت به پاسخ تزریق می‌شود.</p></div>
+    <div class="card reveal"><h3><span class="icon">🧾</span> پاسخ مبتنی بر شواهد</h3>
+      <p>هر فیلد به شناسه قطعه‌های OCR گره خورده است؛ کاربر می‌تواند ببیند هر عدد از کدام سطر تصویر آمده و در صورت اشتباه، آن را با حفظ تاریخچه اصلاح کند. «قدرت درج‌شده» همیشه جایگزین «دوز مصرف» است.</p></div>
+    <div class="card reveal"><h3><span class="icon">🚫</span> مقاومت در برابر ورودی مخرب</h3>
+      <p>نمونه‌های مخرب آزمون (متن «توصیه پزشکی» روی تصویر) نشان می‌دهند نگهبان، دستورهای درون تصویر را اجرا نمی‌کند. magic bytes، سقف حجم/ابعاد و رد فایل غیرتصویری هم در لایه ورودی هستند.</p></div>
+  </div>
+</section>
+
+<!-- ================= ارزیابی و آزمون مدل‌ها ================= -->
+<section class="block" id="evaluation">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۸</div>
+    <h2>ارزیابی و آزمون مدل‌ها — نتایج واقعی و اصول سنجش</h2>
+    <p class="sub">موضوع این سامانه دارو است و هر اشتباه می‌تواند آسیب‌زا باشد؛ بنابراین ارزیابی بر اساس اصول بنیادین و منطقی سنجش سامانه‌های حساس انجام شده است: زمینه‌سنجی برچسب‌خورده، سنجش در سطح فیلد، شمردن غیبت و تعارض به‌عنوان خطا، و هیچ عدد جعلی. همه اعداد این بخش از اجرای واقعی در محیط توسعه به‌دست آمده و با <code>scripts/evaluate.py</code> قابل بازتولید است.</p>
+  </div>
+
+  <div class="grid3 reveal" style="margin-bottom:1rem">
+    <div class="card"><h3><span class="icon">🎯</span> دقت کل فیلدها</h3>
+      <p style="font-size:2rem; font-weight:800; color:#5eead4; margin:.2rem 0">۸۵٫۷٪</p>
+      <p>۱۲ از ۱۴ فیلد با Tesseract 5 روی ۱۴ تصویر نمونه برچسب‌خورده — مطابق خط پایه منتشرشده از v1.0.0.</p></div>
+    <div class="card"><h3><span class="icon">⏱️</span> زمان پاسخ</h3>
+      <p style="font-size:2rem; font-weight:800; color:#93c5fd; margin:.2rem 0">۱٫۸۷ ثانیه</p>
+      <p>میانگین خط لوله کامل (پیش‌پردازش تا پاسخ) روی CPU معمولی؛ میانه ۱٫۸۲ و بیشینه ۲٫۸ ثانیه.</p></div>
+    <div class="card"><h3><span class="icon">🧪</span> آزمون‌های خودکار</h3>
+      <p style="font-size:2rem; font-weight:800; color:#c084fc; margin:.2rem 0">۱۳۳ پاس</p>
+      <p>۷۹ آزمون pytest دسکتاپ + ۵۴ آزمون پاریتی Node موبایل — بدون هیچ شکست در اجرای این سند.</p></div>
+  </div>
+
+  <div class="card reveal" style="margin-bottom:1rem">
+    <h3><span class="icon">📐</span> اصول ارزیابی (چرا این روش؟)</h3>
+    <p>در حوزه دارو، ارزیابی «کلی» خطرناک است؛ سنجش باید در سطح همان چیزی باشد که کاربر مصرف می‌کند — فیلدهای ساخت‌یافته. اصول به‌کاررفته:</p>
+    <p>۱) <b>زمینه‌سنجی برچسب‌خورده (ground-truth):</b> ۱۴ تصویر نمونه شامل حالت‌های چالشی (تار، انعکاس، چرخش، دوز mcg/mg، ترکیبی، تاریخ مبهم، چندمحصولی، غیردارویی، متن مخرب، بدون متن) با مقادیر واقعی در <code>sample_images/manifest.json</code> ثبت شده‌اند.<br>
+    ۲) <b>سنجش در سطح فیلد:</b> نام، قدرت درج‌شده، تعداد، تاریخ انقضا و وزن هرکدام جداگانه با تطبیق نرمال‌شده (حروف و ارقام فارسی/لاتین) سنجیده می‌شوند — نه «متن شبیه هم».<br>
+    ۳) <b>خطای ایمنی = خطا:</b> غیبت (missing) و تعارض (conflicting) هم خطا شمرده می‌شوند؛ سامانه هرگز مقدار حدسی را به‌عنوان قطعه ارائه نمی‌دهد.<br>
+    ۴) <b>نگهبان‌های ضدخطر با آزمون اختصاصی:</b> «قدرت درج‌شده» هرگز «دوز مصرف» نامیده نمی‌شود؛ مقدار صفر رد می‌شود؛ اعداد خارج از شواهد ممنوع‌اند؛ دستورهای تزریق‌شده در تصویر پالایش می‌شوند.<br>
+    ۵) <b>شفافیت محدودیت:</b> نتایج ضعیف پنهان نمی‌شوند (نمودار پایین را ببینید) و با نشان «نامطمئن» + اصلاح دستی مدیریت می‌شوند.<br>
+    ۶) <b>تکرارپذیری:</b> هر عدد این بخش با <code>python scripts/evaluate.py</code> و سابقه کامل در <code>docs/evaluation/evaluation-results.json</code> بازتولید‌پذیر است.</p>
+  </div>
+
+  <h3 class="chart-title reveal">📊 دقت به تفکیک فیلد (٪) — Tesseract 5</h3>
+  <div class="chart card reveal" style="padding:1rem 1.1rem">
+    <div class="bar-row"><span class="bar-label">نام محصول</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۲/۲)</span></div>
+    <div class="bar-row"><span class="bar-label">تاریخ انقضا</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۲/۲)</span></div>
+    <div class="bar-row"><span class="bar-label">وزن/حجم</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">قدرت درج‌شده</span><span class="bar-track"><span class="bar-fill alt" style="--w:83.3%"></span></span><span class="bar-val">۸۳٫۳٪ (۵/۶)</span></div>
+    <div class="bar-row"><span class="bar-label">تعداد/شکل</span><span class="bar-track"><span class="bar-fill warn" style="--w:66.7%"></span></span><span class="bar-val">۶۶٫۷٪ (۲/۳)</span></div>
+  </div>
+
+  <h3 class="chart-title reveal">🖼️ دقت به تفکیک حالت تصویر (٪)</h3>
+  <div class="chart card reveal" style="padding:1rem 1.1rem">
+    <div class="bar-row"><span class="bar-label">انگلیسی ساده</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">دوزبانه (فارسی/انگلیسی)</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">تفکیک mcg/mg</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۲/۲)</span></div>
+    <div class="bar-row"><span class="bar-label">قدرت ترکیبی</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">تاریخ مبهم</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">متن مخرب</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۲/۲)</span></div>
+    <div class="bar-row"><span class="bar-label">غیردارویی</span><span class="bar-track"><span class="bar-fill" style="--w:100%"></span></span><span class="bar-val">۱۰۰٪ (۱/۱)</span></div>
+    <div class="bar-row"><span class="bar-label">فارسی ساده (ارقام فارسی)</span><span class="bar-track"><span class="bar-fill warn" style="--w:0%"></span></span><span class="bar-val">۰٪ (۰/۲)</span></div>
+  </div>
+
+  <h3 class="chart-title reveal">⏱️ زمان پردازش هر تصویر (میلی‌ثانیه)</h3>
+  <div class="chart card reveal" style="padding:1rem 1.1rem">
+    <div class="bar-row"><span class="bar-label">کمینه</span><span class="bar-track"><span class="bar-fill alt" style="--w:42.4%"></span></span><span class="bar-val">۱٬۱۸۹</span></div>
+    <div class="bar-row"><span class="bar-label">میانه</span><span class="bar-track"><span class="bar-fill alt" style="--w:65%"></span></span><span class="bar-val">۱٬۸۲۴</span></div>
+    <div class="bar-row"><span class="bar-label">میانگین</span><span class="bar-track"><span class="bar-fill alt" style="--w:66.8%"></span></span><span class="bar-val">۱٬۸۷۴</span></div>
+    <div class="bar-row"><span class="bar-label">بیشینه / p95</span><span class="bar-track"><span class="bar-fill alt" style="--w:100%"></span></span><span class="bar-val">۲٬۸۰۵</span></div>
+  </div>
+
+  <h3 class="chart-title reveal">🧪 آزمون‌های واحد پایتون به تفکیک ماژول (۷۹ آزمون)</h3>
+  <div class="chart card reveal" style="padding:1rem 1.1rem">
+    <div class="bar-row"><span class="bar-label">پاسخ‌ساز و نگهبان ایمنی</span><span class="bar-track"><span class="bar-fill vio" style="--w:100%"></span></span><span class="bar-val">۱۵</span></div>
+    <div class="bar-row"><span class="bar-label">الگوها و فیلدها</span><span class="bar-track"><span class="bar-fill vio" style="--w:93.3%"></span></span><span class="bar-val">۱۴</span></div>
+    <div class="bar-row"><span class="bar-label">کیفیت و اعتبارسنجی</span><span class="bar-track"><span class="bar-fill vio" style="--w:86.7%"></span></span><span class="bar-val">۱۳</span></div>
+    <div class="bar-row"><span class="bar-label">TTS و LLM</span><span class="bar-track"><span class="bar-fill vio" style="--w:86.7%"></span></span><span class="bar-val">۱۳</span></div>
+    <div class="bar-row"><span class="bar-label">یکپارچگی خط پردازش</span><span class="bar-track"><span class="bar-fill vio" style="--w:73.3%"></span></span><span class="bar-val">۱۱</span></div>
+    <div class="bar-row"><span class="bar-label">نرمال‌سازی متن</span><span class="bar-track"><span class="bar-fill vio" style="--w:53.3%"></span></span><span class="bar-val">۸</span></div>
+    <div class="bar-row"><span class="bar-label">امنیت (تزریق و مخرب)</span><span class="bar-track"><span class="bar-fill vio" style="--w:33.3%"></span></span><span class="bar-val">۵</span></div>
+  </div>
+
+  <div class="grid2 reveal" style="margin-top:1rem">
+    <div class="card redline"><h3><span class="icon">⚠️</span> یافته‌های صادقانه</h3>
+      <p><b>ارقام فارسی:</b> هر دو موتور OCR در ارقام فارسی ضعیف‌اند (حالت «فارسی ساده» ۰٪) — به همین دلیل چنین مقادیری «نامطمئن» علامت می‌خورند و اصلاح دستی ارائه می‌شود؛ هیچ مقدار حدسی به‌عنوان قطعه نمایش داده نمی‌شود.<br>
+      <b>Surya (v2.2.0):</b> موتور سوم است و مثل EasyOCR فقط با نصب صریح فعال می‌شود؛ انتخاب آن بدون نصب، با پیام شفاف راهنمای نصب رد می‌شود (شکست شفاف، نه سکوت).<br>
+      <b>Qwen3-VL (v2.3.0):</b> موتور چهارم است؛ هم به‌عنوان موتور اصلی خوانش قابل انتخاب است هم دستیار مکمل — اگر موتور اصلی باشد دستیار دوباره اجرا نمی‌شود؛ انتخاب بدون نصب با پیام شفاف رد می‌شود.<br>
+      <b>EasyOCR:</b> در محیط اجرای این سند نصب نبود؛ انتخاب صریح آن با پیام شفاف <code>OcrUnavailableError</code> رد می‌شود — رفتار درست: شکست شفاف، نه سکوت. ارزیابی متقاطع آن به خط پایه v1.0.0 ارجاع می‌شود.<br>
+      جزئیات کامل: <code>docs/LIMITATIONS.md</code>.</p></div>
+    <div class="card"><h3><span class="icon">🔬</span> محل پیاده‌سازی و بازتولید</h3>
+      <p>سنجش خط لوله: <code>scripts/evaluate.py</code> — آزمون‌های دسکتاپ: <code>tests/</code> (۷۹) — آزمون پاریتی موبایل: <code>tests-js/run_tests.js</code> (۵۴) — نتایج JSON این اجرا: <code>docs/evaluation/evaluation-results.json</code> — نمودارهای زنده همین ارزیابی در رابط دسکتاپ (بخش «📊 ارزیابی و آزمون مدل‌ها» با pandas + Altair) و در برنامه موبایل (مودال «ارزیابی و آزمون مدل‌ها»). فناوری‌های ارزیابی: pytest، Node Test Runner، OpenCV + Tesseract 5، pandas/Altair.</p></div>
+  </div>
+</section>
+
+<!-- ================= محدودیت‌ها ================= -->
+<section class="block" id="limits">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۹</div>
+    <h2>محدودیت‌های شناخته‌شده (شفافیت کامل)</h2>
+  </div>
+  <div class="grid2">
+    <div class="card reveal"><h3><span class="icon">٠٩</span> ارقام فارسی در OCR</h3>
+      <p>هر دو موتور (Tesseract و EasyOCR) در خواندن ارقام فارسی ضعیف‌اند (مثلاً ۵۰۰ گاهی ۰ خوانده می‌شود). این محدودیت مستند شده و با «محافظ مقدار صفر» + وضعیت «نامطمئن» + اصلاح دستی کاربر مدیریت می‌شود؛ متن پاسخ هرگز عدد مشکوک را قطعی ارائه نمی‌کند.</p></div>
+    <div class="card reveal"><h3><span class="icon">📷</span> وابستگی به کیفیت عکس</h3>
+      <p>تاری شدید، انعکاس و زاویه زیاد، دقت را می‌کاهد. سامانه این موارد را پیش و پس از پردازش شفاف اعلام می‌کند و نسخه موبایل با دوربین زنده و انتخاب تیزترین فریم، تأثیر را کم کرده است.</p></div>
+    <div class="card reveal"><h3><span class="icon">🧪</span> تأیید اصالت نیست</h3>
+      <p>این ابزار اصالت یا هویت دارو را تأیید نمی‌کند؛ فقط متن ظاهری بسته را می‌خواند. برای تصمیم دارویی باید همیشه به داروخانه/پزشک مراجعه شود.</p></div>
+    <div class="card reveal"><h3><span class="icon">🔌</span> LLM پیش‌فرض خاموش</h3>
+      <p>بازنویسی با مدل زبانی به‌صورت اسکلت آمده و پیش‌فرض خاموش است تا حریم خصوصی و قطعیت پاسخ حفظ شود؛ حتی اگر فعال شود، خروجی دوباره از نگهبان عبور می‌کند.</p></div>
+  </div>
+</section>
+
+<!-- ================= نصب ================= -->
+<section class="block" id="install">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۱۰</div>
+    <h2>نصب و اجرا</h2>
+  </div>
+  <div class="grid3">
+    <div class="card reveal"><h3><span class="icon">📦</span> بستهٔ قابل حمل (بدون پایتون)</h3>
+      <p>ZIP «Portable-Web» را از Releases دانلود و استخراج کنید: <code>START-HERE.html</code> را باز کنید (نسخهٔ تک‌فایلی و نسخهٔ کامل در یک نگاه) — یا مستقیم <code>label-reader-singlefile.html</code> را دوبار کلیک کنید. برای دوربین زنده، <code>START-WINDOWS.bat</code> (ویندوز) یا <code>start-linux-mac.sh</code> (لینوکس/مک) را اجرا کنید؛ سرور محلی به‌طور خودکار صفحهٔ اصلی داخل <code>webapp</code> را باز می‌کند. همهٔ نام‌فایل‌های داخل ZIP از v1.8.3 انگلیسی‌اند تا در هیچ سیستم‌عاملی مخدوش نشوند.</p></div>
+    <div class="card reveal"><h3><span class="icon">🖥️</span> دسکتاپ</h3>
+      <p><code>pip install -r requirements.txt</code> سپس <code>streamlit run app.py</code>. نیازمند Tesseract با زبان fas. جزئیات کامل در <code>docs/INSTALL.md</code>.</p></div>
+    <div class="card reveal"><h3><span class="icon">📱</span> موبایل (PWA)</h3>
+      <p>سایت را در مرورگر گوشی باز کنید و «افزودن به صفحه اصلی» را بزنید — اپ نصب و آفلاین اجرا می‌شود. برای میزبانی محلی، لانچر ویندوز (<code>START-WINDOWS.bat</code>) آماده است.</p></div>
+    <div class="card reveal"><h3><span class="icon">🤖</span> اندروید (APK)</h3>
+      <p>با <code>android/build_apk.sh</code> روی ماشین خودتان APK بسازید (نیازمند JDK + Android SDK). راهنمای کامل فارسی: <code>android/README-ANDROID-fa.md</code>.</p></div>
+  </div>
+</section>
+
+<!-- ================= نسخه‌ها ================= -->
+<section class="block" id="history">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۱۱</div>
+    <h2>تاریخچه نسخه‌ها</h2>
+  </div>
+  <div class="timeline">
+    <div class="tl-item reveal"><h4>موتور سوم اختیاری Surya + تجلی پررنگ‌تر پالت دارویی <span class="ver">v2.2.0</span></h4>
+      <p>به درخواست کاربر: (۱) <b>Surya OCR</b> به‌عنوان موتور سوم خوانش به‌صورت <b>اختیاری و انتخابی</b> به نسخهٔ دسکتاپ اضافه شد (<code>label_reader/ocr/surya_provider.py</code>) — گزینهٔ «Surya» در سایدبار، تنظیمات <code>LBR_SURYA_LANGS/SURYA_VARIANTS</code>، عبور خروجی از همان گیت کیفیت و رأی اجماعی، اعلام نام موتور در خط‌زمان مراحل، ثبت در رجیستری مدل‌ها (<code>models_info.py</code>) و راهنماها؛ (۲) درخواست «تجلی بیشتر آبی، سفید، سبز، قرمز در پس‌زمینه و گرافیک»: پس‌زمینهٔ چندلایهٔ پالت دارویی (هاله‌های آبی اعتماد + سبز سلامت + ته‌مایهٔ قرمز هشدار روی سفید بهداشت) در هر دو رابط، <b>ریبون چهاررنگ</b> مشترک زیر هدر/هیرو، خط گرادیانی آبی→سبز بالای کارت‌ها، نوار چهاررنگ بالای هیرو، هاله‌های هدر موبایل از فیروزه‌ای/بنفش قدیمی به آبی/سبز دارویی، و لوگوی SVG با آبی برند؛ (۳) نام‌بردن صریح مدل‌ها در همهٔ مستندات + بخش اختصاصی «اپ موبایل با چه فناوری‌ای ساخته شده»؛ (۴) کش سرویس‌ورکر → v15.</p></div>
+    <div class="tl-item reveal"><h4>پالت داروخانه‌ای یکپارچه در هر دو رابط <span class="ver">v2.1.0</span></h4>
+      <p>به درخواست کاربر («رنگ‌بندی متناسب با داروخانه و دارو» بر اساس روان‌شناسی رنگ برند دارویی): آبی اعتماد #1E88E5 (اعتماد و آرامش) + سبز سلامت #43A047 (سلامت و تعهد) + سفید بهداشت #FFFFFF (پاکیزگی) + قرمز هشدار #E53935 (هشدار و توجه) — بازنویسی THEME_CSS/DARK_THEME_CSS و رنگ مراحل دسکتاپ، توکن‌های style.css موبایل (روشن/تاریک)، گرادیان هدر/سایدبار، manifest/theme-color، لانچر START-HERE، آیکون‌های PWA (صلیب سفید + خط اسکن سبز روی گرادیان آبی) و کش lbr-mobile-v14.</p></div>
+    <div class="tl-item reveal"><h4>لانچر خودترمیم بستهٔ قابل حمل + شفافیت کامل مدل‌ها و موتورها <span class="ver">v2.0.0</span></h4>
+      <p>گزارش کاربر: «با start.bat سایت به‌هم‌ریخته است ولی با فایل وب START-HERE درست است». ریشه‌یابی نشان داد کاربر پوشهٔ قابل حمل قدیمی را اجرا می‌کند و <code>START-WINDOWS.bat</code> صفحهٔ اصلی <code>webapp</code> با رابط کهنه را باز می‌کند؛ بدتر اینکه <b>سرویس‌ورکرِ نسخهٔ قدیمی</b> ثبت‌شده روی همان آدرس <code>127.0.0.1:8765</code> نسخهٔ کهنه را از کش سرو می‌کرد (تک‌فایل به‌دلیل نداشتن سرویس‌ورکر سالم می‌ماند). سه رفع: (۱) <b>ریشهٔ سرور محلی اکنون START-HERE.html است</b> — صفحهٔ شروع با اسکریپت <b>خودترمیم</b> که یک‌بار در هر مرورگر همهٔ سرویس‌ورکرها و کش‌های قدیمی همان آدرس را پاک می‌کند تا همیشه نسخهٔ تازه از دیسک خوانده شود؛ (۲) صفحهٔ ۴۰۴ سرور هم به صفحهٔ شروع هدایت می‌کند؛ (۳) فهرست مدل‌ها به صفحهٔ شروع اضافه شد. دومین محور نسخه، <b>شفافیت مدل‌ها</b> است: رجیستری مرکزی <code>label_reader/models_info.py</code> با تشخیص نسخهٔ زندهٔ هر موتور از دستگاه کاربر، جدول «مدل‌ها و موتورها» در سایدبار دسکتاپ + expander «کدام مدل چه کاری انجام داد؟» در نتایج + معیار «موتور و مدل خوانش» در خط‌زمان مراحل + جدول رسمی در وب و مستندات؛ و <b>دستیار خوانش دوم اختیاری Qwen/Qwen3-VL-2B-Instruct</b> (کاملاً محلی با transformers، پیش‌فرض خاموش، فقط سطرهای تازه با شناسهٔ شاهد vlm-*, ۱۱ آزمون جدید). ۱۱۷ pytest + ۶۴ Node پاس؛ کش سرویس‌ورکر → v13.</p></div>
+    <div class="tl-item reveal"><h4>بازطراحی کامل گرافیک وب با تم مدرن ۲۰۲۵ — پایان اشکال درشت و ناهماهنگ <span class="ver">v1.9.0</span></h4>
+      <p>گزارش کاربر: «گرافیک وب به‌هم‌ریخته است؛ اشکال بزرگ و غیراستاندارد». ریشه‌یابی سه عامل را نشان داد: (۱) <b>واترمارک ایموجی ۱۱۰px</b> (💊) در گوشهٔ هدر که به‌صورت شکل صورتی محو و درشتی رندر می‌شد؛ (۲) <b>باگ انتخابگر <code>html.dark:root</code></b> — ترکیب نامعتبری که هرگز تطبیق نمی‌کند و در نتیجه متغیرهای حالت‌تاریکِ دستی اصلاً اعمال نمی‌شدند و صفحه در حالت تاریک نیمه‌روشن و ناهماهنگ می‌ماند؛ (۳) <b>لایه‌لایه بودن CSS</b> (سه نسل قاعده روی هم با اندازه‌های متناقض ۱۰ تا ۲۰px شعاع، ارتفاع دکمه ۴۸px+ و ارتفاع سطر ۱٫۹). در v1.9.0 کل <code>css/style.css</code> از پایه با یک <b>سیستم طراحی توکن‌محور</b> بازنویسی شد: پالت برند (فیروزه‌ای↔سرمه‌ای + بنفش تأکیدی) در ۳۸ متغیر؛ مقیاس‌های استاندارد (شعاع ۸/۱۲/۱۶px، دکمه ۴۰px، دکمه بزرگ ۴۸px، ارتفاع سطر ۱٫۷۵، بدنه ۱۵px)؛ سایه‌های نرم دولایه؛ هاله‌های نوری شعاعی به‌جای ایموجی؛ تب‌بار شیشه‌ای با blur؛ و اصلاح آبشار تب‌بار در دسکتاپ. آیکون‌های ایموجی ناوبری (سایدبار و تب‌بار) با <b>SVG استروک استاندارد</b> (کپسول، نمودار، کتاب، کاربران) جایگزین شدند و ایموجی‌های تزئینی از تیترها حذف شدند. وزن‌های میانی فونت Vazirmatn (Medium/SemiBold/ExtraBold) به دارایی‌ها اضافه و در پوستهٔ سرویس‌ورکر ثبت شدند. بازسازی تکی‌فایل، تست سرریز افقی موبایل (۳۹۰px، بدون scrollWidth اضافه — رفع سرریز ناشی از <code>white-space:nowrap</code> دکمه بلند)، و راستی‌آزمایی تصویری روشن/تاریک × موبایل/دسکتاپ × مودال؛ ۱۰۶ آزمون pytest + ۶۴ آزمون Node پاس؛ کش سرویس‌ورکر → v12.</p></div>
+    <div class="tl-item reveal"><h4>رفع کامل بستهٔ قابل حمل — پایان خطای ۴۰۴ و نام‌فایل‌های مخدوش <span class="ver">v1.8.3</span></h4>
+      <p>گزارش کاربر: «نسخهٔ قابل حمل صفحهٔ ۴۰۴ می‌دهد». ریشه‌یابی سه عامل مرکب نشان داد: (۱) <b>سرور محلی ویندوز</b> (<code>server-windows.ps1</code>) مسیر ریشهٔ <code>/</code> را بی‌قید و شرط به <code>index.html</code> نگاشت می‌کرد، در حالی که در چیدمان ZIP بستهٔ قابل حمل صفحهٔ اصلی داخل <code>webapp/</code> است — نتیجه: اجرای <code>START-WINDOWS.bat</code> مستقیماً صفحهٔ «404 Not Found» در مرورگر باز می‌کرد؛ اکنون نگاشت ریشه با زنجیرهٔ بازگشتی (<code>index.html</code> → <code>webapp/index.html</code> → <code>START-HERE.html</code>) انجام می‌شود و پاسخ ۴۰۴ نیز به‌جای متن خام، صفحهٔ راهنمای HTML با لینک‌های کاری است؛ (۲) <b>نام‌فایل‌های فارسی داخل ZIP</b> (مثل «شروع-اینجا.html») بدون پرچم UTF-8 بسته‌بندی شده بودند و در استخراج‌کننده‌های ویندوز با نام مخدوش (مثل «╪┤╪▒┘ê╪╣…») ظاهر می‌شدند؛ اکنون صفحهٔ شروع به <code>START-HERE.html</code> تغییر نام یافت و «تمام» نام‌فایل‌های داخل ZIP انگلیسی‌اند (اسکریپت جدید <code>scripts/build_portable_zip.py</code> با راستی‌آزمایی خودکار ASCII)؛ (۳) <b>لینک‌های صفحهٔ شروع در مخزن</b> به مسیرهای ناموجود (<code>webapp/</code> کنار <code>portable/</code>) اشاره می‌کردند؛ اکنون چیدمان مخزن و ZIP یکسان است و لانچر لینوکس/مک نیز با <code>--directory webapp</code> همان پوشه را سرو می‌کند. بستهٔ قابل حمل با همین نسخه بازسازی و جایگزین شد؛ کش سرویس‌ورکر → v11.</p></div>
+    <div class="tl-item reveal"><h4>بازگردانی تجربهٔ دسکتاپ در وب قابل حمل + موتور آفلاین کامل <span class="ver">v1.8.2</span></h4>
+      <p>نسخهٔ تک‌فایلی که در ریلیز قبل منتشر شد فقط چیدمان موبایل (ستون ۷۲۰px + تب‌بار پایین) داشت و موتور OCR آن از CDN بارگیری می‌شد — عقب‌گردی نسبی نسبت به دسکتاپ Streamlit بود. در v1.8.2 همان تجربهٔ محبوب دسکتاپ به وب قابل حمل بازگشت: (۱) <b>پوستهٔ دسکتاپ سایدباری</b> ≥۱۰۲۴px با چهار بخش «خواندن دارو / گزارشات و ارزیابی / راهنما و مستندات / دربارهٔ طراحان» + بخش «🎨 نمایش» با کلید «🌙 حالت تاریک» دستی (هم‌ارز Streamlit؛ <code>css/style.css</code> + <code>js/app.js</code>) — در موبایل همان تب‌بار قبلی حفظ شده است؛ (۲) <b>حالت تاریک دستی</b> با واریانت‌های خودکار تولیدشدهٔ <code>html.dark</code> از همان بلوک‌های <code>prefers-color-scheme</code>؛ (۳) <b>موتور OCR کاملاً آفلاین در تک‌فایلی</b>: کارگر Tesseract، هستهٔ WASM (simd-lstm) و دادهٔ زبان best فارسی/انگلیسی به‌صورت data: URL داخل فایل تزریق می‌شوند (<code>scripts/build_singlefile.py</code> + <code>js/ocr.js</code> + <code>js/offline-engine.js</code>) — محدودیت شناخته‌شدهٔ مرورگرها «importScripts(blob:) در مبدا-ناشناس file://» با تزریق data: URL در پرلود کارگر دور زده می‌شود و در صورت شکست، زنجیرهٔ بازگشت jsdelivr → unpkg فعال است؛ آزمون E2E سرکوب‌شدهٔ شبکه (مسدودسازی همهٔ درخواست‌های خارجی) خوانش کامل یک نمونهٔ واقعی با ۵ مرحلهٔ رنگی و ۷ فیلد را بدون حتی یک درخواست شبکه تأیید کرد. فایل تک‌فایلی ~۱۵MB شد؛ ۶۴ آزمون Node پاس؛ کش سرویس‌ورکر → v10.</p></div>
+    <div class="tl-item reveal"><h4>حالت تاریک دسکتاپ + احترام به کاهش حرکت <span class="ver">v1.8.1</span></h4>
+      <p>تکمیل بند ۶ چارچوب «سیستم طراحی مشترک» (حالت روشن و تاریک + رعایت <code>prefers-reduced-motion</code>): در دسکتاپ (Streamlit) کلید «🌙 حالت تاریک» به بخش نمایش سایدبار اضافه شد — پالت تیرهٔ سرمه‌ای روی بدنهٔ اصلی، کارت‌ها، پاسخ بزرگ، خط‌زمان مراحل، چیپ‌های وضعیت فیلد، جدول‌ها، فرم‌ها و اجزای بومی Streamlit اعمال می‌شود و رنگ اختصاصی هر مرحلهٔ پردازش حفظ می‌شود (<code>label_reader/ui_theme.py: DARK_THEME_CSS</code> + تزریق شرطی در <code>app.py</code>)؛ سایدبار گرادیانی از قبل تیره است. موبایل/PWA از قبل با <code>prefers-color-scheme</code> حالت تاریک خودکار داشت (بدون تغییر). در هر دو سامانه، برای کاربرانی که در سیستم‌عامل «کاهش حرکت» فعال کرده‌اند انیمیشن نبض/محو خاموش می‌شود (<code>ui_theme.py</code> + <code>css/style.css</code>)؛ کش سرویس‌ورکر به v9 ارتقا یافت، فایل تک‌فایلی بازسازی شد و README بخش «تازه در v1.8.1» را گرفت. امنیت: توکن افشاشده در گفتگو از پیکربندی گیت حذف شد (گیت‌هاب از قبل ابطالش کرده بود). همان ۱۰۶ آزمون pytest + ۶۴ آزمون Node پاس.</p></div>
+    <div class="tl-item reveal"><h4>بازطراحی موتور خوانش فارسی + گرافیک جدید دو سامانه <span class="ver">v1.8.0</span></h4>
+      <p>با بازخورد کاربر روی جعبه واقعی «لانزول ۳۰» (خروجی آشغالِ ترکیب حروف لاتین/فارسی)، موتور خوانش از پایه بازطراحی شد: ۱) <b>گذرهای زبانی جدا</b> — ترکیب <code>fas+eng</code> (ریشهٔ تزریق حروف لاتین به فارسی) حذف و کاوش مقایسه‌ای دو-موتوره جایگزین شد (<code>ocr/tesseract_provider.py</code>)؛ ۲) واریانت <b>جداسازی جوهر رنگی</b> <code>255−max(B,G,R)</code> برای متن رنگی روی جعبه سفید (<code>preprocess.py</code> ⇄ <code>js/preprocess.js</code>)؛ ۳) <b>رأی‌گیری اجماعی</b> چند پیکربندی + فیلتر تک‌رأی کم‌اطمینان + فیلتر کادر منحط/نشان‌گرد؛ ۴) <b>موتور دوم مکمل</b> (EasyOCR) با دو گذر ادغام و قوانین «عبارت چندواژه‌ای حق له‌کردن کلمهٔ دقیق را ندارد»؛ ۵) <b>بازسازی سطرها</b> (تلورانس Y نسبی، شکست ستونی، حذف خوانش هم‌ستون)؛ ۶) دروازه‌های نام سخت‌گیرانه‌تر (ساختاری/بریده/تکرار/تک‌منبع) + استخراج مادهٔ مؤثره از سطرِ بعدِ «حاوی:» + اصلاح واژه‌نامه‌ای محدود. <b>رابط کاربری:</b> دسکتاپ: سایدبار گرادیانی ۴ صفحه‌ای (خواندن دارو / گزارش‌ها و ارزیابی / راهنما و مستندات / دربارهٔ طراحان) + خط‌زمان مراحل رنگی زنده (آبی/بنفش/نارنجی/سبز/صورتی) با انیمیشن «در جریان»؛ موبایل: تب‌بار پایین ۴بخشی، مراحل با حاشیه رنگی متمایز + نبض، صفحه گزارش با کاشی‌های ارزیابی، کارت طراحان، کش-باست دارایی‌ها (SW v8) و رفع باگ پنهان ثابت اعلان‌نشده <code>VARIANT_WHITE_ON_DARK</code>. نتیجه روی لانزول: لانسوپرازول / ۳۰ میلی‌گرم / ۲۸ کپسول / کپسول — و نام خوش‌نویسی صادقانه «خوانده نشد». ۱۰۶ آزمون pytest + ۶۴ آزمون Node پاس.</p></div>
+    <div class="tl-item reveal"><h4>اصلاح اساسی کیفیت OCR — رفع خروجی بی‌معنی و هشدارهای کاذب <span class="ver">v1.7.0</span></h4>
+      <p>با بازخورد واقعی کاربر (جعبه با متن سفید روی زمینه سبز-آبی که خروجی «RIE [SE ۱ ES {= ray WE» می‌داد)، چهار اصلاح ریشه‌ای در هر دو زیرسیستم اعمال شد: ۱) واریانت جدید <code>white_on_dark</code> (آستانه تطبیقی برای متن روشن روی جعبه رنگی — <code>preprocess.py</code> ⇄ <code>js/preprocess.js</code>)؛ ۲) ادغام «بهترین-اول» نسخه‌های پردازشی با امتیازدهی و جانشینی محافظه‌کارانه (فقط خوانش کامل‌ترِ معتبر — <code>pipeline.py</code> ⇄ <code>js/pipeline.js</code>)؛ ۳) گیت کیفیت قطعه‌ها (حذف نماد محض، اطمینان زیر ۰٫۳ و کادر غول‌پیکر)؛ ۴) دروازه نام معتبر (<code>_plausible_name</code>) + شرط کنتراست برای هشدار شستگی + هشدار چندناحیه فقط با نام دوم معتبر + ترتیب جدید پاسخ (اول اطلاعات، بعد هشدار). همچنین خروجی مرحله ۲ خط‌زمان، مقایسه نسخه‌ها (قطعه/اطمینان/امتیاز) را شفاف نشان می‌دهد؛ ۱۱ آزمون pytest و ۹ آزمون Node جدید.</p></div>
+    <div class="tl-item reveal"><h4>اعلام مرحله‌به‌مرحله پردازش + خروجی و ارزیابی هر مرحله <span class="ver">v1.6.0</span></h4>
+      <p>در حین پردازش، سامانه اعلام می‌کند «الان کدام بخش از نیازمندی استاد انجام شد»؛ برای هر مرحله از ۵ مرحله معماری استاد، خروجی واقعی و معیارهای ارزیابی کیفیت (تیزی/کنتراست تصویر، اطمینان OCR، پوشش شواهد، عبور از نگهبان، وضعیت صوت) با دکمه «خروجی و ارزیابی» نمایش داده می‌شود؛ گزارش ارزیابی مرحله‌ای (JSON) قابل دانلود؛ پیاده‌سازی در هر دو زیرسیستم (<code>label_reader/stages.py</code> + stage_callback در <code>pipeline.py</code> ⇄ خط‌زمان مراحل در <code>js/app.js</code> + onStage در <code>js/pipeline.js</code>) با ۱۶ آزمون pytest جدید و آزمون پاریتی Node؛ مودال راهنمای اختصاصی؛ این بخش در همین سند (بخش ۳) و سند PDF نیز مستند شده است.</p></div>
+    <div class="tl-item reveal"><h4>بخش «ملزومات طرح‌شده توسط استاد (استاد قربانی)» با جدول انطباق <span class="ver">v1.5.0</span></h4>
+      <p>ملزومات پروژه در دو دسته (تعریف مسئله + نمودار معماری) عیناً در هر دو سند (HTML/PDF) و هر دو رابط (موبایل و دسکتاپ) نقل و برای هر الزام، نحوه تحقق، فایل(های) پیاده‌سازی و آزمون ردیابی‌پذیر آن مشخص شد — جدول انطباق کامل بخش ۳ سند و بخش اختصاصی رابط‌ها.</p></div>
+    <div class="tl-item reveal"><h4>نام توسعه‌دهندگان + بخش ارزیابی مدل‌ها + تقویت مستندات <span class="ver">v1.4.0</span></h4>
+      <p>نام «حمید جلیلوند و نوید بدری» در هدر هر دو سامانه و هر دو سند؛ بخش «ملاحظات کلیدی و محل پیاده‌سازی» با نگاشت فایل‌ها؛ بخش «ارزیابی و آزمون مدل‌ها» با اصول سنجش سامانه‌های حساس دارویی و نمودارهای واقعی (دقت فیلد/حالت، زمان، آزمون‌ها) در هر دو سند و رابط دسکتاپ؛ مودال ارزیابی در موبایل.</p></div>
+    <div class="tl-item reveal"><h4>APK بازساخت‌شده از آخرین کد <span class="ver">v1.3.1</span></h4>
+      <p>فایل قابل نصب اندروید (versionCode 6) از کد v1.3.0 ساخته و در Release منتشر شد — شامل دوربین زنده و مودال‌های راهنما که در APK قدیمی v1.0.2 نبود.</p></div>
+    <div class="tl-item reveal"><h4>دوربین زنده، تشخیص جعبه، کیفیت بالاتر OCR و پاسخ <span class="ver">v1.2.0</span></h4>
+      <p>دکمه دوربین به دوربین زنده واقعی (getUserMedia) تبدیل شد؛ تشخیص خودکار جعبه دارو، ۳ فریم و انتخاب تیزترین، PSM 11، تلاش چرخش ۹۰° و پاسخ غنی‌تر. پشتیبانی اندروید (مجوز CAMERA).</p></div>
+    <div class="tl-item reveal"><h4>رفع اشکال راه‌اندازی ویندوز <span class="ver">v1.0.1</span></h4>
+      <p>لانچرها و اسکریپت PowerShell به ۱۰۰٪ ASCII+CRLF بازنویسی شدند تا مشکل کدگذاری cmd/PowerShell در ویندوزهای فارسی رفع شود.</p></div>
+    <div class="tl-item reveal"><h4>انتشار عمومی اول <span class="ver">v1.0.0</span></h4>
+      <p>دسکتاپ کامل + PWA آفلاین + ۷۹ آزمون pytest + ۵۴ آزمون Node + ۱۶ E2E + GitHub Pages و Releases.</p></div>
+    <div class="tl-item reveal"><h4>مودال‌های راهنما + مستندات مصور + PDF <span class="ver">v1.3.0</span></h4>
+      <p>راهنمای مودالی در همه بخش‌های برنامه (موبایل و دسکتاپ) با معرفی فناوری هر بخش؛ سند فنی HTML رسپانسیو با انیمیشن و نسخه PDF شکیل.</p></div>
+  </div>
+</section>
+
+<footer class="docfoot">
+  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۲.۰.۰ · توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
+  <div class="links">
+    <a href="index.html">🚀 برنامه</a>
+    <a href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ GitHub</a>
+    <a href="https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest" target="_blank" rel="noopener">⬇️ Releases (نسخه PDF)</a>
+    <a href="https://github.com/hjalilvand2004-coder/LabelVoice/blob/main/docs/LIMITATIONS.md" target="_blank" rel="noopener">⚠️ محدودیت‌ها</a>
+  </div>
+  <p>این ابزار فقط متن روی بسته را می‌خواند؛ توصیه پزشکی، مقدار مصرف یا تشخیص ارائه نمی‌دهد. همه پردازش‌ها روی دستگاه شما انجام می‌شود.</p>
+</footer>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+  // نوار پیشرفت مطالعه
+  var bar = document.getElementById('readbar');
+  function onScroll() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // نمایش تدریجی بخش‌ها
+  var els = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.12 });
+    els.forEach(function (el) { io.observe(el); });
+  } else {
+    els.forEach(function (el) { el.classList.add('in'); });
+  }
+
+  // برجسته‌سازی لینک فعال ناوبری
+  var links = document.querySelectorAll('#navlinks a');
+  var secs = [];
+  links.forEach(function (a) {
+    var id = a.getAttribute('href').slice(1);
+    var sec = document.getElementById(id);
+    if (sec) secs.push({ a: a, sec: sec });
+  });
+  function highlight() {
+    var y = window.scrollY + 140, best = null;
+    secs.forEach(function (s) { if (s.sec.offsetTop <= y) best = s; });
+    links.forEach(function (a) { a.classList.remove('active'); });
+    if (best) best.a.classList.add('active');
+  }
+  window.addEventListener('scroll', highlight, { passive: true });
+  highlight();
+})();
+</script>
+
+
+
+</body>
+</html>
