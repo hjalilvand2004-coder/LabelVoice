@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     use_ink_isolated_variant: bool = True
 
     # ---------- OCR ----------
-    # tesseract | easyocr | auto (اولین موتور در دسترس)
+    # tesseract | easyocr | surya | auto (اولین موتور در دسترس)
     ocr_provider: str = "tesseract"
     tessdata_dir: Path = PROJECT_ROOT / "models" / "tessdata"
     ocr_languages: str = "fas+eng"
@@ -61,6 +61,13 @@ class Settings(BaseSettings):
     # در نبود easyocr بی‌صدا رد می‌شود. فقط دسکتاپ (موبایل WASM پشتیبانی نمی‌کند).
     dual_engine: bool = True
     easyocr_variants: str = "original,gray_clahe"
+
+    # v2.2.0: موتور سوم اختیاری (Surya) — به انتخاب صریح کاربر فعال می‌شود؛
+    # در زنجیرهٔ «auto» قرار ندارد تا اجرای پیش‌فرض سریع و پیش‌بینی‌پذیر بماند.
+    # surya-ocr>=0.17 تک‌مدل چندزبانه است (فارسی را بدون تعیین زبان می‌خواند).
+    surya_model_dir: Path | None = None
+    # نسخه‌هایی که سوریا روی‌شان اجرا می‌شود (سنگین است؛ کمینهِ کافی):
+    surya_variants: str = "original,gray_clahe"
 
     # ---------- گیت کیفیت قطعه‌های OCR (v1.7.0) ----------
     # کف مطلق اطمینان: قطعه زیر این مقدار همیشه حذف می‌شود

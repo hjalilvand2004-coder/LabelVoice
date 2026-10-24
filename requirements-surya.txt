@@ -1,0 +1,8 @@
+# موتور OCR سوم اختیاری Surya (v2.2.0) — به انتخاب کاربر
+# روش نصب: pip install -r requirements-surya.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.1+cpu
+torchvision==0.29.1+cpu
+# نکته: surya-ocr 0.17.x با transformers 5.x ناسازگار است؛ 4.57.x الزامی است
+transformers==4.57.1
+surya-ocr==0.17.1

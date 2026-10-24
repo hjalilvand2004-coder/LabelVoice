@@ -71,6 +71,23 @@ pip install -r requirements-easyocr.txt
 
 سپس در رابط کاربری یا با `LBR_OCR_PROVIDER=easyocr` انتخاب کنید. اولین اجرا کند است (دانلود و بارگذاری مدل) و پس از آن نمونه در حافظه نگه داشته می‌شود.
 
+## ۴-ب) Surya OCR (اختیاری — v2.2.0، به انتخاب کاربر)
+
+موتور سوم خوانش با تشخیص خط + بازشناسی ترنسفورمری (تک‌مدل چندزبانه شامل فارسی).
+نصب (به torch نیاز دارد؛ برای CPU از ایندکس رسمی پایتورچ):
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install surya-ocr
+```
+
+- در رابط کاربری، «موتور OCR» را روی گزینهٔ «Surya» بگذارید یا `LBR_OCR_PROVIDER=surya` تنظیم کنید.
+- بار اول وزن مدل‌ها از Hugging Face دانلود می‌شود (چند صد مگابایت در `~/.cache/datalab`)؛ پس از آن کاملاً آفلاین.
+- حداقل حافظهٔ آزاد: ~۴ گیگابایت (در کمبود حافظه، بارگذاری خودکار به float16 برمی‌گردد).
+- خروجی سوریا از همان گیت کیفیت و رأی اجماعی خط لوله عبور می‌کند و نامش در خط‌زمان مراحل اعلام می‌شود.
+- در زنجیرهٔ «auto» قرار ندارد؛ فقط با انتخاب صریح اجرا می‌شود. در نسخهٔ مرورگر/تک‌فایل (WASM) پشتیبانی نمی‌شود.
+- آزمون زندهٔ سنگین: `LBR_TEST_SURYA_LIVE=1 pytest tests/test_surya_provider.py -k live`
+
 ## ۵) اجرا
 
 ```bash
@@ -104,12 +121,14 @@ python scripts/evaluate.py             # جدول واقعی دقت/زمان ر�
 
 | کلید | پیش‌فرض | توضیح |
 |---|---|---|
-| `LBR_OCR_PROVIDER` | tesseract | tesseract / easyocr / auto |
+| `LBR_OCR_PROVIDER` | tesseract | tesseract / easyocr / surya / auto |
 | `LBR_OCR_LANGUAGES` | fas+eng | زبان‌های Tesseract |
 | `LBR_TTS_PROVIDER` | edge | edge / gtts / none |
 | `LBR_TTS_VOICE` | fa-IR-FaridNeural | صدای فارسی edge-tts |
 | `LBR_MAX_FILE_MB` | 10 | سقف حجم فایل تصویر |
 | `LBR_LLM_ENABLED` | false | فعال‌سازی بازنویسی LLM |
+| `LBR_SURYA_VARIANTS` | original,gray_clahe | نسخه‌های پردازشی که سوریا اجرا می‌کند (v2.2.0) |
+| `LBR_SURYA_MODEL_DIR` | — | مسیر اختصاصی کش مدل‌های سوریا (اختیاری) |
 | `LBR_LLM_BASE_URL` / `LBR_LLM_MODEL` / `LBR_LLM_API_KEY` | — | فقط با فعال‌سازی صریح؛ کلید از متغیر محیط |
 
 ## عیب‌یابی

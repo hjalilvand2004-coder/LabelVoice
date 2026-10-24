@@ -12,7 +12,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>برچسب‌خوان هوشمند دارو و محصولات</title>
-<link rel="stylesheet" href="css/style.css?v=2.1.0">
+<link rel="stylesheet" href="css/style.css?v=2.2.0">
 <script>
 /* اعمال زودهنگام حالت تاریک دستی (قبل از اولین رندر) — v1.8.2 */
 try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.classList.add('dark'); } catch (e) { /* نادیده */ }
@@ -23,7 +23,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
 <!-- ================= سایدبار دسکتاپ (v1.8.2 — معادل نسخهٔ دسکتاپ Streamlit) ================= -->
 <aside class="sidebar" id="sidebar" aria-label="ناوبری اصلی">
   <div class="sb-brand">
-    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="10" fill="#0d7377"/><rect x="11" y="12" width="20" height="4" rx="2" fill="#fff"/><rect x="11" y="20" width="26" height="4" rx="2" fill="#9bcdcf"/><rect x="11" y="28" width="14" height="4" rx="2" fill="#9bcdcf"/><circle cx="34" cy="34" r="7" fill="none" stroke="#fff" stroke-width="3"/><line x1="39" y1="39" x2="43" y2="43" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="10" fill="#1565c0"/><rect x="11" y="12" width="20" height="4" rx="2" fill="#fff"/><rect x="11" y="20" width="26" height="4" rx="2" fill="#bbdefb"/><rect x="11" y="28" width="14" height="4" rx="2" fill="#bbdefb"/><circle cx="34" cy="34" r="7" fill="none" stroke="#fff" stroke-width="3"/><line x1="39" y1="39" x2="43" y2="43" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
     <div>
       <div class="sb-title">برچسب‌خوان هوشمند</div>
       <div class="sb-sub">دارو و محصولات</div>
@@ -51,7 +51,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     </label>
   </div>
   <div class="sb-foot">
-    <div class="sb-ver">نسخهٔ وب ۲.۱.۰</div>
+    <div class="sb-ver">نسخهٔ وب ۲.۲.۰</div>
     <div>حمید جلیلوند و نوید بدری</div>
     <div>همه پردازش‌ها روی همین دستگاه</div>
   </div>
@@ -59,7 +59,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
 <div class="app-content">
 <header class="app-header">
   <div class="header-row">
-    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="10" fill="#0d7377"/><rect x="11" y="12" width="20" height="4" rx="2" fill="#fff"/><rect x="11" y="20" width="26" height="4" rx="2" fill="#9bcdcf"/><rect x="11" y="28" width="14" height="4" rx="2" fill="#9bcdcf"/><circle cx="34" cy="34" r="7" fill="none" stroke="#fff" stroke-width="3"/><line x1="39" y1="39" x2="43" y2="43" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="10" fill="#1565c0"/><rect x="11" y="12" width="20" height="4" rx="2" fill="#fff"/><rect x="11" y="20" width="26" height="4" rx="2" fill="#bbdefb"/><rect x="11" y="28" width="14" height="4" rx="2" fill="#bbdefb"/><circle cx="34" cy="34" r="7" fill="none" stroke="#fff" stroke-width="3"/><line x1="39" y1="39" x2="43" y2="43" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
     <div>
       <h1>برچسب‌خوان هوشمند</h1>
       <p class="subtitle">نسخهٔ وب قابل حمل — خواندن متن بسته، بدون ارسال هیچ داده‌ای</p>
@@ -72,6 +72,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     این ابزار فقط «متن روی بسته» را می‌خواند؛ توصیه پزشکی، مقدار مصرف یا تشخیص ارائه نمی‌دهد.
   </div>
 </header>
+<div class="lv-ribbon" aria-hidden="true"></div>
 
 <main id="main">
   <!-- ============ صفحه ۱: خواندن دارو ============ -->
@@ -236,7 +237,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
         <button type="button" class="btn btn-secondary" data-help="reqs">ملزومات استاد و جدول انطباق</button>
         <button type="button" class="btn btn-secondary" data-help="stages">مراحل رنگی پردازش</button>
         <button type="button" class="btn btn-secondary" data-help="engine">موتورهای OCR (v1.8.0)</button>
-        <button type="button" class="btn btn-secondary" data-help="models">🧠 مدل‌ها و موتورها (v2.1.0)</button>
+        <button type="button" class="btn btn-secondary" data-help="models">🧠 مدل‌ها و موتورها (v2.2.0)</button>
         <button type="button" class="btn btn-secondary" data-help="preprocess">پیش‌پردازش OpenCV</button>
         <button type="button" class="btn btn-secondary" data-help="fields">فیلدها و شواهد</button>
         <button type="button" class="btn btn-secondary" data-help="response">پاسخ و نگهبان ایمنی</button>
@@ -389,20 +390,20 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
   <div style="padding:1rem;text-align:center">این برنامه به جاوااسکریپت نیاز دارد. لطفاً جاوااسکریپت مرورگر را فعال کنید.</div>
 </noscript>
 
-<script src="js/textnorm.js?v=2.1.0"></script>
-<script src="js/patterns.js?v=2.1.0"></script>
-<script src="js/guard.js?v=2.1.0"></script>
-<script src="js/extractor.js?v=2.1.0"></script>
-<script src="js/responder.js?v=2.1.0"></script>
-<script src="js/pipeline.js?v=2.1.0"></script>
-<script src="js/preprocess.js?v=2.1.0"></script>
-<script src="js/boxdetect.js?v=2.1.0"></script>
+<script src="js/textnorm.js?v=2.2.0"></script>
+<script src="js/patterns.js?v=2.2.0"></script>
+<script src="js/guard.js?v=2.2.0"></script>
+<script src="js/extractor.js?v=2.2.0"></script>
+<script src="js/responder.js?v=2.2.0"></script>
+<script src="js/pipeline.js?v=2.2.0"></script>
+<script src="js/preprocess.js?v=2.2.0"></script>
+<script src="js/boxdetect.js?v=2.2.0"></script>
 <script src="js/samples-data.js"></script>
-<script src="js/offline-engine.js?v=2.1.0"></script>
+<script src="js/offline-engine.js?v=2.2.0"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
-<script src="js/ocr.js?v=2.1.0"></script>
-<script src="js/camera.js?v=2.1.0"></script>
-<script src="js/help.js?v=2.1.0"></script>
-<script src="js/app.js?v=2.1.0"></script>
+<script src="js/ocr.js?v=2.2.0"></script>
+<script src="js/camera.js?v=2.2.0"></script>
+<script src="js/help.js?v=2.2.0"></script>
+<script src="js/app.js?v=2.2.0"></script>
 </body>
 </html>

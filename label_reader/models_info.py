@@ -52,6 +52,11 @@ def detect_versions() -> dict[str, str]:
     except Exception:  # noqa: BLE001
         out["easyocr"] = "نصب نشده (اختیاری)"
 
+    try:  # v2.2.0: موتور سوم اختیاری Surya
+        out["surya"] = _pkg_version("surya-ocr") or "نصب نشده (اختیاری)"
+    except Exception:  # noqa: BLE001
+        out["surya"] = "نصب نشده (اختیاری)"
+
     out["edge_tts"] = _pkg_version("edge-tts") or "نصب نشده"
     out["gtts"] = _pkg_version("gtts") or "نصب نشده"
     out["streamlit"] = _pkg_version("streamlit") or "نامشخص"
@@ -113,6 +118,15 @@ MODEL_REGISTRY: list[dict] = [
         "role_fa": "پر کردن نواحی‌ای که تسراکت ضعیف خوانده؛ خروجی با همان گیت کیفیت و رأی اجماعی ادغام می‌شود",
         "where": "label_reader/ocr/easyocr_provider.py",
         "privacy_fa": "کاملاً آفلاین (پس از دانلود اولیهٔ وزن‌ها)",
+        "optional": True,
+    },
+    {
+        "stage_fa": "۲. خواندن متن (OCR — موتور سوم به انتخاب کاربر)",
+        "model": "Surya — موتور OCR متن‌باز (تشخیص خط + بازشناسی ترنسفورمری؛ چندزبانه شامل فارسی)",
+        "runtime": "surya",
+        "role_fa": "گزینهٔ سوم خوانش به انتخاب صریح کاربر؛ خروجی با همان گیت کیفیت و رأی اجماعی ادغام می‌شود (فقط دسکتاپ)",
+        "where": "label_reader/ocr/surya_provider.py",
+        "privacy_fa": "کاملاً آفلاین (پس از دانلود اولیهٔ وزن‌ها از Hugging Face)",
         "optional": True,
     },
     {
@@ -185,6 +199,8 @@ def models_table_rows() -> list[dict]:
                        f"نصب نشده (اختیاری) — {note}")
         else:
             version = ver.get(m["runtime"], "نامشخص")
+        if m["runtime"] in ("easyocr", "surya") and version.startswith("نصب نشده"):
+            version = "اختیاری — " + version
         rows.append({
             "مرحله": m["stage_fa"],
             "مدل / موتور": m["model"],
@@ -211,5 +227,7 @@ def models_markdown_fa() -> str:
             version = "نصب و آماده" if ok else "اختیاری — نصب نشده"
         else:
             version = ver.get(m["runtime"], "نامشخص")
+        if m["runtime"] in ("easyocr", "surya") and version.startswith("نصب نشده"):
+            version = "اختیاری — نصب نشده"
         lines.append(f"| {m['stage_fa']} | {m['model']} | {m['role_fa']} | {version} |")
     return "\n".join(lines)

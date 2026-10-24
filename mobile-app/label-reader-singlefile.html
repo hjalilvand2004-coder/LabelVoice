@@ -31,8 +31,11 @@
 
   /* سطوح و متن */
   --bg: #f3f9fe;
-  --bg-grad: radial-gradient(1200px 500px at 85% -10%, #e0f0fd 0%, transparent 60%),
-             radial-gradient(900px 420px at 0% 110%, #e9f6ec 0%, transparent 55%);
+  /* v2.2.0 — تجلی پررنگ‌تر پالت دارویی در پس‌زمینه: آبی اعتماد + سبز سلامت + ته‌مایهٔ قرمز هشدار روی سفید بهداشت */
+  --bg-grad: radial-gradient(1100px 520px at 88% -8%, rgba(30, 136, 229, .22) 0%, transparent 62%),
+             radial-gradient(950px 460px at -4% 4%, rgba(67, 160, 71, .18) 0%, transparent 58%),
+             radial-gradient(820px 420px at 50% 112%, rgba(229, 57, 53, .09) 0%, transparent 60%),
+             radial-gradient(560px 300px at 8% 52%, rgba(30, 136, 229, .07) 0%, transparent 62%);
   --card: #ffffff;
   --well: #f4f8fc;
   --text: #12283d;
@@ -88,8 +91,9 @@
     --accent-soft: #12331a;
 
     --bg: #07111e;
-    --bg-grad: radial-gradient(1100px 480px at 85% -10%, #0d2138 0%, transparent 60%),
-               radial-gradient(900px 420px at 0% 110%, #0e1c30 0%, transparent 55%);
+    --bg-grad: radial-gradient(1100px 480px at 85% -10%, rgba(21, 101, 192, .38) 0%, transparent 60%),
+               radial-gradient(900px 420px at 0% 110%, rgba(46, 125, 50, .26) 0%, transparent 55%),
+               radial-gradient(760px 380px at 50% 115%, rgba(229, 57, 53, .12) 0%, transparent 58%);
     --card: #102035;
     --well: #0d1a2b;
     --text: #e3edf7;
@@ -125,8 +129,9 @@ html.dark {
   --accent: #81c784;
   --accent-soft: #12331a;
   --bg: #07111e;
-  --bg-grad: radial-gradient(1100px 480px at 85% -10%, #0d2138 0%, transparent 60%),
-             radial-gradient(900px 420px at 0% 110%, #0e1c30 0%, transparent 55%);
+  --bg-grad: radial-gradient(1100px 480px at 85% -10%, rgba(21, 101, 192, .38) 0%, transparent 60%),
+             radial-gradient(900px 420px at 0% 110%, rgba(46, 125, 50, .26) 0%, transparent 55%),
+             radial-gradient(760px 380px at 50% 115%, rgba(229, 57, 53, .12) 0%, transparent 58%);
   --card: #102035;
   --well: #0d1a2b;
   --text: #e3edf7;
@@ -149,6 +154,18 @@ html.dark {
   --shadow-md: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 28px -16px rgba(0, 0, 0, .55);
   --shadow-brand: 0 2px 10px -2px rgba(100, 181, 246, .35);
 }
+
+/* ریبون چهاررنگ داروخانه‌ای (آبی → سفید → سبز → قرمز) — هم‌هویت با نسخهٔ دسکتاپ */
+.lv-ribbon {
+  height: 6px; width: min(760px, calc(100% - 2rem)); margin: .8rem auto 0;
+  border-radius: var(--r-full);
+  background: linear-gradient(90deg,
+    #0d47a1 0%, #1e88e5 22%, #e3f2fd 34%, #ffffff 44%,
+    #e8f5e9 56%, #43a047 72%, #e53935 100%);
+  border: 1px solid rgba(13, 71, 161, .20);
+  box-shadow: 0 2px 8px rgba(13, 71, 161, .22);
+}
+html.dark .lv-ribbon { border-color: rgba(100, 181, 246, .25); }
 
 /* ---------- ۲) پایه ---------- */
 * { box-sizing: border-box; }
@@ -260,18 +277,18 @@ html.dark .btn-ghost { color: var(--brand); }
   position: relative; overflow: hidden;
   border-bottom: 1px solid rgba(255, 255, 255, .08);
 }
-/* تزئین ملایم: دو هالهٔ نوری کم‌رنگ به‌جای ایموجی درشت */
+/* تزئین: هاله‌های نوری پالت دارویی (آبی اعتماد + سبز سلامت) */
 .app-header::before,
 .app-header::after {
   content: ''; position: absolute; border-radius: 50%; pointer-events: none;
 }
 .app-header::before {
   width: 300px; height: 300px; left: -90px; top: -150px;
-  background: radial-gradient(circle, rgba(62, 195, 208, .18) 0%, transparent 68%);
+  background: radial-gradient(circle, rgba(100, 181, 246, .22) 0%, transparent 68%);
 }
 .app-header::after {
   width: 260px; height: 260px; right: -70px; bottom: -140px;
-  background: radial-gradient(circle, rgba(109, 90, 230, .14) 0%, transparent 68%);
+  background: radial-gradient(circle, rgba(102, 187, 106, .20) 0%, transparent 68%);
 }
 .header-row {
   display: flex; align-items: center; gap: .7rem;
@@ -411,6 +428,13 @@ main { max-width: 760px; margin: 0 auto; padding: .9rem .85rem calc(74px + env(s
   padding: 1rem 1.05rem;
   margin-bottom: .85rem;
   box-shadow: var(--shadow-sm);
+  position: relative; overflow: hidden;
+}
+/* خط گرادیانی آبی→سبز→قرمز بالای هر کارت (v2.2.0 — تجلی پالت) */
+.card::before {
+  content: ''; position: absolute; top: 0; right: 0; left: 0; height: 3px;
+  background: linear-gradient(90deg, var(--st-opencv) 0%, var(--st-response) 60%, var(--st-tts) 130%);
+  opacity: .8; pointer-events: none;
 }
 
 /* ---------- ۸) ورود تصویر ---------- */
@@ -905,7 +929,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
 <!-- ================= سایدبار دسکتاپ (v1.8.2 — معادل نسخهٔ دسکتاپ Streamlit) ================= -->
 <aside class="sidebar" id="sidebar" aria-label="ناوبری اصلی">
   <div class="sb-brand">
-    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="10" fill="#0d7377"/><rect x="11" y="12" width="20" height="4" rx="2" fill="#fff"/><rect x="11" y="20" width="26" height="4" rx="2" fill="#9bcdcf"/><rect x="11" y="28" width="14" height="4" rx="2" fill="#9bcdcf"/><circle cx="34" cy="34" r="7" fill="none" stroke="#fff" stroke-width="3"/><line x1="39" y1="39" x2="43" y2="43" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="10" fill="#1565c0"/><rect x="11" y="12" width="20" height="4" rx="2" fill="#fff"/><rect x="11" y="20" width="26" height="4" rx="2" fill="#bbdefb"/><rect x="11" y="28" width="14" height="4" rx="2" fill="#bbdefb"/><circle cx="34" cy="34" r="7" fill="none" stroke="#fff" stroke-width="3"/><line x1="39" y1="39" x2="43" y2="43" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
     <div>
       <div class="sb-title">برچسب‌خوان هوشمند</div>
       <div class="sb-sub">دارو و محصولات</div>
@@ -933,7 +957,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     </label>
   </div>
   <div class="sb-foot">
-    <div class="sb-ver">نسخهٔ وب ۲.۱.۰</div>
+    <div class="sb-ver">نسخهٔ وب ۲.۲.۰</div>
     <div>حمید جلیلوند و نوید بدری</div>
     <div>همه پردازش‌ها روی همین دستگاه</div>
   </div>
@@ -941,7 +965,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
 <div class="app-content">
 <header class="app-header">
   <div class="header-row">
-    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="10" fill="#0d7377"/><rect x="11" y="12" width="20" height="4" rx="2" fill="#fff"/><rect x="11" y="20" width="26" height="4" rx="2" fill="#9bcdcf"/><rect x="11" y="28" width="14" height="4" rx="2" fill="#9bcdcf"/><circle cx="34" cy="34" r="7" fill="none" stroke="#fff" stroke-width="3"/><line x1="39" y1="39" x2="43" y2="43" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="10" fill="#1565c0"/><rect x="11" y="12" width="20" height="4" rx="2" fill="#fff"/><rect x="11" y="20" width="26" height="4" rx="2" fill="#bbdefb"/><rect x="11" y="28" width="14" height="4" rx="2" fill="#bbdefb"/><circle cx="34" cy="34" r="7" fill="none" stroke="#fff" stroke-width="3"/><line x1="39" y1="39" x2="43" y2="43" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
     <div>
       <h1>برچسب‌خوان هوشمند</h1>
       <p class="subtitle">نسخهٔ وب قابل حمل — خواندن متن بسته، بدون ارسال هیچ داده‌ای</p>
@@ -954,6 +978,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     این ابزار فقط «متن روی بسته» را می‌خواند؛ توصیه پزشکی، مقدار مصرف یا تشخیص ارائه نمی‌دهد.
   </div>
 </header>
+<div class="lv-ribbon" aria-hidden="true"></div>
 
 <main id="main">
   <!-- ============ صفحه ۱: خواندن دارو ============ -->
@@ -1118,7 +1143,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
         <button type="button" class="btn btn-secondary" data-help="reqs">ملزومات استاد و جدول انطباق</button>
         <button type="button" class="btn btn-secondary" data-help="stages">مراحل رنگی پردازش</button>
         <button type="button" class="btn btn-secondary" data-help="engine">موتورهای OCR (v1.8.0)</button>
-        <button type="button" class="btn btn-secondary" data-help="models">🧠 مدل‌ها و موتورها (v2.1.0)</button>
+        <button type="button" class="btn btn-secondary" data-help="models">🧠 مدل‌ها و موتورها (v2.2.0)</button>
         <button type="button" class="btn btn-secondary" data-help="preprocess">پیش‌پردازش OpenCV</button>
         <button type="button" class="btn btn-secondary" data-help="fields">فیلدها و شواهد</button>
         <button type="button" class="btn btn-secondary" data-help="response">پاسخ و نگهبان ایمنی</button>
@@ -4575,7 +4600,7 @@ window.LBR_SAMPLES = [
 
     models: {
       icon: '🧠',
-      title: 'مدل‌ها و موتورها — شفافیت کامل (v2.0.0)',
+      title: 'مدل‌ها و موتورها — شفافیت کامل (v2.2.0)',
       intro: 'سامانه در هر مرحله اعلام می‌کند از چه مدل یا موتوری استفاده می‌کند. هیچ مدل ابری بدون اطلاع شما در کار نیست و همهٔ پردازش‌های اصلی روی همین دستگاه انجام می‌شود.',
       points: [
         'وب/PWA/تک‌فایل: OCR با Tesseract.js 6.0.1 (WebAssembly) و دادهٔ زبان fas+eng — کاملاً آفلاین.',
@@ -4583,6 +4608,8 @@ window.LBR_SAMPLES = [
         'استخراج فیلدها و پاسخ فارسی: الگوها و قواعد فارسی + نگهبان ایمنی — بدون مدل زبانی ابری.',
         'خوانش صوتی: Web Speech API (speechSynthesis) — صدای فارسی روی خود دستگاه.',
         'نسخهٔ دسکتاپ (Streamlit): Tesseract 5 (fas+eng) + EasyOCR (fa+en) با رأی اجماعی + صدای edge-tts (fa-IR-FaridNeural/DilaraNeural) یا gTTS فقط با رضایت صریح.',
+        'موتور سوم دسکتاپ (v2.2.0 — اختیاری به انتخاب کاربر): Surya OCR — تشخیص خط + بازشناسی ترنسفورمری با پشتیبانی فارسی؛ نصب: pip install surya-ocr؛ خروجی آن از همان گیت کیفیت و رأی اجماعی عبور می‌کند. (در نسخهٔ مرورگر پشتیبانی نمی‌شود — مرورگر فقط WebAssembly اجرا می‌کند.)',
+        'فناوری ساخت همین اپ موبایل: PWA با HTML/CSS/JavaScript خالص (بدون فریم‌ورک) + Tesseract.js WASM + Service Worker (کش آفلاین) + Web App Manifest + دوربین getUserMedia + خوانش صوتی Web Speech API + بستهٔ اندروید با WebView wrapper.',
         'دستیار خوانش دوم دسکتاپ (اختیاری و پیش‌فرض خاموش): مدل Qwen/Qwen3-VL-2B-Instruct به‌صورت کاملاً محلی با transformers؛ فقط سطرهای تازه را مکمل می‌خواند و با شناسهٔ شاهد vlm-* ردیابی می‌شود.',
         'تک‌منبع حقیقت شفافیت در کد: label_reader/models_info.py — نسخه‌ها در زمان اجرا از همان دستگاه خوانده می‌شود.'
       ],
@@ -4590,6 +4617,7 @@ window.LBR_SAMPLES = [
         { t: 'Tesseract.js 6.0.1 (WASM)', r: 'موتور OCR وب — دادهٔ fas+eng', c: 'engine' },
         { t: 'Tesseract 5 (دسکتاپ)', r: 'موتور OCR اول با گذرهای زبانی جدا', c: 'engine' },
         { t: 'EasyOCR (دسکتاپ)', r: 'موتور دوم CRNN — مشارکت در رأی اجماعی', c: 'engine' },
+        { t: 'Surya OCR (دسکتاپ — اختیاری)', r: 'موتور سوم ترنسفورمری به انتخاب کاربر (v2.2.0)', c: 'engine' },
         { t: 'Qwen/Qwen3-VL-2B-Instruct', r: 'دستیار بینایی اختیاری — اجرای کاملاً محلی', c: 'engine' },
         { t: 'edge-tts / gTTS', r: 'خوانش صوتی فارسی دسکتاپ با رضایت', c: 'api' },
         { t: 'Web Speech API', r: 'خوانش صوتی وب روی خود دستگاه', c: 'api' }
@@ -4775,7 +4803,7 @@ window.LBR_SAMPLES = [
         'دسته ۲ (عین ملزومات): «OpenCV ← OCR ← پردازش متن و کنترل فیلدها ← تولید پاسخ فارسی (منطق استخراج یا LLM بازنویسی وفادار) ← TTS + Streamlit».',
         'دوربین به سمت جعبه: js/camera.js (getUserMedia + تیزترین فریم از ۳ فریم) ⇄ app.py (st.camera_input) — راستی‌آزمایی: ۱۶ آزمون E2E مرورگر.',
         'OpenCV: js/boxdetect.js + js/preprocess.js ⇄ label_reader/preprocess.py + quality.py (برش جعبه، deskew، CLAHE، تیزکردن).',
-        'OCR: js/ocr.js (Tesseract.js روی WASM) ⇄ label_reader/ocr/* (Tesseract 5 + EasyOCR اختیاری).',
+        'OCR: js/ocr.js (Tesseract.js روی WASM) ⇄ label_reader/ocr/* (Tesseract 5 + EasyOCR + Surya اختیاری).',
         'پردازش متن و کنترل فیلدها: js/textnorm.js + js/patterns.js + js/extractor.js ⇄ textnorm.py + extraction/* (نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده).',
         'تولید پاسخ فارسی: js/responder.js + js/guard.js ⇄ response/builder.py + response/guard.py — منطق استخراج قاعده‌محور؛ ماژول LLM (llm/rewriter.py) فقط اختیاری و پیش‌فرض خاموش است و خروجی‌اش دوباره از نگهبان عبور می‌کند (انطباق با «یا» ملزومات).',
         'TTS + رابط: speechSynthesis روی خود دستگاه ⇄ label_reader/tts/* + app.py (Streamlit).',

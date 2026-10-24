@@ -11,8 +11,9 @@
 body {
   font-family: 'Vazirmatn', Tahoma, sans-serif; margin: 0; min-height: 100vh;
   background:
-    radial-gradient(900px 320px at 85% -60px, rgba(30,136,229,.14), transparent),
-    radial-gradient(800px 300px at 5% -50px, rgba(67,160,71,.12), transparent),
+    radial-gradient(900px 320px at 85% -60px, rgba(30,136,229,.18), transparent),
+    radial-gradient(800px 300px at 5% -50px, rgba(67,160,71,.15), transparent),
+    radial-gradient(700px 300px at 50% 110%, rgba(229,57,53,.08), transparent),
     var(--bg);
   color: #1a2b3c; display: flex; align-items: center; justify-content: center; padding: 24px;
 }
@@ -32,6 +33,7 @@ body {
 .hero h1 { margin: 0 0 8px; font-size: 26px; font-weight: 900; }
 .hero p { margin: 0; color: #dbeafe; font-size: 14px; line-height: 2; }
 .hero .ver { display: inline-block; margin-top: 10px; padding: 3px 14px; border-radius: 999px; font-size: 12px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); }
+.lv-ribbon { height: 7px; border-radius: 999px; margin: 0 0 16px; background: linear-gradient(90deg, #0d47a1 0%, #1e88e5 22%, #e3f2fd 34%, #ffffff 44%, #e8f5e9 56%, #43a047 72%, #e53935 100%); border: 1px solid rgba(13,71,161,.18); box-shadow: 0 2px 8px rgba(13,71,161,.22); }
 .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 620px) { .cards { grid-template-columns: 1fr; } }
 .card {
@@ -77,8 +79,9 @@ code { background:#eef2f7; border-radius:6px; padding:1px 6px; font-size:12px; d
     <h1>برچسب‌خوان هوشمند دارو و محصولات</h1>
     <p>تصویر بسته را می‌دهد و می‌گوید «روی آن چه نوشته شده» — بدون پایتون، بدون پای‌چارم، بدون نصب هیچ‌چیز.<br>
     فقط یک مرورگر مدرن کافی است؛ موتور OCR و دادهٔ زبان فارسی/انگلیسی داخل همین بسته است.</p>
-    <span class="ver">نسخه ۲.۰.۰ · 👨‍💻 حمید جلیلوند و نوید بدری</span>
+    <span class="ver">نسخه ۲.۲.۰ · 👨‍💻 حمید جلیلوند و نوید بدری</span>
   </div>
+  <div class="lv-ribbon" aria-hidden="true"></div>
 
   <div class="cards">
     <div class="card">
@@ -111,13 +114,13 @@ code { background:#eef2f7; border-radius:6px; padding:1px 6px; font-size:12px; d
       <tr><td>پیش‌پردازش تصویر</td><td>پردازش تصویر با جاوااسکریپت (تیزکردن، صاف‌کردن زاویه، تشخیص جعبه) — همتای OpenCV در نسخهٔ دسکتاپ</td></tr>
       <tr><td>استخراج فیلدها</td><td>الگوها و قواعد فارسی (<code>js/patterns.js + extractor.js</code>) — بدون مدل زبانی ابری</td></tr>
       <tr><td>خوانش صوتی (TTS)</td><td><code>Web Speech API (speechSynthesis)</code> — صدای فارسی روی خود دستگاه</td></tr>
-      <tr><td>نسخهٔ دسکتاپ (Streamlit)</td><td>Tesseract 5 + EasyOCR (+ دستیار اختیاری <code>Qwen/Qwen3-VL-2B-Instruct</code>) و صدای <code>edge-tts</code>/<code>gTTS</code> با رضایت صریح</td></tr>
+      <tr><td>نسخهٔ دسکتاپ (Streamlit)</td><td>Tesseract 5 + EasyOCR + <b>Surya اختیاری</b> (موتور سوم — به انتخاب کاربر در سایدبار «موتور OCR»؛ v2.2.0) (+ دستیار اختیاری <code>Qwen/Qwen3-VL-2B-Instruct</code>) و صدای <code>edge-tts</code>/<code>gTTS</code> با رضایت صریح</td></tr>
     </table>
     <p style="margin:8px 0 0; font-size:11.5px; color:#64748b;">شرح کامل هر مدل، نسخهٔ در حال استفاده و جای تحقق آن در کد: بخش «راهنما» ← «مدل‌ها و موتورها» و فایل <code>webapp/documentation.html</code>.</p>
   </div>
 
   <div class="foot">
-    👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری · v2.0.0 — لانچر خودترمیم (پاک‌سازی کش سرویس‌ورکر قدیمی) + شفافیت مدل‌ها
+    👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری · v2.2.0 — لانچر خودترمیم + شفافیت مدل‌ها + پالت داروخانه‌ای + موتور سوم اختیاری Surya (دسکتاپ)
   </div>
 </div>
 <script>

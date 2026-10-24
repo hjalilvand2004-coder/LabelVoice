@@ -134,6 +134,15 @@ class LabelReaderPipeline:
         # ۵) OCR روی نسخه‌ها + گیت کیفیت قطعه + امتیازدهی واریانت (v1.7.0)
         t0 = time.perf_counter()
         provider = self._resolve_provider(ocr_engine)
+        # v2.2.0: سوریا سنگین است — فقط نسخه‌های تنظیم‌شده اجرا می‌شوند
+        # (پیش‌فرض: original,gray_clahe)؛ «original» همیشه حاضر است.
+        surya_variant_set: set[str] | None = None
+        if provider.name == "surya":
+            _sv = str(getattr(self.settings, "surya_variants",
+                              "original,gray_clahe"))
+            surya_variant_set = (
+                {n.strip() for n in _sv.split(",") if n.strip()}
+                | {VARIANT_ORIGINAL})
         by_variant: dict[str, list] = {}
         for name, image in variants.items():
             if name == VARIANT_BINARIZED:
@@ -142,6 +151,9 @@ class LabelReaderPipeline:
                              for p in vps if p.confidence is not None]
                 if mean_conf and float(np.mean(mean_conf)) >= 0.8:
                     continue
+            if (surya_variant_set is not None
+                    and name not in surya_variant_set):
+                continue
             by_variant[name] = self._filter_pieces(
                 provider.run(image, name),
                 image_area=int(variants[VARIANT_ORIGINAL].shape[0]) *

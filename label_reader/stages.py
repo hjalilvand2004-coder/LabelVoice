@@ -195,6 +195,8 @@ def build_stage_item(key: str, payload: dict) -> dict:
         _engine_val = " + ".join(_engines)
         if "qwen3-vl" in _engines:
             _engine_val += " (دستیار Qwen3-VL-2B-Instruct)"
+        if "surya" in _engines:
+            _engine_val += " (Surya OCR — موتور سوم به انتخاب کاربر)"
         metrics.append(_metric(
             "موتور و مدل خوانش", _engine_val, "ok",
             "شرح کامل مدل‌ها در بخش «مدل‌ها و موتورها» راهنما"))

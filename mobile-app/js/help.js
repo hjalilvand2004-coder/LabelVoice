@@ -37,7 +37,7 @@
 
     models: {
       icon: '🧠',
-      title: 'مدل‌ها و موتورها — شفافیت کامل (v2.0.0)',
+      title: 'مدل‌ها و موتورها — شفافیت کامل (v2.2.0)',
       intro: 'سامانه در هر مرحله اعلام می‌کند از چه مدل یا موتوری استفاده می‌کند. هیچ مدل ابری بدون اطلاع شما در کار نیست و همهٔ پردازش‌های اصلی روی همین دستگاه انجام می‌شود.',
       points: [
         'وب/PWA/تک‌فایل: OCR با Tesseract.js 6.0.1 (WebAssembly) و دادهٔ زبان fas+eng — کاملاً آفلاین.',
@@ -45,6 +45,8 @@
         'استخراج فیلدها و پاسخ فارسی: الگوها و قواعد فارسی + نگهبان ایمنی — بدون مدل زبانی ابری.',
         'خوانش صوتی: Web Speech API (speechSynthesis) — صدای فارسی روی خود دستگاه.',
         'نسخهٔ دسکتاپ (Streamlit): Tesseract 5 (fas+eng) + EasyOCR (fa+en) با رأی اجماعی + صدای edge-tts (fa-IR-FaridNeural/DilaraNeural) یا gTTS فقط با رضایت صریح.',
+        'موتور سوم دسکتاپ (v2.2.0 — اختیاری به انتخاب کاربر): Surya OCR — تشخیص خط + بازشناسی ترنسفورمری با پشتیبانی فارسی؛ نصب: pip install surya-ocr؛ خروجی آن از همان گیت کیفیت و رأی اجماعی عبور می‌کند. (در نسخهٔ مرورگر پشتیبانی نمی‌شود — مرورگر فقط WebAssembly اجرا می‌کند.)',
+        'فناوری ساخت همین اپ موبایل: PWA با HTML/CSS/JavaScript خالص (بدون فریم‌ورک) + Tesseract.js WASM + Service Worker (کش آفلاین) + Web App Manifest + دوربین getUserMedia + خوانش صوتی Web Speech API + بستهٔ اندروید با WebView wrapper.',
         'دستیار خوانش دوم دسکتاپ (اختیاری و پیش‌فرض خاموش): مدل Qwen/Qwen3-VL-2B-Instruct به‌صورت کاملاً محلی با transformers؛ فقط سطرهای تازه را مکمل می‌خواند و با شناسهٔ شاهد vlm-* ردیابی می‌شود.',
         'تک‌منبع حقیقت شفافیت در کد: label_reader/models_info.py — نسخه‌ها در زمان اجرا از همان دستگاه خوانده می‌شود.'
       ],
@@ -52,6 +54,7 @@
         { t: 'Tesseract.js 6.0.1 (WASM)', r: 'موتور OCR وب — دادهٔ fas+eng', c: 'engine' },
         { t: 'Tesseract 5 (دسکتاپ)', r: 'موتور OCR اول با گذرهای زبانی جدا', c: 'engine' },
         { t: 'EasyOCR (دسکتاپ)', r: 'موتور دوم CRNN — مشارکت در رأی اجماعی', c: 'engine' },
+        { t: 'Surya OCR (دسکتاپ — اختیاری)', r: 'موتور سوم ترنسفورمری به انتخاب کاربر (v2.2.0)', c: 'engine' },
         { t: 'Qwen/Qwen3-VL-2B-Instruct', r: 'دستیار بینایی اختیاری — اجرای کاملاً محلی', c: 'engine' },
         { t: 'edge-tts / gTTS', r: 'خوانش صوتی فارسی دسکتاپ با رضایت', c: 'api' },
         { t: 'Web Speech API', r: 'خوانش صوتی وب روی خود دستگاه', c: 'api' }
@@ -237,7 +240,7 @@
         'دسته ۲ (عین ملزومات): «OpenCV ← OCR ← پردازش متن و کنترل فیلدها ← تولید پاسخ فارسی (منطق استخراج یا LLM بازنویسی وفادار) ← TTS + Streamlit».',
         'دوربین به سمت جعبه: js/camera.js (getUserMedia + تیزترین فریم از ۳ فریم) ⇄ app.py (st.camera_input) — راستی‌آزمایی: ۱۶ آزمون E2E مرورگر.',
         'OpenCV: js/boxdetect.js + js/preprocess.js ⇄ label_reader/preprocess.py + quality.py (برش جعبه، deskew، CLAHE، تیزکردن).',
-        'OCR: js/ocr.js (Tesseract.js روی WASM) ⇄ label_reader/ocr/* (Tesseract 5 + EasyOCR اختیاری).',
+        'OCR: js/ocr.js (Tesseract.js روی WASM) ⇄ label_reader/ocr/* (Tesseract 5 + EasyOCR + Surya اختیاری).',
         'پردازش متن و کنترل فیلدها: js/textnorm.js + js/patterns.js + js/extractor.js ⇄ textnorm.py + extraction/* (نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده).',
         'تولید پاسخ فارسی: js/responder.js + js/guard.js ⇄ response/builder.py + response/guard.py — منطق استخراج قاعده‌محور؛ ماژول LLM (llm/rewriter.py) فقط اختیاری و پیش‌فرض خاموش است و خروجی‌اش دوباره از نگهبان عبور می‌کند (انطباق با «یا» ملزومات).',
         'TTS + رابط: speechSynthesis روی خود دستگاه ⇄ label_reader/tts/* + app.py (Streamlit).',

@@ -5,11 +5,13 @@ from __future__ import annotations
 from ..config import Settings
 from .base import OcrProvider, OcrUnavailableError
 from .easyocr_provider import EasyOcrProvider
+from .surya_provider import SuryaProvider
 from .tesseract_provider import TesseractProvider
 
 _PROVIDERS = {
     "tesseract": TesseractProvider,
     "easyocr": EasyOcrProvider,
+    "surya": SuryaProvider,
 }
 
 
@@ -27,7 +29,8 @@ def make_provider(name: str, settings: Settings) -> OcrProvider:
     cls = _PROVIDERS.get(key)
     if cls is None:
         raise OcrUnavailableError(
-            f"موتور OCR ناشناخته است: {name} (گزینه‌ها: tesseract، easyocr، auto)")
+            f"موتور OCR ناشناخته است: {name} "
+            f"(گزینه‌ها: tesseract، easyocr، surya، auto)")
     provider = cls(settings)
     ok, hint = provider.available()
     if not ok:

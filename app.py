@@ -106,12 +106,21 @@ with st.sidebar:
 
     st.divider()
     st.subheader("⚙️ تنظیمات پردازش")
+    _engine_opts = ["tesseract", "easyocr", "surya", "auto"]
     engine_choice = st.radio(
         "موتور OCR",
-        ["tesseract", "easyocr", "auto"],
-        index=["tesseract", "easyocr", "auto"].index(settings.ocr_provider)
-        if settings.ocr_provider in ("tesseract", "easyocr", "auto") else 0,
-        help="tesseract سبک‌تر است؛ easyocr مدل عمیق با نصب سنگین‌تر. هر دو قابل تعویض‌اند.",
+        _engine_opts,
+        index=_engine_opts.index(settings.ocr_provider)
+        if settings.ocr_provider in _engine_opts else 0,
+        format_func=lambda v: {
+            "tesseract": "Tesseract (سبک — پیش‌فرض)",
+            "easyocr": "EasyOCR (عمیق — اختیاری)",
+            "surya": "Surya (ترنسفورمری — اختیاری)",
+            "auto": "خودکار",
+        }.get(v, v),
+        help="tesseract سبک و سریع است؛ easyocr مدل عمیق CRNN با نصب سنگین‌تر؛ "
+             "surya موتور سوم ترنسفورمری است (به انتخاب کاربر؛ اولین اجرا وزن "
+             "مدل‌ها را دانلود می‌کند). هر سه از همان گیت کیفیت و رأی اجماعی عبور می‌کنند.",
     )
     voice = st.selectbox("صدای فارسی (edge-tts)", ["fa-IR-FaridNeural", "fa-IR-DilaraNeural"])
     rate = st.select_slider("سرعت خوانش", ["-15%", "-5%", "+0%", "+10%", "+20%"], value="+0%")
@@ -177,6 +186,7 @@ if page == "read":
           اجماعی تأیید و به فارسی نمایش و خوانش می‌کند.</p>
           <span class="authors">👨‍💻 توسعه و طراحی: {APP_AUTHORS_FA}</span>
         </div>
+        <div class="lv-ribbon"></div>
         """, unsafe_allow_html=True)
 
     st.markdown(
@@ -558,6 +568,7 @@ elif page == "reports":
           <p>دقت سامانه در سطح فیلد روی مجموعه نمونه برچسب‌خورده سنجیده می‌شود؛
           غیبت و تعارض هم خطا شمرده می‌شود چون هر اشتباه دارویی می‌تواند آسیب‌زا باشد.</p>
         </div>
+        <div class="lv-ribbon"></div>
         """, unsafe_allow_html=True)
 
     tech_help("eval", "🧩 روش و اصول ارزیابی مدل‌ها", "ev")
@@ -669,6 +680,7 @@ elif page == "docs":
           <h1>📚 راهنما و مستندات فنی</h1>
           <p>معماری سامانه، ملزومات استاد، فناوری هر بخش و مستندات کامل HTML/PDF.</p>
         </div>
+        <div class="lv-ribbon"></div>
         """, unsafe_allow_html=True)
 
     with st.expander("🏗️ معماری سامانه در یک نگاه", expanded=True):
@@ -713,6 +725,7 @@ else:
           <p>پروژهٔ LabelVoice — برچسب‌خوان هوشمند دارو و محصولات؛ طراحی و توسعهٔ
           دو-نفره با تمرکز بر ایمنی، شفافیت و وفاداری به شواهد.</p>
         </div>
+        <div class="lv-ribbon"></div>
         """, unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)

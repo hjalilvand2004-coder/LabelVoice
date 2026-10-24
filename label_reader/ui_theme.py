@@ -40,10 +40,23 @@ html, body, [class*="css"], .stApp, .stMarkdown, button, input, textarea,
 .stRadio label, .stSelectbox label, .stCheckbox label, .stSlider label {
   font-family: 'Vazirmatn', 'Tahoma', sans-serif !important;
 }
-.stApp { background:
-  radial-gradient(1200px 400px at 90% -50px, rgba(30,136,229,.09), transparent),
-  radial-gradient(1000px 380px at 5% -40px, rgba(67,160,71,.08), transparent),
-  var(--lv-bg);
+.stApp {
+  background:
+    radial-gradient(1100px 480px at 92% -80px, rgba(30,136,229,.20), transparent 62%),
+    radial-gradient(900px 460px at -6% -60px, rgba(67,160,71,.17), transparent 58%),
+    radial-gradient(820px 420px at 50% 118%, rgba(229,57,53,.10), transparent 60%),
+    radial-gradient(560px 300px at 10% 48%, rgba(30,136,229,.06), transparent 60%),
+    linear-gradient(180deg, #e9f3fd 0%, #f8fbff 46%, #edf6ef 100%);
+}
+
+/* ریبون چهاررنگ داروخانه‌ای (آبی → سفید → سبز → قرمز) — هویت بصری مشترک وب و موبایل */
+.lv-ribbon {
+  height: 7px; border-radius: 999px; margin: 0 0 14px;
+  background: linear-gradient(90deg,
+    #0d47a1 0%, #1e88e5 22%, #e3f2fd 34%, #ffffff 44%,
+    #e8f5e9 56%, #43a047 72%, #e53935 100%);
+  border: 1px solid rgba(13,71,161,.18);
+  box-shadow: 0 2px 8px rgba(13,71,161,.22);
 }
 #MainMenu, footer { visibility: hidden; }
 .block-container { padding-top: 1.2rem; max-width: 1200px; }
@@ -82,10 +95,17 @@ section[data-testid="stSidebar"] .stRadio label:hover {
 
 /* ---------- هیرو ---------- */
 .lv-hero {
-  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 45%, #1e88e5 100%);
+  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 42%, #1e88e5 68%, #43a047 118%);
   border-radius: 20px; padding: 26px 28px; color: #fff;
   box-shadow: 0 12px 30px rgba(13,71,161,.25); margin-bottom: 14px;
   position: relative; overflow: hidden;
+}
+/* نوار چهاررنگ بالای هیرو: سبز، سفید، قرمز، آبی */
+.lv-hero::before {
+  content: ''; position: absolute; top: 0; right: 0; left: 0; height: 5px;
+  background: linear-gradient(90deg,
+    #43a047 0%, #ffffff 25%, #e53935 50%, #ffffff 75%, #1e88e5 100%);
+  opacity: .95;
 }
 .lv-hero::after {
   content: '💊'; position: absolute; left: 18px; top: 50%;
@@ -104,6 +124,13 @@ section[data-testid="stSidebar"] .stRadio label:hover {
   background: #fff; border-radius: 16px; padding: 18px 20px;
   border: 1px solid #d8e7f6; box-shadow: 0 4px 14px rgba(13,71,161,.06);
   margin-bottom: 12px;
+  position: relative; overflow: hidden;
+}
+/* خط گرادیانی آبی→سبز بالای هر کارت — حضور پررنگ‌تر پالت در گرافیک صفحه */
+.lv-card::before {
+  content: ''; position: absolute; top: 0; right: 0; left: 0; height: 3px;
+  background: linear-gradient(90deg, #1e88e5 0%, #43a047 60%, #e53935 130%);
+  opacity: .85;
 }
 .lv-scope {
   background: linear-gradient(90deg, #e8f4fd, #eaf6ec);
@@ -115,6 +142,7 @@ section[data-testid="stSidebar"] .stRadio label:hover {
   background: #fff; border-radius: 16px; padding: 20px 22px; font-size: 16.5px;
   line-height: 2.1; color: #12283d; border: 1px solid #d4e5f5;
   border-right: 6px solid var(--lv-accent);
+  border-top: 3px solid #43a047;
   box-shadow: 0 4px 16px rgba(13,71,161,.07);
 }
 .lv-field-chip {
@@ -209,8 +237,9 @@ DARK_THEME_CSS = """
 <style>
 .stApp {
   background:
-    radial-gradient(1200px 400px at 90% -50px, rgba(30,136,229,.18), transparent),
-    radial-gradient(1000px 380px at 5% -40px, rgba(67,160,71,.14), transparent),
+    radial-gradient(1100px 480px at 92% -80px, rgba(30,136,229,.26), transparent 62%),
+    radial-gradient(900px 460px at -6% -60px, rgba(67,160,71,.20), transparent 58%),
+    radial-gradient(820px 420px at 50% 118%, rgba(229,57,53,.14), transparent 60%),
     #081426 !important;
 }
 .stApp p, .stApp li, .stApp td, .stApp th, .stApp dd, .stApp dt,
