@@ -77,7 +77,12 @@ print(f"OK {mobile_zip} ({mobile_zip.stat().st_size/1e6:.1f} MB)")
 # ---------- دارایی‌های بدون تغییر (Portable-Web/تک‌فایل/APK از v2.5.0) ----------
 PORTABLE_SRC = OUT / "LabelVoice-v2.5.0-Portable-Web.zip"
 SINGLEFILE_SRC = ROOT / "mobile-app" / "label-reader-singlefile.html"
-APK_SRC = ROOT / "android" / "build" / "LabelVoice-Android-2.5.0.apk"
+APK_SRC = OUT / "LabelVoice-v2.5.0-Android.apk"
+if not APK_SRC.exists():
+    print("دانلود APK v2.5.0 از ریلیز قبلی (بدون تغییر بازنشر می‌شود)…")
+    urllib.request.urlretrieve(
+        "https://github.com/hjalilvand2004-coder/LabelVoice/releases/"
+        "download/v2.5.0/LabelVoice-v2.5.0-Android.apk", APK_SRC)
 
 ASSETS = [
     (full_zip, f"LabelVoice-v{VERSION}-Full-Project.zip",
@@ -88,7 +93,7 @@ ASSETS = [
      "اپ موبایل (PWA) — بدون تغییر نسبت به ۲.۵.۰"),
     (SINGLEFILE_SRC, f"label-reader-singlefile-v{VERSION}.html",
      "تک‌فایل قابل حمل — بدون تغییر نسبت به ۲.۵.۰"),
-    (APK_SRC, "LabelVoice-Android-2.5.0.apk",
+    (APK_SRC, "LabelVoice-v2.5.0-Android.apk",
      "نسخهٔ نصب‌پذیر اندروید (versionCode 17) — بدون تغییر نسبت به ۲.۵.۰؛ این نسخه فقط دسکتاپ را تغییر داده است"),
 ]
 
