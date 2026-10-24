@@ -96,6 +96,13 @@ class Settings(BaseSettings):
     llm_api_key: str = ""  # فقط از متغیر محیط/secret؛ هرگز در کد هاردکد نشود
     llm_timeout_s: int = 30
 
+    # ---------- دستیار خوانش دوم VLM (v2.0.0 — پیش‌فرض: خاموش) ----------
+    # مدل: Qwen/Qwen3-VL-2B-Instruct — اجرای کاملاً محلی با transformers؛
+    # فقط سطرهای تازه (غیرتکراری) با شناسهٔ شاهد vlm-* اضافه می‌شود.
+    vlm_assist: bool = False
+    vlm_model_id: str = "Qwen/Qwen3-VL-2B-Instruct"
+    vlm_max_lines: int = 60
+
 
 def load_settings() -> Settings:
     return Settings()

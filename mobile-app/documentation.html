@@ -333,6 +333,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
       <a href="#pipeline">چگونه کار می‌کند</a>
       <a href="#files">فایل‌ها</a>
       <a href="#tech">فناوری‌ها</a>
+      <a href="#models">مدل‌ها</a>
       <a href="#safety">ایمنی</a>
       <a href="#evaluation">ارزیابی</a>
       <a href="#install">نصب</a>
@@ -343,7 +344,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 
 <header class="hero" id="top">
   <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
-  <span class="kicker">📘 سند فنی رسمی — نسخه ۱.۷.۰</span>
+  <span class="kicker">📘 سند فنی رسمی — نسخه ۲.۰.۰</span>
   <h1>برچسب‌خوان هوشمند دارو و محصولات<br><span class="grad">LabelVoice — معماری، کارکرد و فناوری</span></h1>
   <p class="lede">
     سامانه‌ای دو زیرسیستمی (دسکتاپ + موبایل) که فقط «متن روی بسته» را با OCR می‌خواند،
@@ -734,6 +735,8 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <div class="techcard reveal" style="--tc:#5fa04e"><div class="glyph">CV</div><h4>OpenCV (opencv-python)</h4><div class="role">پیش‌پردازش تصویر: CLAHE، حذف نویز، تیزکردن، deskew، مقیاس هوشمند</div><span class="where">preprocess.py · quality.py</span></div>
     <div class="techcard reveal" style="--tc:#a4262c"><div class="glyph">TE</div><h4>Tesseract 5 + pytesseract</h4><div class="role">موتور OCR دسکتاپ (LSTM) با fas+eng، دو PSM و ادغام فازی</div><span class="where">ocr/tesseract_provider.py</span></div>
     <div class="techcard reveal" style="--tc:#7d1142"><div class="glyph">EO</div><h4>EasyOCR (PyTorch)</h4><div class="role">موتور OCR عمیق اختیاری برای تصاویر سخت — بارگیری lazy</div><span class="where">ocr/easyocr_provider.py</span></div>
+    <div class="techcard reveal" style="--tc:#615ced"><div class="glyph">Q3</div><h4>Qwen3-VL-2B-Instruct (اختیاری)</h4><div class="role">دستیار خوانش دوم با مدل زبانی-بینایی — کاملاً محلی، پیش‌فرض خاموش، سطرهای تازه با شناسهٔ شاهد vlm-*</div><span class="where">ocr/vlm_provider.py</span></div>
+    <div class="techcard reveal" style="--tc:#0e7c8f"><div class="glyph">MI</div><h4>رجیستری مدل‌ها (v2.0.0)</h4><div class="role">تک‌منبع حقیقت شفافیت: کدام مدل برای کدام بخش + تشخیص نسخهٔ زندهٔ دستگاه</div><span class="where">models_info.py</span></div>
     <div class="techcard reveal" style="--tc:#e92063"><div class="glyph">Pd</div><h4>Pydantic v2 + pydantic-settings</h4><div class="role">مدل‌های داده با اعتبارسنجی + ردیابی شواهد؛ تنظیمات پروژه</div><span class="where">models.py · config.py</span></div>
     <div class="techcard reveal" style="--tc:#ff4b4b"><div class="glyph">St</div><h4>Streamlit</h4><div class="role">رابط وب دسکتاپ RTL؛ مودال‌های راهنما با @st.dialog</div><span class="where">app.py</span></div>
     <div class="techcard reveal" style="--tc:#4b8bbe"><div class="glyph">Pi</div><h4>Pillow (PIL)</h4><div class="role">باز/تبدیل تصویر در دسکتاپ و رسم نمونه‌های آزمون (raqm برای فارسی)</div><span class="where">app.py · make_sample_images.py</span></div>
@@ -746,8 +749,36 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <div class="techcard reveal" style="--tc:#f472b6"><div class="glyph">SW</div><h4>PWA + Service Worker</h4><div class="role">نصب روی گوشی (A2HS) و اجرای آفلاین cache-first</div><span class="where">manifest.webmanifest · sw.js</span></div>
     <div class="techcard reveal" style="--tc:#0ea5a4"><div class="glyph">وز</div><h4>فونت وزیرمتن (Vazirmatn)</h4><div class="role">فونت فارسی متن‌باز — محلی و آفلاین در هر دو زیرسیستم</div><span class="where">assets/fonts/ · mobile-app/assets/fonts/</span></div>
     <div class="techcard reveal" style="--tc:#84cc16"><div class="glyph">WV</div><h4>Android WebView</h4><div class="role">پوسته اپ اندروید با مجوز دوربین برای نسخه APK</div><span class="where">android/MainActivity.java</span></div>
-    <div class="techcard reveal" style="--tc:#16a34a"><div class="glyph">✓</div><h4>pytest</h4><div class="role">۷۹ آزمون دسکتاپ: امنیت، نگهبان، فیلدها، یکپارچگی</div><span class="where">tests/</span></div>
-    <div class="techcard reveal" style="--tc:#68a063"><div class="glyph">Nd</div><h4>Node.js</h4><div class="role">۵۴ آزمون واحد موبایل + اجرای E2E مرورگر</div><span class="where">tests-js/</span></div>
+    <div class="techcard reveal" style="--tc:#16a34a"><div class="glyph">✓</div><h4>pytest</h4><div class="role">۱۱۷ آزمون دسکتاپ: امنیت، نگهبان، فیلدها، رجیستری مدل‌ها، دستیار VLM</div><span class="where">tests/</span></div>
+    <div class="techcard reveal" style="--tc:#68a063"><div class="glyph">Nd</div><h4>Node.js</h4><div class="role">۶۴ آزمون واحد موبایل + اجرای E2E مرورگر</div><span class="where">tests-js/</span></div>
+  </div>
+</section>
+
+<!-- ================= مدل‌ها و موتورها (شفافیت — v2.0.0) ================= -->
+<section class="block" id="models">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۶-ب</div>
+    <h2>🧠 مدل‌ها و موتورها — شفافیت کامل (از v2.0.0)</h2>
+    <p class="sub">کاربر همیشه باید بداند برای هر بخش از چه مدل یا موتوری استفاده می‌شود — این جدول رسمی سامانه است و در رابط کاربری (سایدبار دسکتاپ + بخش راهنمای وب) و حین مراحل پردازش نیز اعلام می‌شود. نسخه‌ها در زمان اجرا از دستگاه کاربر خوانده می‌شوند (تک‌منبع حقیقت: <code>label_reader/models_info.py</code>).</p>
+  </div>
+  <div class="table-wrap reveal">
+    <table>
+      <thead><tr><th>مرحله</th><th>مدل / موتور</th><th>نقش در سامانه</th><th>حریم خصوصی</th></tr></thead>
+      <tbody>
+        <tr><td>۱. پیش‌پردازش تصویر</td><td><b>OpenCV</b> (کلاسیک — بدون مدل یادگیری)</td><td>CLAHE، صاف‌کردن زاویه، پنج نسخهٔ پردازشی (original / gray_clahe / binarized / white_on_dark / ink_isolated)</td><td>کاملاً آفلاین</td></tr>
+        <tr><td>۲. خواندن متن — موتور اول</td><td><b>Tesseract 5</b> — دادهٔ زبان <code>fas+eng</code></td><td>گذرهای زبانی جداگانهٔ فارسی/انگلیسی + PSM 3/6/11</td><td>کاملاً آفلاین</td></tr>
+        <tr><td>۲. خواندن متن — موتور دوم مکمل</td><td><b>EasyOCR</b> — CRNN (fa+en)</td><td>پر کردن نواحی ضعیف تسراکت؛ مشارکت در رأی اجماعی — نصب اختیاری</td><td>آفلاین پس از دانلود اولیه</td></tr>
+        <tr><td>۲. دستیار خوانش دوم (اختیاری)</td><td><b>Qwen/Qwen3-VL-2B-Instruct</b> — مدل زبانی-بینایی</td><td>خوانش مکمل سطرهایی که OCR از دست داده؛ فقط سطرهای تازه با شناسهٔ شاهد <code>vlm-*</code>؛ پیش‌فرض خاموش</td><td>اجرای کاملاً محلی (transformers)</td></tr>
+        <tr><td>۳. پردازش متن و کنترل فیلدها</td><td><b>الگوها و قواعد فارسی/انگلیسی</b> — بدون مدل زبانی</td><td>regex دو زبانه + گیت کیفیت قطعه + رأی اجماعی + تشخیص تناقض</td><td>کاملاً آفلاین</td></tr>
+        <tr><td>۴. تولید پاسخ فارسی</td><td><b>قالب‌ساز قاعده‌محور + نگهبان ایمنی</b></td><td>پاسخ فقط از فیلدهای تأییدشده؛ (اختیاری) LLM سازگار OpenAI API با تنظیم LBR_LLM_* و عبور اجباری از نگهبان</td><td>آفلاین؛ مسیر LLM فقط با تنظیم صریح</td></tr>
+        <tr><td>۵. خوانش صوتی (TTS)</td><td><b>edge-tts</b> — صداهای fa-IR-FaridNeural / fa-IR-DilaraNeural</td><td>خواندن همان پاسخ تأییدشده؛ جایگزین خودکار: gTTS (گوگل)</td><td>فقط متن پاسخ، با رضایت صریح</td></tr>
+        <tr><td>وب / PWA / تک‌فایل</td><td><b>Tesseract.js 6.0.1 (WASM)</b> + Web Speech API</td><td>همان خط پردازش داخل مرورگر با دادهٔ fas+eng تعبیه‌شده؛ خوانش صوتی روی خود دستگاه</td><td>کاملاً آفلاین (تک‌فایل)</td></tr>
+        <tr><td>رابط کاربری دسکتاپ</td><td><b>Streamlit</b> + فونت وزیرمتن</td><td>رابط فارسی RTL، خط‌زمان مراحل رنگی، حالت تاریک</td><td>کاملاً محلی</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note reveal">
+    <b>فعال‌سازی دستیار Qwen3-VL (اختیاری):</b> <code>pip install "transformers>=4.57" accelerate</code> — سپس در سایدبار دسکتاپ «دستیار خوانش Qwen3-VL» را روشن کنید. مدل در نخستین اجرا از Hugging Face دانلود می‌شود (حدود ۴ تا ۵ گیگابایت) و پس از آن کاملاً آفلاین اجرا می‌شود. دستیار هرگز جایگزین موتورهای اصلی نیست، هرگز پردازش را نمی‌شکند و خروجی آن با شناسهٔ شاهد <code>vlm-*</code> جداگانه ردیابی می‌شود.
   </div>
 </section>
 
@@ -894,6 +925,8 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <h2>تاریخچه نسخه‌ها</h2>
   </div>
   <div class="timeline">
+    <div class="tl-item reveal"><h4>لانچر خودترمیم بستهٔ قابل حمل + شفافیت کامل مدل‌ها و موتورها <span class="ver">v2.0.0</span></h4>
+      <p>گزارش کاربر: «با start.bat سایت به‌هم‌ریخته است ولی با فایل وب START-HERE درست است». ریشه‌یابی نشان داد کاربر پوشهٔ قابل حمل قدیمی را اجرا می‌کند و <code>START-WINDOWS.bat</code> صفحهٔ اصلی <code>webapp</code> با رابط کهنه را باز می‌کند؛ بدتر اینکه <b>سرویس‌ورکرِ نسخهٔ قدیمی</b> ثبت‌شده روی همان آدرس <code>127.0.0.1:8765</code> نسخهٔ کهنه را از کش سرو می‌کرد (تک‌فایل به‌دلیل نداشتن سرویس‌ورکر سالم می‌ماند). سه رفع: (۱) <b>ریشهٔ سرور محلی اکنون START-HERE.html است</b> — صفحهٔ شروع با اسکریپت <b>خودترمیم</b> که یک‌بار در هر مرورگر همهٔ سرویس‌ورکرها و کش‌های قدیمی همان آدرس را پاک می‌کند تا همیشه نسخهٔ تازه از دیسک خوانده شود؛ (۲) صفحهٔ ۴۰۴ سرور هم به صفحهٔ شروع هدایت می‌کند؛ (۳) فهرست مدل‌ها به صفحهٔ شروع اضافه شد. دومین محور نسخه، <b>شفافیت مدل‌ها</b> است: رجیستری مرکزی <code>label_reader/models_info.py</code> با تشخیص نسخهٔ زندهٔ هر موتور از دستگاه کاربر، جدول «مدل‌ها و موتورها» در سایدبار دسکتاپ + expander «کدام مدل چه کاری انجام داد؟» در نتایج + معیار «موتور و مدل خوانش» در خط‌زمان مراحل + جدول رسمی در وب و مستندات؛ و <b>دستیار خوانش دوم اختیاری Qwen/Qwen3-VL-2B-Instruct</b> (کاملاً محلی با transformers، پیش‌فرض خاموش، فقط سطرهای تازه با شناسهٔ شاهد vlm-*, ۱۱ آزمون جدید). ۱۱۷ pytest + ۶۴ Node پاس؛ کش سرویس‌ورکر → v13.</p></div>
     <div class="tl-item reveal"><h4>بازطراحی کامل گرافیک وب با تم مدرن ۲۰۲۵ — پایان اشکال درشت و ناهماهنگ <span class="ver">v1.9.0</span></h4>
       <p>گزارش کاربر: «گرافیک وب به‌هم‌ریخته است؛ اشکال بزرگ و غیراستاندارد». ریشه‌یابی سه عامل را نشان داد: (۱) <b>واترمارک ایموجی ۱۱۰px</b> (💊) در گوشهٔ هدر که به‌صورت شکل صورتی محو و درشتی رندر می‌شد؛ (۲) <b>باگ انتخابگر <code>html.dark:root</code></b> — ترکیب نامعتبری که هرگز تطبیق نمی‌کند و در نتیجه متغیرهای حالت‌تاریکِ دستی اصلاً اعمال نمی‌شدند و صفحه در حالت تاریک نیمه‌روشن و ناهماهنگ می‌ماند؛ (۳) <b>لایه‌لایه بودن CSS</b> (سه نسل قاعده روی هم با اندازه‌های متناقض ۱۰ تا ۲۰px شعاع، ارتفاع دکمه ۴۸px+ و ارتفاع سطر ۱٫۹). در v1.9.0 کل <code>css/style.css</code> از پایه با یک <b>سیستم طراحی توکن‌محور</b> بازنویسی شد: پالت برند (فیروزه‌ای↔سرمه‌ای + بنفش تأکیدی) در ۳۸ متغیر؛ مقیاس‌های استاندارد (شعاع ۸/۱۲/۱۶px، دکمه ۴۰px، دکمه بزرگ ۴۸px، ارتفاع سطر ۱٫۷۵، بدنه ۱۵px)؛ سایه‌های نرم دولایه؛ هاله‌های نوری شعاعی به‌جای ایموجی؛ تب‌بار شیشه‌ای با blur؛ و اصلاح آبشار تب‌بار در دسکتاپ. آیکون‌های ایموجی ناوبری (سایدبار و تب‌بار) با <b>SVG استروک استاندارد</b> (کپسول، نمودار، کتاب، کاربران) جایگزین شدند و ایموجی‌های تزئینی از تیترها حذف شدند. وزن‌های میانی فونت Vazirmatn (Medium/SemiBold/ExtraBold) به دارایی‌ها اضافه و در پوستهٔ سرویس‌ورکر ثبت شدند. بازسازی تکی‌فایل، تست سرریز افقی موبایل (۳۹۰px، بدون scrollWidth اضافه — رفع سرریز ناشی از <code>white-space:nowrap</code> دکمه بلند)، و راستی‌آزمایی تصویری روشن/تاریک × موبایل/دسکتاپ × مودال؛ ۱۰۶ آزمون pytest + ۶۴ آزمون Node پاس؛ کش سرویس‌ورکر → v12.</p></div>
     <div class="tl-item reveal"><h4>رفع کامل بستهٔ قابل حمل — پایان خطای ۴۰۴ و نام‌فایل‌های مخدوش <span class="ver">v1.8.3</span></h4>
@@ -926,7 +959,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 </section>
 
 <footer class="docfoot">
-  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۱.۹.۰ · توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
+  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۲.۰.۰ · توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
   <div class="links">
     <a href="index.html">🚀 برنامه</a>
     <a href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ GitHub</a>

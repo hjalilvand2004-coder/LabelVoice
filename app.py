@@ -24,6 +24,9 @@ from label_reader import APP_AUTHORS_FA, APP_NAME_FA, SCOPE_FA, __version__
 from label_reader.config import load_settings
 from label_reader.help_content import HELP_CONTENT
 from label_reader.models import FieldStatus
+from label_reader.models_info import (
+    VLM_MIN_TRANSFORMERS, models_table_rows, vlm_available,
+)
 from label_reader.pipeline import LabelReaderPipeline
 from label_reader.response.tts_prep import prepare_for_tts
 from label_reader.stages import (
@@ -120,6 +123,29 @@ with st.sidebar:
         help="در حین پردازش، تکمیل هر مرحله با رنگ اختصاصی همان مرحله اعلام و "
              "خروجی و معیارهای ارزیابی کیفیت آن نمایش داده می‌شود.")
     tech_help("stages", "🧩 مراحل رنگی چگونه کار می‌کنند؟", "st")
+
+    # ---------------- v2.0.0: شفافیت مدل‌ها ----------------
+    st.subheader("🧠 مدل‌ها و موتورها")
+    tech_help("models", "🧠 کدام مدل برای کدام بخش؟", "md")
+    with st.expander("📋 جدول مدل‌ها (نسخهٔ همین دستگاه)", expanded=False):
+        try:
+            st.dataframe(models_table_rows(), hide_index=True,
+                         use_container_width=True)
+        except Exception:  # noqa: BLE001
+            st.markdown(HELP_CONTENT.get("models", "—"), unsafe_allow_html=False)
+    _vlm_ok, _vlm_note = vlm_available()
+    vlm_on = st.toggle(
+        "🤖 دستیار خوانش Qwen3-VL (اختیاری)",
+        value=bool(get_state("vlm_assist", False)), key="vlm_assist",
+        help=("مدل Qwen/Qwen3-VL-2B-Instruct به‌صورت کاملاً محلی سطرهایی که OCR "
+              "از دست داده را مکمل می‌خواند (شناسهٔ شاهد vlm-*). نیازمند "
+              f"transformers>={VLM_MIN_TRANSFORMERS}. " + _vlm_note))
+    try:
+        pipeline.settings.vlm_assist = bool(vlm_on)
+    except Exception:  # noqa: BLE001
+        pass
+    if vlm_on and not _vlm_ok:
+        st.caption("⛔ " + _vlm_note)
 
     st.subheader("🎨 نمایش")
     if st.toggle("🌙 حالت تاریک", key="dark_mode",
@@ -284,7 +310,8 @@ if page == "read":
                 _ok, _note = _prov.available()
                 spoken = prepare_for_tts(result.response_fa)
                 stage_records.append(build_stage_item(STAGE_TTS_KEY, tts_payload(
-                    provider=getattr(_prov, "name", settings.tts_provider),
+                    provider=(f"{getattr(_prov, 'name', settings.tts_provider)} — "
+                              f"مدل صوت: {settings.tts_voice}"),
                     note_fa=_note or ("در دسترس است" if _ok else
                                       "در دسترس نیست؛ جایگزین به‌صورت خودکار آزمایش می‌شود"),
                     spoken_text=spoken, synthesized=False)))
@@ -377,6 +404,16 @@ if page == "read":
                 mime="application/json",
             )
 
+            # v2.0.0 — شفافیت مدل: کدام مدل چه کاری انجام داد؟
+            with st.expander("🧠 کدام مدل چه کاری انجام داد؟ (نسخهٔ همین دستگاه)",
+                             expanded=False):
+                st.dataframe(models_table_rows(), hide_index=True,
+                             use_container_width=True)
+                st.caption(
+                    "این جدول در زمان اجرا از `label_reader/models_info.py` ساخته "
+                    "می‌شود؛ هر فیلد استخراج‌شده به شناسهٔ شاهد (ocr_* از موتورهای "
+                    "OCR یا vlm-* از دستیار بینایی) متصل است.")
+
         left_col, right_col = st.columns([3, 2])
 
         with left_col:
@@ -391,6 +428,9 @@ if page == "read":
                             f"<small>(اطمینان: "
                             f"{round((line.confidence_mean or 0) * 100)}%)</small>",
                             unsafe_allow_html=True)
+                    st.caption("شناسه‌های `ocr_*` خوانش موتورهای OCR (Tesseract/EasyOCR) و "
+                               "شناسه‌های `vlm-*` خوانش مکمل دستیار بینایی "
+                               "(Qwen3-VL-2B-Instruct — در صورت فعال‌بودن) هستند.")
                 else:
                     st.caption("متنی شناسایی نشد.")
             tech_help("preprocess", "🧩 فناوری پیش‌پردازش و OCR", "pp")

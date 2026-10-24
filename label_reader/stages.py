@@ -190,7 +190,14 @@ def build_stage_item(key: str, payload: dict) -> dict:
             "مجموع نویسه‌های خوانده‌شده", payload["chars_total"], "ok"))
         metrics.append(_metric(
             "سطرهای منطقی ساخته‌شده", payload["lines_count"], "ok"))
-        metrics.append(_metric("موتور OCR", payload["engine"], "ok"))
+        # v2.0.0 — شفافیت مدل: کاربر می‌بیند کدام موتور/مدل خوانده است
+        _engines = payload.get("engines_used") or [payload.get("engine", "—")]
+        _engine_val = " + ".join(_engines)
+        if "qwen3-vl" in _engines:
+            _engine_val += " (دستیار Qwen3-VL-2B-Instruct)"
+        metrics.append(_metric(
+            "موتور و مدل خوانش", _engine_val, "ok",
+            "شرح کامل مدل‌ها در بخش «مدل‌ها و موتورها» راهنما"))
         # مقایسه نسخه‌های پردازشی (v1.7.0) — خروجی و دقت هر واریانت شفاف می‌شود
         vr_lines = []
         for vr in payload.get("variant_results", []) or []:
@@ -203,6 +210,10 @@ def build_stage_item(key: str, payload: dict) -> dict:
             outputs.append(
                 "🔀 مقایسه نسخه‌های پردازشی (ادغام بهترین-اول): " +
                 " | ".join(vr_lines))
+        if payload.get("vlm_lines_added"):
+            outputs.append(
+                "🤖 " + (payload.get("vlm_note") or "دستیار بینایی سطرهای مکمل ارائه کرد")
+                + " — شناسهٔ شاهد این سطرها vlm-* است.")
         outputs.append("📄 خروجی این مرحله: متن خام استخراج‌شده (سطر به سطر) — "
                        "در بخش «مشاهده خروجی» و در ناحیه «نواحی شناسایی‌شده OCR».")
         if payload.get("lines_preview"):

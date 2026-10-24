@@ -194,6 +194,54 @@ class LabelReaderPipeline:
         # ۷) سطرهای منطقی
         raw_lines = self._build_lines(pieces)
 
+        # ۷-ب) دستیار خوانش دوم VLM (v2.0.0 — اختیاری، پیش‌فرض خاموش)
+        # مدل: Qwen/Qwen3-VL-2B-Instruct — فقط سطرهای تازه (غیرتکراری) اضافه
+        # می‌شود؛ شناسهٔ شاهد «vlm-*» ردیابی‌پذیری را حفظ می‌کند. هر خطا بی‌صدا
+        # رد می‌شود؛ دستیار هرگز پردازش اصلی را نمی‌شکند.
+        vlm_lines_added = 0
+        vlm_note = ""
+        if getattr(self.settings, "vlm_assist", False):
+            try:
+                from .ocr.vlm_provider import QwenVlmProvider
+                _vlm = QwenVlmProvider(self.settings)
+                _ok, _note = _vlm.available()
+                if _ok:
+                    import difflib
+
+                    existing_norms = {
+                        normalize_for_matching(ln.text).lower() for ln in raw_lines}
+                    existing_norms.discard("")
+                    for vlm_line in _vlm.read_lines(
+                            variants[VARIANT_ORIGINAL])[:self.settings.vlm_max_lines]:
+                        v_text = (vlm_line.get("text") or "").strip()
+                        v_norm = normalize_for_matching(v_text).lower()
+                        if len(v_norm) < 3:
+                            continue
+                        if any(difflib.SequenceMatcher(
+                                None, v_norm, ex).ratio() >= 0.85
+                               for ex in existing_norms):
+                            continue  # تکرار خوانش موتورهای اصلی — اضافه نمی‌شود
+                        existing_norms.add(v_norm)
+                        vlm_lines_added += 1
+                        raw_lines.append(RawLine(
+                            id=f"vlm-{vlm_lines_added}",
+                            text=v_text,
+                            normalized_text=v_norm,
+                            source_ids=[f"vlm-{vlm_lines_added}"],
+                            bbox=BoundingBox(x=0, y=0, w=0, h=0),
+                            confidence_mean=vlm_line.get("confidence"),
+                        ))
+                    if vlm_lines_added:
+                        engines_used.append("qwen3-vl")
+                        vlm_note = (f"دستیار بینایی {self.settings.vlm_model_id} "
+                                    f"{vlm_lines_added} سطر تازه خواند (بدون تکرار).")
+                else:
+                    vlm_note = f"دستیار Qwen3-VL فعال است اما در دسترس نیست: {_note}"
+            except Exception:  # noqa: BLE001 — دستیار هرگز پردازش را نمی‌شکند
+                vlm_note = ""
+            if vlm_note:
+                warnings_fa.append(vlm_note)
+
         # ---- مرحله ۲: OCR (اعلام خروجی و ارزیابی) ----
         durations["ocr_ms"] = int((time.perf_counter() - t0) * 1000)
         confs = [p.confidence for p in pieces if p.confidence is not None]
@@ -204,6 +252,9 @@ class LabelReaderPipeline:
                                 else None),
             "lines_count": len(raw_lines),
             "engine": provider.name,
+            "engines_used": list(engines_used),
+            "vlm_lines_added": vlm_lines_added,
+            "vlm_note": vlm_note,
             "lines_preview": [ln.text for ln in raw_lines[:6]],
             "variant_results": variant_results,
             "duration_ms": durations["ocr_ms"],
@@ -279,7 +330,7 @@ class LabelReaderPipeline:
         ]
 
         metadata = ProcessingMetadata(
-            engine=" + ".join(engines_used) if easy_used else provider.name,
+            engine=" + ".join(engines_used) if len(engines_used) > 1 else provider.name,
             languages="+".join(getattr(provider, "last_langs_used", []) or
                                [self.settings.ocr_languages]),
             variants_used=list(variants.keys()),

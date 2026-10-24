@@ -12,7 +12,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>برچسب‌خوان هوشمند دارو و محصولات</title>
-<link rel="stylesheet" href="css/style.css?v=1.9.0">
+<link rel="stylesheet" href="css/style.css?v=2.0.0">
 <script>
 /* اعمال زودهنگام حالت تاریک دستی (قبل از اولین رندر) — v1.8.2 */
 try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.classList.add('dark'); } catch (e) { /* نادیده */ }
@@ -51,7 +51,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     </label>
   </div>
   <div class="sb-foot">
-    <div class="sb-ver">نسخهٔ وب ۱.۹.۰</div>
+    <div class="sb-ver">نسخهٔ وب ۲.۰.۰</div>
     <div>حمید جلیلوند و نوید بدری</div>
     <div>همه پردازش‌ها روی همین دستگاه</div>
   </div>
@@ -236,6 +236,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
         <button type="button" class="btn btn-secondary" data-help="reqs">ملزومات استاد و جدول انطباق</button>
         <button type="button" class="btn btn-secondary" data-help="stages">مراحل رنگی پردازش</button>
         <button type="button" class="btn btn-secondary" data-help="engine">موتورهای OCR (v1.8.0)</button>
+        <button type="button" class="btn btn-secondary" data-help="models">🧠 مدل‌ها و موتورها (v2.0.0)</button>
         <button type="button" class="btn btn-secondary" data-help="preprocess">پیش‌پردازش OpenCV</button>
         <button type="button" class="btn btn-secondary" data-help="fields">فیلدها و شواهد</button>
         <button type="button" class="btn btn-secondary" data-help="response">پاسخ و نگهبان ایمنی</button>
@@ -272,6 +273,25 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
       </ul>
     </details>
     <p class="hint">جدول انطباق کامل (الزام ← تحقق ← فایل ← آزمون ← وضعیت): <a href="documentation.html#considerations">مستندات فنی، بخش «ملزومات استاد»</a></p>
+  </section>
+  <!-- بخش شفافیت مدل‌ها (از نسخه ۲.۰.۰) -->
+  <section class="card" id="models-section" aria-labelledby="models-title">
+    <h2 id="models-title">🧠 مدل‌ها و موتورها — شفافیت کامل</h2>
+    <p>در هر مرحله از پردازش، سامانه اعلام می‌کند از چه مدل یا موتوری استفاده می‌کند. جدول رسمی این نسخه:</p>
+    <div class="models-table-wrap">
+      <table class="models-table">
+        <thead><tr><th>مرحله</th><th>مدل / موتور</th><th>نقش</th></tr></thead>
+        <tbody>
+          <tr><td>پیش‌پردازش تصویر</td><td>پردازش تصویر جاوااسکریپتی (همتای OpenCV)</td><td>تیزکردن، صاف‌کردن زاویه، تشخیص جعبه</td></tr>
+          <tr><td>خواندن متن (OCR)</td><td><code>Tesseract.js 6.0.1 (WebAssembly)</code> — دادهٔ زبان <code>fas+eng</code></td><td>خوانش چندگذری داخل مرورگر، کاملاً آفلاین</td></tr>
+          <tr><td>پردازش متن و فیلدها</td><td>الگوها و قواعد فارسی (<code>patterns.js + extractor.js</code>)</td><td>استخراج نام، قدرت، تعداد — بدون مدل زبانی</td></tr>
+          <tr><td>تولید پاسخ فارسی</td><td>قالب‌ساز قاعده‌محور + نگهبان ایمنی (<code>responder.js + guard.js</code>)</td><td>پاسخ فقط از شواهد OCR</td></tr>
+          <tr><td>خوانش صوتی</td><td><code>Web Speech API (speechSynthesis)</code></td><td>صدای فارسی روی خود دستگاه</td></tr>
+          <tr><td>نسخهٔ دسکتاپ (Streamlit)</td><td><code>Tesseract 5</code> + <code>EasyOCR</code> + دستیار اختیاری <code>Qwen/Qwen3-VL-2B-Instruct</code></td><td>خوانش دوموتوره با رأی اجماعی؛ صدای edge-tts/gTTS با رضایت</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">شرح کامل و نسخه‌های زندهٔ دسکتاپ: راهنمای دسکتاپ ← بخش «مدل‌ها و موتورها» و فایل <code>label_reader/models_info.py</code> (تک‌منبع حقیقت شفافیت).</p>
   </section>
   </div><!-- /page-docs -->
 
@@ -326,11 +346,12 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
 </nav>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخهٔ وب ۱.۹.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخهٔ وب ۲.۰.۰</p>
   <p>توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="stages">اعلام مراحل پردازش و ارزیابی مرحله‌ای</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="eval">ارزیابی و آزمون مدل‌ها</button></p>
+  <p><button type="button" class="btn btn-ghost btn-small" data-help="models">مدل‌ها و موتورهای سامانه</button></p>
   <p><a href="documentation.html">مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها، ملزومات استاد، ارزیابی)</a></p>
   <p>همه پردازش‌ها (OCR، استخراج، صوت) روی همین دستگاه انجام می‌شود. این ابزار تأیید هویت یا اصالت محصول نیست.</p>
 </footer>
@@ -368,20 +389,20 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
   <div style="padding:1rem;text-align:center">این برنامه به جاوااسکریپت نیاز دارد. لطفاً جاوااسکریپت مرورگر را فعال کنید.</div>
 </noscript>
 
-<script src="js/textnorm.js?v=1.9.0"></script>
-<script src="js/patterns.js?v=1.9.0"></script>
-<script src="js/guard.js?v=1.9.0"></script>
-<script src="js/extractor.js?v=1.9.0"></script>
-<script src="js/responder.js?v=1.9.0"></script>
-<script src="js/pipeline.js?v=1.9.0"></script>
-<script src="js/preprocess.js?v=1.9.0"></script>
-<script src="js/boxdetect.js?v=1.9.0"></script>
+<script src="js/textnorm.js?v=2.0.0"></script>
+<script src="js/patterns.js?v=2.0.0"></script>
+<script src="js/guard.js?v=2.0.0"></script>
+<script src="js/extractor.js?v=2.0.0"></script>
+<script src="js/responder.js?v=2.0.0"></script>
+<script src="js/pipeline.js?v=2.0.0"></script>
+<script src="js/preprocess.js?v=2.0.0"></script>
+<script src="js/boxdetect.js?v=2.0.0"></script>
 <script src="js/samples-data.js"></script>
-<script src="js/offline-engine.js?v=1.9.0"></script>
+<script src="js/offline-engine.js?v=2.0.0"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
-<script src="js/ocr.js?v=1.9.0"></script>
-<script src="js/camera.js?v=1.9.0"></script>
-<script src="js/help.js?v=1.9.0"></script>
-<script src="js/app.js?v=1.9.0"></script>
+<script src="js/ocr.js?v=2.0.0"></script>
+<script src="js/camera.js?v=2.0.0"></script>
+<script src="js/help.js?v=2.0.0"></script>
+<script src="js/app.js?v=2.0.0"></script>
 </body>
 </html>

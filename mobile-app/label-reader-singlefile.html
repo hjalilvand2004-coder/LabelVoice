@@ -873,6 +873,26 @@ body.help-open { overflow: hidden; }
   .app-content { padding-bottom: 0; }
 }
 
+/* ---------- ۱۹) جدول مدل‌ها و موتورها (v2.0.0 — شفافیت) ---------- */
+.models-table-wrap { overflow-x: auto; margin-top: .55rem; border-radius: var(--radius-md, 12px); border: 1px solid var(--border); }
+.models-table { width: 100%; border-collapse: collapse; font-size: .78rem; min-width: 520px; }
+.models-table th, .models-table td {
+  padding: .5rem .6rem; text-align: right; line-height: 1.8;
+  border-bottom: 1px solid var(--border);
+}
+.models-table thead th {
+  background: var(--gray-bg, #f1f5f9); color: var(--text); font-weight: 700;
+  font-size: .75rem; position: sticky; top: 0;
+}
+.models-table tbody tr:last-child td { border-bottom: none; }
+.models-table td:first-child { font-weight: 700; color: var(--text); white-space: nowrap; }
+.models-table td code {
+  font-size: .7rem; direction: ltr; unicode-bidi: embed;
+  background: var(--gray-bg); border-radius: 4px; padding: 0 .3rem;
+}
+html.dark .models-table thead th { background: var(--surface-2, #14293d); }
+html.dark .models-table td code { background: var(--surface-2, #14293d); }
+
 </style>
 <script>
 /* اعمال زودهنگام حالت تاریک دستی (قبل از اولین رندر) — v1.8.2 */
@@ -912,7 +932,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     </label>
   </div>
   <div class="sb-foot">
-    <div class="sb-ver">نسخهٔ وب ۱.۹.۰</div>
+    <div class="sb-ver">نسخهٔ وب ۲.۰.۰</div>
     <div>حمید جلیلوند و نوید بدری</div>
     <div>همه پردازش‌ها روی همین دستگاه</div>
   </div>
@@ -1097,6 +1117,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
         <button type="button" class="btn btn-secondary" data-help="reqs">ملزومات استاد و جدول انطباق</button>
         <button type="button" class="btn btn-secondary" data-help="stages">مراحل رنگی پردازش</button>
         <button type="button" class="btn btn-secondary" data-help="engine">موتورهای OCR (v1.8.0)</button>
+        <button type="button" class="btn btn-secondary" data-help="models">🧠 مدل‌ها و موتورها (v2.0.0)</button>
         <button type="button" class="btn btn-secondary" data-help="preprocess">پیش‌پردازش OpenCV</button>
         <button type="button" class="btn btn-secondary" data-help="fields">فیلدها و شواهد</button>
         <button type="button" class="btn btn-secondary" data-help="response">پاسخ و نگهبان ایمنی</button>
@@ -1133,6 +1154,25 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
       </ul>
     </details>
     <p class="hint">جدول انطباق کامل (الزام ← تحقق ← فایل ← آزمون ← وضعیت): <a href="documentation.html#considerations">مستندات فنی، بخش «ملزومات استاد»</a></p>
+  </section>
+  <!-- بخش شفافیت مدل‌ها (از نسخه ۲.۰.۰) -->
+  <section class="card" id="models-section" aria-labelledby="models-title">
+    <h2 id="models-title">🧠 مدل‌ها و موتورها — شفافیت کامل</h2>
+    <p>در هر مرحله از پردازش، سامانه اعلام می‌کند از چه مدل یا موتوری استفاده می‌کند. جدول رسمی این نسخه:</p>
+    <div class="models-table-wrap">
+      <table class="models-table">
+        <thead><tr><th>مرحله</th><th>مدل / موتور</th><th>نقش</th></tr></thead>
+        <tbody>
+          <tr><td>پیش‌پردازش تصویر</td><td>پردازش تصویر جاوااسکریپتی (همتای OpenCV)</td><td>تیزکردن، صاف‌کردن زاویه، تشخیص جعبه</td></tr>
+          <tr><td>خواندن متن (OCR)</td><td><code>Tesseract.js 6.0.1 (WebAssembly)</code> — دادهٔ زبان <code>fas+eng</code></td><td>خوانش چندگذری داخل مرورگر، کاملاً آفلاین</td></tr>
+          <tr><td>پردازش متن و فیلدها</td><td>الگوها و قواعد فارسی (<code>patterns.js + extractor.js</code>)</td><td>استخراج نام، قدرت، تعداد — بدون مدل زبانی</td></tr>
+          <tr><td>تولید پاسخ فارسی</td><td>قالب‌ساز قاعده‌محور + نگهبان ایمنی (<code>responder.js + guard.js</code>)</td><td>پاسخ فقط از شواهد OCR</td></tr>
+          <tr><td>خوانش صوتی</td><td><code>Web Speech API (speechSynthesis)</code></td><td>صدای فارسی روی خود دستگاه</td></tr>
+          <tr><td>نسخهٔ دسکتاپ (Streamlit)</td><td><code>Tesseract 5</code> + <code>EasyOCR</code> + دستیار اختیاری <code>Qwen/Qwen3-VL-2B-Instruct</code></td><td>خوانش دوموتوره با رأی اجماعی؛ صدای edge-tts/gTTS با رضایت</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">شرح کامل و نسخه‌های زندهٔ دسکتاپ: راهنمای دسکتاپ ← بخش «مدل‌ها و موتورها» و فایل <code>label_reader/models_info.py</code> (تک‌منبع حقیقت شفافیت).</p>
   </section>
   </div><!-- /page-docs -->
 
@@ -1187,11 +1227,12 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
 </nav>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخهٔ وب ۱.۹.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخهٔ وب ۲.۰.۰</p>
   <p>توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="stages">اعلام مراحل پردازش و ارزیابی مرحله‌ای</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="eval">ارزیابی و آزمون مدل‌ها</button></p>
+  <p><button type="button" class="btn btn-ghost btn-small" data-help="models">مدل‌ها و موتورهای سامانه</button></p>
   <p><a href="documentation.html">مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها، ملزومات استاد، ارزیابی)</a></p>
   <p>همه پردازش‌ها (OCR، استخراج، صوت) روی همین دستگاه انجام می‌شود. این ابزار تأیید هویت یا اصالت محصول نیست.</p>
 </footer>
@@ -4531,6 +4572,29 @@ window.LBR_SAMPLES = [
       ]
     },
 
+    models: {
+      icon: '🧠',
+      title: 'مدل‌ها و موتورها — شفافیت کامل (v2.0.0)',
+      intro: 'سامانه در هر مرحله اعلام می‌کند از چه مدل یا موتوری استفاده می‌کند. هیچ مدل ابری بدون اطلاع شما در کار نیست و همهٔ پردازش‌های اصلی روی همین دستگاه انجام می‌شود.',
+      points: [
+        'وب/PWA/تک‌فایل: OCR با Tesseract.js 6.0.1 (WebAssembly) و دادهٔ زبان fas+eng — کاملاً آفلاین.',
+        'پیش‌پردازش تصویر و تشخیص جعبه: جاوااسکریپت خالص (همتای OpenCV دسکتاپ) — بدون مدل یادگیری.',
+        'استخراج فیلدها و پاسخ فارسی: الگوها و قواعد فارسی + نگهبان ایمنی — بدون مدل زبانی ابری.',
+        'خوانش صوتی: Web Speech API (speechSynthesis) — صدای فارسی روی خود دستگاه.',
+        'نسخهٔ دسکتاپ (Streamlit): Tesseract 5 (fas+eng) + EasyOCR (fa+en) با رأی اجماعی + صدای edge-tts (fa-IR-FaridNeural/DilaraNeural) یا gTTS فقط با رضایت صریح.',
+        'دستیار خوانش دوم دسکتاپ (اختیاری و پیش‌فرض خاموش): مدل Qwen/Qwen3-VL-2B-Instruct به‌صورت کاملاً محلی با transformers؛ فقط سطرهای تازه را مکمل می‌خواند و با شناسهٔ شاهد vlm-* ردیابی می‌شود.',
+        'تک‌منبع حقیقت شفافیت در کد: label_reader/models_info.py — نسخه‌ها در زمان اجرا از همان دستگاه خوانده می‌شود.'
+      ],
+      tech: [
+        { t: 'Tesseract.js 6.0.1 (WASM)', r: 'موتور OCR وب — دادهٔ fas+eng', c: 'engine' },
+        { t: 'Tesseract 5 (دسکتاپ)', r: 'موتور OCR اول با گذرهای زبانی جدا', c: 'engine' },
+        { t: 'EasyOCR (دسکتاپ)', r: 'موتور دوم CRNN — مشارکت در رأی اجماعی', c: 'engine' },
+        { t: 'Qwen/Qwen3-VL-2B-Instruct', r: 'دستیار بینایی اختیاری — اجرای کاملاً محلی', c: 'engine' },
+        { t: 'edge-tts / gTTS', r: 'خوانش صوتی فارسی دسکتاپ با رضایت', c: 'api' },
+        { t: 'Web Speech API', r: 'خوانش صوتی وب روی خود دستگاه', c: 'api' }
+      ]
+    },
+
     input: {
       icon: '📷',
       title: 'ورود تصویر و دوربین زنده',
@@ -5243,7 +5307,7 @@ window.LBR_SAMPLES = [
       stages: stageRecords,
       metadata: {
         total_ms: state.result && state.result.metadata ? state.result.metadata.durations_ms.total_ms : null,
-        app_version: '1.6.0-mobile',
+        app_version: '2.0.0-mobile',
         timestamp_utc: new Date().toISOString()
       }
     };
@@ -5368,9 +5432,9 @@ window.LBR_SAMPLES = [
       })
       .then(function (baseCanvas) {
         // ۴) گذر اصلی OCR
-        // اعلام مرحله ۲ (OCR) — ملزومات استاد
+        // اعلام مرحله ۲ (OCR) — ملزومات استاد + شفافیت مدل (v2.0.0)
         stageRun('ocr');
-        setProgress(10, 'مرحله ۲ از ۵ — OCR: خواندن نام، اعداد و متن بسته‌بندی…');
+        setProgress(10, 'مرحله ۲ از ۵ — OCR با موتور Tesseract.js 6.0.1 (WASM، fas+eng): خواندن نام، اعداد و متن بسته‌بندی…');
         durations.preprocess_ms = Math.round(performance.now() - t0);
         return runPass(baseCanvas, settings, langQuality)
           .then(function (pass1) {
@@ -5435,6 +5499,7 @@ window.LBR_SAMPLES = [
             'متن استخراج‌شده در بخش «شواهد OCR» قابل مشاهده است.'
           ],
           metrics: [
+            { n: 'موتور و مدل خوانش', v: 'Tesseract.js 6.0.1 (WASM) — fas+eng', status: 'ok' },
             { n: 'قطعه‌های متنی خوانده‌شده', v: st2.pieces, status: st2.pieces > 0 ? 'ok' : 'fail' },
             { n: 'میانگین اطمینان موتور', v: st2.mean_conf === null ? '—' : Math.round(st2.mean_conf * 100) + '٪', status: (st2.mean_conf !== null && st2.mean_conf < 0.6) ? 'warn' : 'ok' },
             { n: 'مجموع نویسه‌ها', v: st2.chars, status: 'ok' },

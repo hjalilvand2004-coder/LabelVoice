@@ -26,8 +26,8 @@ echo.
 echo ============================================
 echo  Server stopped.
 echo  Alternative without a server (needs internet):
-echo    double-click "index.html" (or "webapp\index.html" in the portable ZIP)
-echo    or "label-reader-singlefile.html"
+echo    double-click "START-HERE.html" and pick the
+echo    single-file version "label-reader-singlefile.html"
 echo ============================================
 pause
 

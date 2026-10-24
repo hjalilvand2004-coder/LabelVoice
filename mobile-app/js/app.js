@@ -379,7 +379,7 @@
       stages: stageRecords,
       metadata: {
         total_ms: state.result && state.result.metadata ? state.result.metadata.durations_ms.total_ms : null,
-        app_version: '1.6.0-mobile',
+        app_version: '2.0.0-mobile',
         timestamp_utc: new Date().toISOString()
       }
     };
@@ -504,9 +504,9 @@
       })
       .then(function (baseCanvas) {
         // ۴) گذر اصلی OCR
-        // اعلام مرحله ۲ (OCR) — ملزومات استاد
+        // اعلام مرحله ۲ (OCR) — ملزومات استاد + شفافیت مدل (v2.0.0)
         stageRun('ocr');
-        setProgress(10, 'مرحله ۲ از ۵ — OCR: خواندن نام، اعداد و متن بسته‌بندی…');
+        setProgress(10, 'مرحله ۲ از ۵ — OCR با موتور Tesseract.js 6.0.1 (WASM، fas+eng): خواندن نام، اعداد و متن بسته‌بندی…');
         durations.preprocess_ms = Math.round(performance.now() - t0);
         return runPass(baseCanvas, settings, langQuality)
           .then(function (pass1) {
@@ -571,6 +571,7 @@
             'متن استخراج‌شده در بخش «شواهد OCR» قابل مشاهده است.'
           ],
           metrics: [
+            { n: 'موتور و مدل خوانش', v: 'Tesseract.js 6.0.1 (WASM) — fas+eng', status: 'ok' },
             { n: 'قطعه‌های متنی خوانده‌شده', v: st2.pieces, status: st2.pieces > 0 ? 'ok' : 'fail' },
             { n: 'میانگین اطمینان موتور', v: st2.mean_conf === null ? '—' : Math.round(st2.mean_conf * 100) + '٪', status: (st2.mean_conf !== null && st2.mean_conf < 0.6) ? 'warn' : 'ok' },
             { n: 'مجموع نویسه‌ها', v: st2.chars, status: 'ok' },

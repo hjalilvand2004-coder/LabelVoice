@@ -110,7 +110,7 @@ while ($true) {
       if ($method -eq 'GET') { $stream.Write($bytes, 0, $bytes.Length) }
     } else {
       # v1.8.3 fix: friendly 404 page (pure ASCII per design note) with instant redirect
-      $body = $utf8.GetBytes('<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/webapp/index.html"><title>LabelVoice</title></head><body style="font-family:Tahoma,sans-serif;text-align:center;padding:48px;background:#f4f7fb;color:#1a2b3c"><h2>Page not found - redirecting to the app...</h2><p><a href="/webapp/index.html">Open the full app (webapp/index.html)</a> | <a href="/label-reader-singlefile.html">Open the single-file version</a></p></body></html>')
+      $body = $utf8.GetBytes('<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/index.html"><title>LabelVoice</title></head><body style="font-family:Tahoma,sans-serif;text-align:center;padding:48px;background:#f4f7fb;color:#1a2b3c"><h2>Page not found - redirecting to the app...</h2><p><a href="/index.html">Open the app (index.html)</a></p></body></html>')
       $hdr = $utf8.GetBytes("HTTP/1.1 404 Not Found`r`nContent-Type: text/html; charset=utf-8`r`nContent-Length: $($body.Length)`r`nCache-Control: no-cache`r`nConnection: close`r`n`r`n")
       $stream.Write($hdr, 0, $hdr.Length)
       $stream.Write($body, 0, $body.Length)

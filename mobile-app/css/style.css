@@ -858,3 +858,23 @@ body.help-open { overflow: hidden; }
   .tab-bar { display: none; }
   .app-content { padding-bottom: 0; }
 }
+
+/* ---------- ۱۹) جدول مدل‌ها و موتورها (v2.0.0 — شفافیت) ---------- */
+.models-table-wrap { overflow-x: auto; margin-top: .55rem; border-radius: var(--radius-md, 12px); border: 1px solid var(--border); }
+.models-table { width: 100%; border-collapse: collapse; font-size: .78rem; min-width: 520px; }
+.models-table th, .models-table td {
+  padding: .5rem .6rem; text-align: right; line-height: 1.8;
+  border-bottom: 1px solid var(--border);
+}
+.models-table thead th {
+  background: var(--gray-bg, #f1f5f9); color: var(--text); font-weight: 700;
+  font-size: .75rem; position: sticky; top: 0;
+}
+.models-table tbody tr:last-child td { border-bottom: none; }
+.models-table td:first-child { font-weight: 700; color: var(--text); white-space: nowrap; }
+.models-table td code {
+  font-size: .7rem; direction: ltr; unicode-bidi: embed;
+  background: var(--gray-bg); border-radius: 4px; padding: 0 .3rem;
+}
+html.dark .models-table thead th { background: var(--surface-2, #14293d); }
+html.dark .models-table td code { background: var(--surface-2, #14293d); }
