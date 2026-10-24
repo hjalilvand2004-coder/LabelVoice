@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a1e33">
+<meta name="theme-color" content="#0d47a1">
 <meta name="description" content="برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل؛ همه پردازش‌ها روی همین دستگاه انجام می‌شود.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,47 +20,48 @@
 
 /* ---------- ۱) توکن‌های طراحی (روشن) ---------- */
 :root {
-  /* رنگ‌های برند */
-  --brand: #0d7f8c;
-  --brand-strong: #075c68;
-  --brand-soft: #e4f4f6;
-  --brand-ring: rgba(13, 127, 140, .28);
-  --accent: #6d5ae6;
-  --accent-soft: #edeafb;
+  /* رنگ‌های برند — پالت داروخانه‌ای (روان‌شناسی رنگ برند دارویی):
+     آبی اعتماد #1E88E5 · سبز سلامت #43A047 · سفید بهداشت #FFFFFF · قرمز هشدار #E53935 */
+  --brand: #1e88e5;
+  --brand-strong: #1565c0;
+  --brand-soft: #e3f2fd;
+  --brand-ring: rgba(30, 136, 229, .28);
+  --accent: #43a047;
+  --accent-soft: #e8f5e9;
 
   /* سطوح و متن */
-  --bg: #f3f6fa;
-  --bg-grad: radial-gradient(1200px 500px at 85% -10%, #e6f2f5 0%, transparent 60%),
-             radial-gradient(900px 420px at 0% 110%, #eceffa 0%, transparent 55%);
+  --bg: #f3f9fe;
+  --bg-grad: radial-gradient(1200px 500px at 85% -10%, #e0f0fd 0%, transparent 60%),
+             radial-gradient(900px 420px at 0% 110%, #e9f6ec 0%, transparent 55%);
   --card: #ffffff;
-  --well: #f4f7fb;
-  --text: #16222f;
-  --text-soft: #5d6c80;
-  --text-faint: #8b99ac;
-  --border: #e3e9f1;
-  --border-strong: #ccd6e3;
+  --well: #f4f8fc;
+  --text: #12283d;
+  --text-soft: #54677d;
+  --text-faint: #8298ad;
+  --border: #dce7f3;
+  --border-strong: #c3d7ea;
 
   /* معنایی */
-  --ok: #178245;
-  --ok-bg: #e7f5ec;
+  --ok: #2e7d32;
+  --ok-bg: #e8f5e9;
   --warn: #a95c07;
   --warn-bg: #fdf1dd;
-  --bad: #c92f30;
-  --bad-bg: #fdecec;
-  --gray-bg: #eef2f7;
-  --corrected: #0d7f8c;
-  --corrected-bg: #e4f4f6;
+  --bad: #d32f2f;
+  --bad-bg: #ffebee;
+  --gray-bg: #eceff4;
+  --corrected: #1565c0;
+  --corrected-bg: #e3f2fd;
 
   /* مراحل پردازش */
-  --st-opencv: #2f6fed;
-  --st-ocr: #7c4fe0;
-  --st-fields: #e0731d;
-  --st-response: #0e9d68;
-  --st-tts: #dd4b8e;
+  --st-opencv: #1e88e5;
+  --st-ocr: #00acc1;
+  --st-fields: #fb8c00;
+  --st-response: #43a047;
+  --st-tts: #e53935;
 
-  /* هدر و سایدبار (سرمه‌ای برند) */
-  --header-grad: linear-gradient(135deg, #0a1e33 0%, #0d3350 52%, #0b5666 100%);
-  --side-grad: linear-gradient(180deg, #0a1e33 0%, #0c2c46 55%, #0b3d4e 100%);
+  /* هدر و سایدبار (آبی اعتماد داروخانه) */
+  --header-grad: linear-gradient(135deg, #08234f 0%, #0d47a1 52%, #1565c0 100%);
+  --side-grad: linear-gradient(180deg, #08234f 0%, #0a3573 55%, #0d47a1 100%);
 
   /* مقیاس‌های استاندارد */
   --r-sm: 8px;
@@ -69,7 +70,7 @@
   --r-full: 999px;
   --shadow-sm: 0 1px 2px rgba(8, 28, 44, .05);
   --shadow-md: 0 1px 2px rgba(8, 28, 44, .05), 0 10px 26px -16px rgba(8, 28, 44, .22);
-  --shadow-brand: 0 2px 8px -2px rgba(13, 127, 140, .45);
+  --shadow-brand: 0 2px 8px -2px rgba(30, 136, 229, .45);
   --h-btn: 40px;
   --h-btn-big: 48px;
   --h-btn-sm: 32px;
@@ -79,74 +80,74 @@
 /* ---------- توکن‌های تاریک (سیستم + دستی — v1.9.0 تک‌منبع) ---------- */
 @media (prefers-color-scheme: dark) {
   :root {
-    --brand: #3ec3d0;
-    --brand-strong: #8adfe8;
-    --brand-soft: #0f2e37;
-    --brand-ring: rgba(62, 195, 208, .32);
-    --accent: #a294f5;
-    --accent-soft: #24204a;
+    --brand: #64b5f6;
+    --brand-strong: #90caf9;
+    --brand-soft: #0d2a4a;
+    --brand-ring: rgba(100, 181, 246, .32);
+    --accent: #81c784;
+    --accent-soft: #12331a;
 
-    --bg: #0b141d;
-    --bg-grad: radial-gradient(1100px 480px at 85% -10%, #102633 0%, transparent 60%),
-               radial-gradient(900px 420px at 0% 110%, #101a2e 0%, transparent 55%);
-    --card: #121f2b;
-    --well: #0f1a24;
-    --text: #e6edf4;
-    --text-soft: #96a7ba;
-    --text-faint: #6d7f94;
-    --border: #22374a;
-    --border-strong: #31485e;
+    --bg: #07111e;
+    --bg-grad: radial-gradient(1100px 480px at 85% -10%, #0d2138 0%, transparent 60%),
+               radial-gradient(900px 420px at 0% 110%, #0e1c30 0%, transparent 55%);
+    --card: #102035;
+    --well: #0d1a2b;
+    --text: #e3edf7;
+    --text-soft: #96a9be;
+    --text-faint: #6d8299;
+    --border: #1e3550;
+    --border-strong: #2c4a6b;
 
-    --ok: #58d38c;
-    --ok-bg: #123122;
+    --ok: #66bb6a;
+    --ok-bg: #0f2e1b;
     --warn: #ecb45c;
     --warn-bg: #33270f;
-    --bad: #ff8c86;
-    --bad-bg: #3c1b19;
-    --gray-bg: #1a2836;
-    --corrected: #4fd0c2;
-    --corrected-bg: #0e3038;
+    --bad: #ef9a9a;
+    --bad-bg: #3a1516;
+    --gray-bg: #182738;
+    --corrected: #64b5f6;
+    --corrected-bg: #0d2a4a;
 
-    --header-grad: linear-gradient(135deg, #071320 0%, #0a2940 52%, #0b4a58 100%);
-    --side-grad: linear-gradient(180deg, #071320 0%, #0a2236 55%, #0b3543 100%);
+    --header-grad: linear-gradient(135deg, #041223 0%, #0a2b52 52%, #0e4a8f 100%);
+    --side-grad: linear-gradient(180deg, #041223 0%, #07203d 55%, #0a3061 100%);
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
     --shadow-md: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 28px -16px rgba(0, 0, 0, .55);
-    --shadow-brand: 0 2px 10px -2px rgba(62, 195, 208, .35);
+    --shadow-brand: 0 2px 10px -2px rgba(100, 181, 246, .35);
   }
 }
 /* حالت تاریک دستی — همان مقادیر بلوک بالا (کلاس روی html) */
 html.dark {
-  --brand: #3ec3d0;
-  --brand-strong: #8adfe8;
-  --brand-soft: #0f2e37;
-  --brand-ring: rgba(62, 195, 208, .32);
-  --accent: #a294f5;
-  --accent-soft: #24204a;
-  --bg: #0b141d;
-  --bg-grad: radial-gradient(1100px 480px at 85% -10%, #102633 0%, transparent 60%),
-             radial-gradient(900px 420px at 0% 110%, #101a2e 0%, transparent 55%);
-  --card: #121f2b;
-  --well: #0f1a24;
-  --text: #e6edf4;
-  --text-soft: #96a7ba;
-  --text-faint: #6d7f94;
-  --border: #22374a;
-  --border-strong: #31485e;
-  --ok: #58d38c;
-  --ok-bg: #123122;
+  --brand: #64b5f6;
+  --brand-strong: #90caf9;
+  --brand-soft: #0d2a4a;
+  --brand-ring: rgba(100, 181, 246, .32);
+  --accent: #81c784;
+  --accent-soft: #12331a;
+  --bg: #07111e;
+  --bg-grad: radial-gradient(1100px 480px at 85% -10%, #0d2138 0%, transparent 60%),
+             radial-gradient(900px 420px at 0% 110%, #0e1c30 0%, transparent 55%);
+  --card: #102035;
+  --well: #0d1a2b;
+  --text: #e3edf7;
+  --text-soft: #96a9be;
+  --text-faint: #6d8299;
+  --border: #1e3550;
+  --border-strong: #2c4a6b;
+  --ok: #66bb6a;
+  --ok-bg: #0f2e1b;
   --warn: #ecb45c;
   --warn-bg: #33270f;
-  --bad: #ff8c86;
-  --bad-bg: #3c1b19;
-  --gray-bg: #1a2836;
-  --corrected: #4fd0c2;
-  --corrected-bg: #0e3038;
-  --header-grad: linear-gradient(135deg, #071320 0%, #0a2940 52%, #0b4a58 100%);
-  --side-grad: linear-gradient(180deg, #071320 0%, #0a2236 55%, #0b3543 100%);
+  --bad: #ef9a9a;
+  --bad-bg: #3a1516;
+  --gray-bg: #182738;
+  --corrected: #64b5f6;
+  --corrected-bg: #0d2a4a;
+  --header-grad: linear-gradient(135deg, #041223 0%, #0a2b52 52%, #0e4a8f 100%);
+  --side-grad: linear-gradient(180deg, #041223 0%, #07203d 55%, #0a3061 100%);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
   --shadow-md: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 28px -16px rgba(0, 0, 0, .55);
-  --shadow-brand: 0 2px 10px -2px rgba(62, 195, 208, .35);
+  --shadow-brand: 0 2px 10px -2px rgba(100, 181, 246, .35);
 }
 
 /* ---------- ۲) پایه ---------- */
@@ -279,7 +280,7 @@ html.dark .btn-ghost { color: var(--brand); }
 .logo { width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; }
 .app-header h1 {
   font-size: 1.08rem; font-weight: 800; margin: 0; letter-spacing: -.2px;
-  background: linear-gradient(90deg, #ffffff, #b8ecf2);
+  background: linear-gradient(90deg, #ffffff, #bbdefb);
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
 .subtitle { margin: .05rem 0 0; font-size: .78rem; opacity: .88; }
@@ -309,7 +310,7 @@ html.dark .btn-ghost { color: var(--brand); }
     position: sticky; top: 0; height: 100vh;
     width: 264px; flex: 0 0 264px; padding: 1.1rem .85rem;
     box-sizing: border-box; overflow-y: auto;
-    background: var(--side-grad); color: #dfeef0;
+    background: var(--side-grad); color: #dfeaf8;
   }
   .sb-brand {
     display: flex; align-items: center; gap: .6rem;
@@ -318,14 +319,14 @@ html.dark .btn-ghost { color: var(--brand); }
   }
   .sb-brand .logo { width: 38px; height: 38px; }
   .sb-title { font-weight: 800; font-size: .95rem; color: #fff; letter-spacing: -.1px; }
-  .sb-sub { font-size: .72rem; color: #8fc7cd; margin-top: .1rem; }
+  .sb-sub { font-size: .72rem; color: #9dc3f0; margin-top: .1rem; }
 
   .sb-nav { display: flex; flex-direction: column; gap: .2rem; }
   .snav-btn {
     display: flex; align-items: center; gap: .6rem;
     width: 100%; min-height: 38px; padding: .45rem .7rem;
     border: none; border-radius: 9px;
-    background: transparent; color: #c3dde0;
+    background: transparent; color: #c2dcf8;
     font: 500 .855rem/1.4 Vazirmatn, "Segoe UI", Tahoma, sans-serif;
     text-align: right; cursor: pointer;
     transition: background .16s ease, color .16s ease;
@@ -340,8 +341,8 @@ html.dark .btn-ghost { color: var(--brand); }
   .snav-ic svg { width: 100%; height: 100%; }
 
   .sb-group { margin-top: auto; padding-top: .9rem; border-top: 1px solid rgba(255, 255, 255, .12); }
-  .sb-group-title { font-size: .72rem; font-weight: 700; color: #8fc7cd; letter-spacing: .3px; margin-bottom: .5rem; }
-  .sb-switch { display: flex; align-items: center; gap: .6rem; cursor: pointer; font-size: .84rem; color: #d7ecee; }
+  .sb-group-title { font-size: .72rem; font-weight: 700; color: #9dc3f0; letter-spacing: .3px; margin-bottom: .5rem; }
+  .sb-switch { display: flex; align-items: center; gap: .6rem; cursor: pointer; font-size: .84rem; color: #d6e8fa; }
   .sb-switch input {
     appearance: none; -webkit-appearance: none;
     width: 36px; height: 20px; margin: 0; flex: 0 0 auto;
@@ -357,8 +358,8 @@ html.dark .btn-ghost { color: var(--brand); }
   .sb-switch input:checked { background: var(--brand); }
   .sb-switch input:checked::after { transform: translateX(-15.5px); }
 
-  .sb-foot { font-size: .72rem; color: #7fa8ad; line-height: 1.85; }
-  .sb-ver { color: #cfeef1; font-weight: 700; }
+  .sb-foot { font-size: .72rem; color: #7fa6d9; line-height: 1.85; }
+  .sb-ver { color: #cfe6fa; font-weight: 700; }
 
   .tab-bar { display: none; }
   .app-content { padding-bottom: 0; }
@@ -932,7 +933,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     </label>
   </div>
   <div class="sb-foot">
-    <div class="sb-ver">نسخهٔ وب ۲.۰.۰</div>
+    <div class="sb-ver">نسخهٔ وب ۲.۱.۰</div>
     <div>حمید جلیلوند و نوید بدری</div>
     <div>همه پردازش‌ها روی همین دستگاه</div>
   </div>
@@ -1117,7 +1118,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
         <button type="button" class="btn btn-secondary" data-help="reqs">ملزومات استاد و جدول انطباق</button>
         <button type="button" class="btn btn-secondary" data-help="stages">مراحل رنگی پردازش</button>
         <button type="button" class="btn btn-secondary" data-help="engine">موتورهای OCR (v1.8.0)</button>
-        <button type="button" class="btn btn-secondary" data-help="models">🧠 مدل‌ها و موتورها (v2.0.0)</button>
+        <button type="button" class="btn btn-secondary" data-help="models">🧠 مدل‌ها و موتورها (v2.1.0)</button>
         <button type="button" class="btn btn-secondary" data-help="preprocess">پیش‌پردازش OpenCV</button>
         <button type="button" class="btn btn-secondary" data-help="fields">فیلدها و شواهد</button>
         <button type="button" class="btn btn-secondary" data-help="response">پاسخ و نگهبان ایمنی</button>

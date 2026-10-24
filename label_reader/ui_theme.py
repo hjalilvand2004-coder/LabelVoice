@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-"""تم بصری LabelVoice — CSS حرفه‌ای، رنگ‌های مراحل و اجازهٔ HTML (v1.8.0).
+"""تم بصری LabelVoice — CSS حرفه‌ای، رنگ‌های مراحل و اجازهٔ HTML (v2.1.0).
 
-پالت: سرمه‌ای عمیق + فیروزه‌ای دارویی + گرادیان بنفش-آبی؛
+پالت داروخانه‌ای (روان‌شناسی رنگ برند دارویی — طرح‌باکس):
+  آبی اعتماد #1E88E5 (اعتماد و آرامش) · سبز سلامت #43A047 (سلامت و تعهد)
+  سفید بهداشت #FFFFFF (پاکیزگی) · قرمز هشدار #E53935 (هشدار و توجه)
 هر مرحلهٔ پردازش رنگ اختصاصی دارد تا کاربر همیشه بداند الان
 کدام مرحله در حال انجام است.
 """
@@ -9,11 +11,11 @@ from __future__ import annotations
 
 # ---------- رنگ اختصاصی هر مرحله ----------
 STAGE_COLORS: dict[str, str] = {
-    "opencv": "#2563eb",    # آبی — پیش‌پردازش تصویر
-    "ocr": "#7c3aed",       # بنفش — موتور خوانش
-    "fields": "#ea580c",    # نارنجی — پردازش متن و فیلدها
-    "response": "#059669",  # سبز — تولید پاسخ
-    "tts": "#db2777",       # صورتی — خوانش صوتی
+    "opencv": "#1E88E5",    # آبی اعتماد — پیش‌پردازش تصویر
+    "ocr": "#00ACC1",       # فیروزه‌ای — موتور خوانش (میان آبی و سبز پالت)
+    "fields": "#FB8C00",    # نارنجی — پردازش متن و فیلدها
+    "response": "#43A047",  # سبز سلامت — تولید پاسخ
+    "tts": "#E53935",       # قرمز هشدار — خوانش صوتی
 }
 STAGE_ICONS: dict[str, str] = {
     "opencv": "🖼️",
@@ -28,18 +30,19 @@ THEME_CSS = """
 @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
 
 :root {
-  --lv-primary: #0f2b46;
-  --lv-accent: #0e7c8f;
-  --lv-accent2: #7c3aed;
-  --lv-bg: #f4f7fb;
+  --lv-primary: #0d47a1;   /* آبی عمیق اعتماد */
+  --lv-accent: #1e88e5;    /* آبی دارویی (رنگ اصلی برند) */
+  --lv-accent2: #43a047;   /* سبز سلامت */
+  --lv-danger: #e53935;    /* قرمز هشدار */
+  --lv-bg: #f3f9fe;
 }
 html, body, [class*="css"], .stApp, .stMarkdown, button, input, textarea,
 .stRadio label, .stSelectbox label, .stCheckbox label, .stSlider label {
   font-family: 'Vazirmatn', 'Tahoma', sans-serif !important;
 }
 .stApp { background:
-  radial-gradient(1200px 400px at 90% -50px, rgba(124,58,237,.08), transparent),
-  radial-gradient(1000px 380px at 5% -40px, rgba(14,124,143,.10), transparent),
+  radial-gradient(1200px 400px at 90% -50px, rgba(30,136,229,.09), transparent),
+  radial-gradient(1000px 380px at 5% -40px, rgba(67,160,71,.08), transparent),
   var(--lv-bg);
 }
 #MainMenu, footer { visibility: hidden; }
@@ -47,7 +50,7 @@ html, body, [class*="css"], .stApp, .stMarkdown, button, input, textarea,
 
 /* ---------- سایدبار ---------- */
 section[data-testid="stSidebar"] {
-  background: linear-gradient(180deg, #0f2b46 0%, #123a5c 55%, #0e7c8f 140%);
+  background: linear-gradient(180deg, #0d47a1 0%, #1565c0 55%, #1e88e5 140%);
 }
 section[data-testid="stSidebar"] * { color: #eaf2f8 !important; }
 section[data-testid="stSidebar"] .stRadio label {
@@ -73,15 +76,15 @@ section[data-testid="stSidebar"] .stRadio label:hover {
 .lv-brand p { font-size: 11.5px; color: #a8c6d8 !important; margin: 0; }
 .lv-version {
   display: inline-block; margin-top: 6px; padding: 2px 10px; font-size: 10.5px;
-  background: rgba(14,124,143,.35); border: 1px solid rgba(14,124,143,.6);
-  border-radius: 999px; color: #c9f0f7 !important;
+  background: rgba(67,160,71,.35); border: 1px solid rgba(67,160,71,.65);
+  border-radius: 999px; color: #d9f5de !important;
 }
 
 /* ---------- هیرو ---------- */
 .lv-hero {
-  background: linear-gradient(135deg, #0f2b46 0%, #14496e 45%, #0e7c8f 100%);
+  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 45%, #1e88e5 100%);
   border-radius: 20px; padding: 26px 28px; color: #fff;
-  box-shadow: 0 12px 30px rgba(15,43,70,.25); margin-bottom: 14px;
+  box-shadow: 0 12px 30px rgba(13,71,161,.25); margin-bottom: 14px;
   position: relative; overflow: hidden;
 }
 .lv-hero::after {
@@ -89,7 +92,7 @@ section[data-testid="stSidebar"] .stRadio label:hover {
   transform: translateY(-50%); font-size: 84px; opacity: .16;
 }
 .lv-hero h1 { font-size: 26px; font-weight: 900; margin: 0 0 6px; }
-.lv-hero p { font-size: 14px; margin: 0; color: #d7e9f4; max-width: 88%; }
+.lv-hero p { font-size: 14px; margin: 0; color: #dbeafe; max-width: 88%; }
 .lv-hero .authors {
   display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
   background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
@@ -99,30 +102,30 @@ section[data-testid="stSidebar"] .stRadio label:hover {
 /* ---------- کارت‌ها و چیپ‌ها ---------- */
 .lv-card {
   background: #fff; border-radius: 16px; padding: 18px 20px;
-  border: 1px solid #e3eaf2; box-shadow: 0 4px 14px rgba(15,43,70,.06);
+  border: 1px solid #d8e7f6; box-shadow: 0 4px 14px rgba(13,71,161,.06);
   margin-bottom: 12px;
 }
 .lv-scope {
-  background: linear-gradient(90deg, #eef7f9, #f6f0fd);
-  border: 1px solid #cfe4ea; border-right: 5px solid var(--lv-accent);
-  border-radius: 12px; padding: 12px 16px; font-size: 13px; color: #234;
+  background: linear-gradient(90deg, #e8f4fd, #eaf6ec);
+  border: 1px solid #c4ddf4; border-right: 5px solid var(--lv-accent);
+  border-radius: 12px; padding: 12px 16px; font-size: 13px; color: #123;
   margin-bottom: 12px;
 }
 .lv-big-answer {
   background: #fff; border-radius: 16px; padding: 20px 22px; font-size: 16.5px;
-  line-height: 2.1; color: #1a2b3c; border: 1px solid #dbe7ef;
+  line-height: 2.1; color: #12283d; border: 1px solid #d4e5f5;
   border-right: 6px solid var(--lv-accent);
-  box-shadow: 0 4px 16px rgba(15,43,70,.07);
+  box-shadow: 0 4px 16px rgba(13,71,161,.07);
 }
 .lv-field-chip {
   display: inline-block; padding: 3px 10px; border-radius: 999px;
   font-size: 11.5px; font-weight: 700; margin-inline-start: 6px;
 }
-.chip-extracted { background: #dcfce7; color: #166534; }
-.chip-uncertain { background: #fef9c3; color: #854d0e; }
-.chip-missing { background: #f1f5f9; color: #475569; }
-.chip-conflicting { background: #fee2e2; color: #991b1b; }
-.chip-user_corrected { background: #e0e7ff; color: #3730a3; }
+.chip-extracted { background: #e8f5e9; color: #2e7d32; }
+.chip-uncertain { background: #fff8e1; color: #94670a; }
+.chip-missing { background: #eceff1; color: #546e7a; }
+.chip-conflicting { background: #ffebee; color: #c62828; }
+.chip-user_corrected { background: #e3f2fd; color: #1565c0; }
 
 /* ---------- خط‌زمان مراحل رنگی ---------- */
 .lv-timeline { direction: rtl; padding: 6px 2px; }
@@ -139,13 +142,13 @@ section[data-testid="stSidebar"] .stRadio label:hover {
   flex-shrink: 0;
 }
 .lv-stage .line {
-  width: 3px; flex: 1; background: #d7e0ea; margin: 2px 0;
+  width: 3px; flex: 1; background: #d3e2f1; margin: 2px 0;
 }
-.lv-stage.done .line { background: linear-gradient(#c9d6e2, #c9d6e2); }
+.lv-stage.done .line { background: linear-gradient(#c3d9ee, #c3d9ee); }
 .lv-stage .body {
-  flex: 1; background: #fff; border: 1px solid #e6edf4; border-radius: 12px;
+  flex: 1; background: #fff; border: 1px solid #e1ecf7; border-radius: 12px;
   padding: 10px 14px; margin: 0 10px 12px 0;
-  border-right-width: 4px; box-shadow: 0 2px 8px rgba(15,43,70,.05);
+  border-right-width: 4px; box-shadow: 0 2px 8px rgba(13,71,161,.05);
 }
 .lv-stage .body h4 { margin: 0 0 4px; font-size: 14px; font-weight: 800; }
 .lv-stage .body .meta {
@@ -155,30 +158,30 @@ section[data-testid="stSidebar"] .stRadio label:hover {
 .lv-stage .mrow { font-size: 12px; color: #475569; margin-top: 4px; }
 .lv-stage.active .dot { animation: lv-pulse 1.2s infinite; }
 @keyframes lv-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(124,58,237,.45); }
-  70% { box-shadow: 0 0 0 12px rgba(124,58,237,0); }
-  100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
+  0% { box-shadow: 0 0 0 0 rgba(30,136,229,.45); }
+  70% { box-shadow: 0 0 0 12px rgba(30,136,229,0); }
+  100% { box-shadow: 0 0 0 0 rgba(30,136,229,0); }
 }
 .lv-status-pill {
   display: inline-block; font-size: 10.5px; padding: 1px 9px;
   border-radius: 999px; margin-inline-start: 8px; font-weight: 700;
 }
-.lv-pill-run { background: #ede9fe; color: #6d28d9; }
-.lv-pill-done { background: #dcfce7; color: #15803d; }
-.lv-pill-fail { background: #fee2e2; color: #b91c1c; }
+.lv-pill-run { background: #e3f2fd; color: #1565c0; }
+.lv-pill-done { background: #e8f5e9; color: #2e7d32; }
+.lv-pill-fail { background: #ffebee; color: #c62828; }
 
 /* ---------- کارت طراحان ---------- */
 .lv-author {
-  background: linear-gradient(135deg, #ffffff, #f4f9fc);
-  border: 1px solid #dfe9f2; border-radius: 18px; padding: 24px;
-  text-align: center; box-shadow: 0 6px 18px rgba(15,43,70,.07);
+  background: linear-gradient(135deg, #ffffff, #f2f9fe);
+  border: 1px solid #d8e7f6; border-radius: 18px; padding: 24px;
+  text-align: center; box-shadow: 0 6px 18px rgba(13,71,161,.07);
 }
 .lv-author .avatar {
   width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 12px;
   display: flex; align-items: center; justify-content: center;
   font-size: 38px; color: #fff;
-  background: linear-gradient(135deg, #0e7c8f, #7c3aed);
-  box-shadow: 0 6px 16px rgba(14,124,143,.35);
+  background: linear-gradient(135deg, #1e88e5, #43a047);
+  box-shadow: 0 6px 16px rgba(30,136,229,.35);
 }
 .lv-author h3 { margin: 0 0 4px; font-weight: 900; }
 .lv-author .role { color: #64748b; font-size: 12.5px; margin-bottom: 10px; }
@@ -186,7 +189,7 @@ section[data-testid="stSidebar"] .stRadio label:hover {
   background: #fff; border-radius: 14px; padding: 14px 16px;
   border: 1px solid #e3eaf2; text-align: center;
 }
-.lv-metric-tile .v { font-size: 24px; font-weight: 900; color: #0f2b46; }
+.lv-metric-tile .v { font-size: 24px; font-weight: 900; color: #0d47a1; }
 .lv-metric-tile .k { font-size: 12px; color: #64748b; }
 
 /* ---------- احترام به تنظیمات کاهش حرکت (بند ۶ چارچوب) ---------- */
@@ -206,94 +209,94 @@ DARK_THEME_CSS = """
 <style>
 .stApp {
   background:
-    radial-gradient(1200px 400px at 90% -50px, rgba(124,58,237,.16), transparent),
-    radial-gradient(1000px 380px at 5% -40px, rgba(14,124,143,.20), transparent),
-    #0b1622 !important;
+    radial-gradient(1200px 400px at 90% -50px, rgba(30,136,229,.18), transparent),
+    radial-gradient(1000px 380px at 5% -40px, rgba(67,160,71,.14), transparent),
+    #081426 !important;
 }
 .stApp p, .stApp li, .stApp td, .stApp th, .stApp dd, .stApp dt,
 [data-testid="stMarkdownContainer"] {
-  color: #d9e6f2 !important;
+  color: #dceaf8 !important;
 }
 .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
-  color: #f2f8fd !important;
+  color: #eef6fd !important;
 }
-.stApp .stCaption, .stApp [data-testid="stCaptionContainer"] { color: #8fa8bd !important; }
+.stApp .stCaption, .stApp [data-testid="stCaptionContainer"] { color: #8fabc6 !important; }
 
 /* کارت‌ها و اجزای اختصاصی */
 .lv-card, .lv-big-answer, .lv-metric-tile, .lv-author {
-  background: #10202f !important;
-  border-color: #1f3247 !important;
+  background: #0e2440 !important;
+  border-color: #1d3a5f !important;
   box-shadow: 0 4px 14px rgba(0,0,0,.35) !important;
 }
-.lv-big-answer { color: #e6eef6 !important; border-right-color: var(--lv-accent) !important; }
+.lv-big-answer { color: #e6eff8 !important; border-right-color: var(--lv-accent) !important; }
 .lv-scope {
-  background: linear-gradient(90deg, #0e2233, #1a1433) !important;
-  border-color: #27455e !important; color: #cfe0ee !important;
+  background: linear-gradient(90deg, #0c2743, #0d2f1e) !important;
+  border-color: #24507c !important; color: #cfe3f5 !important;
 }
-.lv-metric-tile .v { color: #7dd3fc !important; }
-.lv-metric-tile .k, .lv-author .role { color: #8fa8bd !important; }
-.lv-author { background: linear-gradient(135deg, #10202f, #0d1a28) !important; }
+.lv-metric-tile .v { color: #64b5f6 !important; }
+.lv-metric-tile .k, .lv-author .role { color: #8fabc6 !important; }
+.lv-author { background: linear-gradient(135deg, #0e2440, #0b1c33) !important; }
 
 /* چیپ وضعیت فیلدها — نسخهٔ تاریک */
-.chip-extracted { background: #052e1b !important; color: #6ee7a0 !important; }
-.chip-uncertain { background: #33230a !important; color: #fcd34d !important; }
-.chip-missing   { background: #1e293b !important; color: #94a3b8 !important; }
-.chip-conflicting { background: #3d0d0d !important; color: #fca5a5 !important; }
-.chip-user_corrected { background: #1e1b4b !important; color: #a5b4fc !important; }
+.chip-extracted { background: #0d2e18 !important; color: #81de9c !important; }
+.chip-uncertain { background: #33270a !important; color: #ffd54f !important; }
+.chip-missing   { background: #16283b !important; color: #9fb3c8 !important; }
+.chip-conflicting { background: #3a1212 !important; color: #ff9e9a !important; }
+.chip-user_corrected { background: #0d2a4a !important; color: #90caf9 !important; }
 
 /* خط‌زمان مراحل */
 .lv-stage .body {
-  background: #10202f !important;
-  border-color: #1f3247 !important;
+  background: #0e2440 !important;
+  border-color: #1d3a5f !important;
   box-shadow: 0 2px 8px rgba(0,0,0,.35) !important;
 }
-.lv-stage .line { background: #24384d !important; }
-.lv-stage.done .line { background: #24384d !important; }
-.lv-stage .body .outs { color: #c8d9e8 !important; }
-.lv-stage .body .meta, .lv-stage .mrow { color: #93a9bd !important; }
-.lv-status-pill.lv-pill-run  { background: #2e1065 !important; color: #c4b5fd !important; }
-.lv-status-pill.lv-pill-done { background: #052e1b !important; color: #6ee7a0 !important; }
-.lv-status-pill.lv-pill-fail { background: #3d0d0d !important; color: #fca5a5 !important; }
+.lv-stage .line { background: #1d3a5f !important; }
+.lv-stage.done .line { background: #1d3a5f !important; }
+.lv-stage .body .outs { color: #c8dbee !important; }
+.lv-stage .body .meta, .lv-stage .mrow { color: #93aecb !important; }
+.lv-status-pill.lv-pill-run  { background: #0d2a4a !important; color: #90caf9 !important; }
+.lv-status-pill.lv-pill-done { background: #0d2e18 !important; color: #81de9c !important; }
+.lv-status-pill.lv-pill-fail { background: #3a1212 !important; color: #ff9e9a !important; }
 
 /* اجزای بومی Streamlit در بدنهٔ اصلی */
 .stApp [data-testid="stExpander"] details,
 .stApp [data-testid="stExpander"] summary {
-  background: #10202f !important; color: #d9e6f2 !important;
-  border-color: #1f3247 !important;
+  background: #0e2440 !important; color: #dceaf8 !important;
+  border-color: #1d3a5f !important;
 }
-.stApp [data-testid="stExpander"] summary p { color: #d9e6f2 !important; }
+.stApp [data-testid="stExpander"] summary p { color: #dceaf8 !important; }
 .stApp textarea, .stApp input, .stApp [data-baseweb="select"] > div,
 .stApp [data-baseweb="input"] {
-  background: #10202f !important; color: #e6eef6 !important;
+  background: #0e2440 !important; color: #e6eff8 !important;
 }
 .stApp [data-testid="stFileUploader"], .stApp [data-testid="stFileUploaderDropzone"] {
-  background: #10202f !important; border-color: #27455e !important;
+  background: #0e2440 !important; border-color: #24507c !important;
 }
-.stApp [data-testid="stFileUploaderDropzone"] * { color: #c8d9e8 !important; }
+.stApp [data-testid="stFileUploaderDropzone"] * { color: #c8dbee !important; }
 .stApp [data-testid="stRadio"] label, .stApp [data-testid="stCheckbox"] label {
-  background: #0e1c2a !important; border-color: #1f3247 !important;
+  background: #0c2038 !important; border-color: #1d3a5f !important;
 }
 .stApp [data-testid="stRadio"] label:hover,
-.stApp [data-testid="stCheckbox"] label:hover { background: #16304a !important; }
+.stApp [data-testid="stCheckbox"] label:hover { background: #143356 !important; }
 .stApp .stButton > button {
-  background: #12314a !important; color: #eaf4fc !important;
-  border: 1px solid #27547a !important;
+  background: #103862 !important; color: #eaf4fc !important;
+  border: 1px solid #2a5f96 !important;
 }
-.stApp .stButton > button:hover { background: #1a4062 !important; }
-.stApp hr { border-color: #1f3247 !important; }
+.stApp .stButton > button:hover { background: #17497c !important; }
+.stApp hr { border-color: #1d3a5f !important; }
 .stApp code, .stApp pre {
-  background: #0d1a28 !important; color: #9fe8d8 !important;
+  background: #0a1d33 !important; color: #90caf9 !important;
 }
-.stApp table { border-color: #27455e !important; }
-.stApp th { background: #14293d !important; }
+.stApp table { border-color: #24507c !important; }
+.stApp th { background: #102c4c !important; }
 .stApp .stAlert {
-  background: #14293d !important; color: #d9e6f2 !important;
-  border-color: #27455e !important;
+  background: #102c4c !important; color: #dceaf8 !important;
+  border-color: #24507c !important;
 }
 .stApp [data-testid="stSlider"] [role="slider"] {
-  background-color: #7dd3fc !important;
+  background-color: #64b5f6 !important;
 }
-.stApp [data-testid="stSliderTrack"] > div { background: #27547a !important; }
+.stApp [data-testid="stSliderTrack"] > div { background: #2a5f96 !important; }
 /* سایدبار از قبل تیره است؛ دست‌نخورده */
 </style>
 """

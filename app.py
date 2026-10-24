@@ -266,7 +266,7 @@ if page == "read":
                 for k in order_keys)
             status_slot.markdown(
                 f"""
-                <div class="lv-scope" style="border-right-color:#7c3aed">
+                <div class="lv-scope" style="border-right-color:#43a047">
                 🚀 <b>پردازش مرحله‌به‌مرحله (۵ مرحله) شروع شد.</b><br/>
                 هر مرحله با رنگ اختصاصی خودش نمایش داده می‌شود: {_legend}<br/>
                 📌 تعریف مسئله: {PROBLEM_STATEMENT_FA}
@@ -553,7 +553,7 @@ if page == "read":
 elif page == "reports":
     st.markdown(
         """
-        <div class="lv-hero" style="background:linear-gradient(135deg,#134e4a 0%,#0e7c8f 60%,#2563eb 130%)">
+        <div class="lv-hero" style="background:linear-gradient(135deg,#0d47a1 0%,#1565c0 55%,#1e88e5 120%)">
           <h1>📊 گزارش‌ها، تحلیل‌ها و ارزیابی</h1>
           <p>دقت سامانه در سطح فیلد روی مجموعه نمونه برچسب‌خورده سنجیده می‌شود؛
           غیبت و تعارض هم خطا شمرده می‌شود چون هر اشتباه دارویی می‌تواند آسیب‌زا باشد.</p>
@@ -589,7 +589,7 @@ elif page == "reports":
         st.markdown("#### 🎯 دقت به تفکیک فیلد (٪)")
         st.bar_chart(pd.DataFrame(
             {"دقت (٪)": {FIELD_FA.get(k, k): v["acc"] for k, v in _pf.items()}}),
-            color="#0e7c66")
+            color="#43a047")
 
         CASE_FA = {"clear_english": "انگلیسی ساده", "clear_persian": "فارسی ساده",
                    "mixed_fa_en": "دوزبانه", "ambiguous_date": "تاریخ مبهم",
@@ -599,14 +599,14 @@ elif page == "reports":
         st.markdown("#### 🖼️ دقت به تفکیک حالت تصویر (٪)")
         st.bar_chart(pd.DataFrame(
             {"دقت (٪)": {CASE_FA.get(k, k): v["acc"] for k, v in _pc.items()}}),
-            color="#2563a8")
+            color="#1e88e5")
 
         _lat = _tess["latency_ms"]
         st.markdown("#### ⏱️ زمان پردازش هر تصویر (میلی‌ثانیه)")
         st.bar_chart(pd.DataFrame(
             {"ms": {"کمینه": _lat["min"], "میانه": _lat["median"],
                     "میانگین": _lat["mean"], "p95": _lat["p95"],
-                    "بیشینه": _lat["max"]}}), color="#8a5a00")
+                    "بیشینه": _lat["max"]}}), color="#ef6c00")
 
         MOD_FA = {"tests/test_patterns_fields.py": "الگوها و فیلدها",
                   "tests/test_pipeline_integration.py": "یکپارچگی خط پردازش",
@@ -619,7 +619,7 @@ elif page == "reports":
         st.bar_chart(pd.DataFrame(
             {"تعداد آزمون": {MOD_FA.get(k, k): v["total"]
                              for k, v in _pt["per_file"].items()}}),
-            color="#5a3d8a")
+            color="#00acc1")
 
         st.info(
             "**یافته صادقانه (v1.8.0):** در نسخه ۱.۸٫۰ موتور فارسی بازطراحی شد — "
@@ -665,7 +665,7 @@ elif page == "reports":
 elif page == "docs":
     st.markdown(
         """
-        <div class="lv-hero" style="background:linear-gradient(135deg,#312e81 0%,#6d28d9 60%,#db2777 140%)">
+        <div class="lv-hero" style="background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 50%,#43a047 120%)">
           <h1>📚 راهنما و مستندات فنی</h1>
           <p>معماری سامانه، ملزومات استاد، فناوری هر بخش و مستندات کامل HTML/PDF.</p>
         </div>
@@ -708,7 +708,7 @@ elif page == "docs":
 else:
     st.markdown(
         """
-        <div class="lv-hero" style="background:linear-gradient(135deg,#0f2b46 0%,#7c3aed 70%,#db2777 140%)">
+        <div class="lv-hero" style="background:linear-gradient(135deg,#0d47a1 0%,#1e88e5 60%,#43a047 140%)">
           <h1>👥 دربارهٔ طراحان</h1>
           <p>پروژهٔ LabelVoice — برچسب‌خوان هوشمند دارو و محصولات؛ طراحی و توسعهٔ
           دو-نفره با تمرکز بر ایمنی، شفافیت و وفاداری به شواهد.</p>
