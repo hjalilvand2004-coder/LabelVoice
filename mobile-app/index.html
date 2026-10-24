@@ -12,7 +12,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>برچسب‌خوان هوشمند دارو و محصولات</title>
-<link rel="stylesheet" href="css/style.css?v=2.5.0">
+<link rel="stylesheet" href="css/style.css?v=2.7.0">
 <script>
 /* اعمال زودهنگام حالت تاریک دستی (قبل از اولین رندر) — v1.8.2 */
 try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.classList.add('dark'); } catch (e) { /* نادیده */ }
@@ -51,7 +51,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     </label>
   </div>
   <div class="sb-foot">
-    <div class="sb-ver">نسخهٔ وب ۲.۵.۰</div>
+    <div class="sb-ver">نسخهٔ وب ۲.۷.۰</div>
     <div>حمید جلیلوند و نوید بدری</div>
     <div>همه پردازش‌ها روی همین دستگاه</div>
   </div>
@@ -208,6 +208,20 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
       <summary id="evidence-summary">نمایش شواهد</summary>
       <ol id="evidence-list" dir="auto"></ol>
     </details>
+
+    <!-- v2.7.0: دیدن کار OpenCV و خوانش خام OCR (گام‌به‌گام) — خواستهٔ کاربر:
+         «می‌خواهم تغییراتی که روی تصویر اعمال می‌شود را به‌صورت تصویر ببینم
+         و بعد ببینم OCR چه خوانده است» -->
+    <div id="opencv-trace-box" class="hidden">
+      <h3>🔬 دیدن کار OpenCV و خوانش خام OCR (گام‌به‌گام)
+        <button type="button" class="help-btn" data-help="trace" aria-label="راهنمای دیدن گام‌های OpenCV">؟</button>
+      </h3>
+      <p class="hint">خروجی تصویریِ هر عملیات پیش‌پردازش (روی همان تصویر اولیه شما) + متن خامی که OCR از هر نسخهٔ پردازشی خوانده است — همه‌چیز قبل از ادغام بهترین-اول و رأی‌گیری، بدون هیچ تغییر در نتیجهٔ نهایی.</p>
+      <h4 class="cv-subtitle">۱) تصویر پس از هر عملیات پیش‌پردازش</h4>
+      <div id="opencv-trace-list" class="cv-trace-list"></div>
+      <h4 class="cv-subtitle">۲) خوانش خام OCR برای هر نسخهٔ پردازشی</h4>
+      <div id="variant-readings-list" class="cv-trace-list"></div>
+    </div>
 
     <h3>خروجی کامل</h3>
     <details class="json-box">
@@ -416,20 +430,20 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
   <div style="padding:1rem;text-align:center">این برنامه به جاوااسکریپت نیاز دارد. لطفاً جاوااسکریپت مرورگر را فعال کنید.</div>
 </noscript>
 
-<script src="js/textnorm.js?v=2.5.0"></script>
-<script src="js/patterns.js?v=2.5.0"></script>
-<script src="js/guard.js?v=2.5.0"></script>
-<script src="js/extractor.js?v=2.5.0"></script>
-<script src="js/responder.js?v=2.5.0"></script>
-<script src="js/pipeline.js?v=2.5.0"></script>
-<script src="js/preprocess.js?v=2.5.0"></script>
-<script src="js/boxdetect.js?v=2.5.0"></script>
+<script src="js/textnorm.js?v=2.7.0"></script>
+<script src="js/patterns.js?v=2.7.0"></script>
+<script src="js/guard.js?v=2.7.0"></script>
+<script src="js/extractor.js?v=2.7.0"></script>
+<script src="js/responder.js?v=2.7.0"></script>
+<script src="js/pipeline.js?v=2.7.0"></script>
+<script src="js/preprocess.js?v=2.7.0"></script>
+<script src="js/boxdetect.js?v=2.7.0"></script>
 <script src="js/samples-data.js"></script>
-<script src="js/offline-engine.js?v=2.5.0"></script>
+<script src="js/offline-engine.js?v=2.7.0"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
-<script src="js/ocr.js?v=2.5.0"></script>
-<script src="js/camera.js?v=2.5.0"></script>
-<script src="js/help.js?v=2.5.0"></script>
-<script src="js/app.js?v=2.5.0"></script>
+<script src="js/ocr.js?v=2.7.0"></script>
+<script src="js/camera.js?v=2.7.0"></script>
+<script src="js/help.js?v=2.7.0"></script>
+<script src="js/app.js?v=2.7.0"></script>
 </body>
 </html>

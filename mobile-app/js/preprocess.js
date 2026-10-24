@@ -328,41 +328,117 @@
     return { canvas: canvas, angle: 0.0 };
   }
 
+  // ---------- معیارهای هر گام (v2.7.0 — شفافیت پایپ‌لاین) ----------
+  // روشنایی میانگین و کنتراست (انحراف معیار) هر نسخه — برای نمایش کنار تصویر گام
+  function grayStats(gray) {
+    var n = gray.length;
+    var sum = 0;
+    for (var i = 0; i < n; i++) sum += gray[i];
+    var mean = sum / Math.max(1, n);
+    var vsum = 0;
+    for (var j = 0; j < n; j++) { var d = gray[j] - mean; vsum += d * d; }
+    var std = Math.sqrt(vsum / Math.max(1, n));
+    return {
+      brightness: Math.round(mean * 10) / 10,
+      contrast: Math.round(std * 10) / 10
+    };
+  }
+
   // ---------- ساخت نسخه‌های پردازشی ----------
+  // v2.7.0: هر واریانت با عنوان/توضیح فارسیِ عین عملیات + تصویر خروجی + معیارها
+  // در آرایهٔ trace برگردانده می‌شود تا کاربر «کار OpenCV» را گام‌به‌گام ببیند
+  // (همتای opencv_trace نسخهٔ دسکتاپ v2.6.0).
   function buildVariants(sourceCanvas, sw, sh, settings) {
     var scaled = drawScaled(sourceCanvas, sw, sh, settings);
     var variants = {};
+    var trace = [];
     variants[VARIANT_ORIGINAL] = scaled.canvas;
+    trace.push({
+      key: VARIANT_ORIGINAL,
+      title_fa: 'نسخهٔ اصلی (بزرگ‌نمایی کنترل‌شده)',
+      desc_fa: 'تصویر پس از اعتبارسنجی، اصلاح جهت و برش خودکار، با درون‌یابی «high» به ابعاد ' +
+        scaled.w + '×' + scaled.h + ' پیکسل رسیده است (مقیاس ×' +
+        (Math.round(scaled.scale * 100) / 100) + '). شکل حروف و اعداد تغییر نمی‌کند؛ ' +
+        'فقط اندازه برای خواندن ماشینی مناسب می‌شود.',
+      canvas: scaled.canvas,
+      metrics: grayStats(scaled.grayData)
+    });
     var gray = scaled.grayData;
     var claheGray = clahe(gray, scaled.w, scaled.h,
       settings.clahe_clip_limit, settings.clahe_tile_size);
     variants[VARIANT_GRAY_CLAHE] = grayToCanvas(claheGray, scaled.w, scaled.h);
+    trace.push({
+      key: VARIANT_GRAY_CLAHE,
+      title_fa: 'خاکستری‌سازی + یکنواخت‌سازی هیستوگرام موضعی (CLAHE)',
+      desc_fa: 'هر پیکسل با میانگین وزنی کانال‌های رنگ (۲۹۹R، ۵۸۷G، ۱۱۴B) خاکستری می‌شود؛ ' +
+        'سپس هیستوگرام در کاشی‌های ' + settings.clahe_tile_size + '×' + settings.clahe_tile_size +
+        ' با محدودسازی کنتراست (clip=' + settings.clahe_clip_limit +
+        ') و درون‌یابی دوخطی یکنواخت می‌شود تا متن در سایه و انعکاس نور هم دیده شود.',
+      canvas: variants[VARIANT_GRAY_CLAHE],
+      metrics: grayStats(claheGray)
+    });
     // نسخه تیزشده: برای عکس‌های کمی نرم دوربین موبایل مؤثر است
     if (settings.use_sharpened_variant) {
       var sharp = sharpenGray(claheGray, scaled.w, scaled.h, 1.1);
       variants[VARIANT_SHARPENED] = grayToCanvas(sharp, scaled.w, scaled.h);
+      trace.push({
+        key: VARIANT_SHARPENED,
+        title_fa: 'تیزکردن لبه‌ها (ماسک تیزکننده — Unsharp Mask)',
+        desc_fa: 'مقدار جدید = خاکستری + ۱٫۱ × (خاکستری − میانگین همسایگی ۳×۳)؛ ' +
+          'لبه‌های نرم‌شدهٔ عکس دوربین موبایل دوباره برجسته می‌شود و OCR رقم‌های ریز را بهتر می‌خواند.',
+        canvas: variants[VARIANT_SHARPENED],
+        metrics: grayStats(sharp)
+      });
     }
     if (settings.use_binarized_variant) {
       var bw = binarize(gray, scaled.w, scaled.h, 31, 15);
       variants[VARIANT_BINARIZED] = grayToCanvas(bw, scaled.w, scaled.h);
+      trace.push({
+        key: VARIANT_BINARIZED,
+        title_fa: 'آستانه‌گذاری تطبیقی (سیاه‌وسفید)',
+        desc_fa: 'معادل adaptiveThreshold گاوسی: پنجرهٔ ۳۱×۳۱ محاسبه‌شده با تصویر انتگرالی؛ ' +
+          'هر پیکسل روشن‌تر از میانگین همسایگی منهای ۱۵ → سفید، بقیه → سیاه. ' +
+          'نویز پس‌زمینه و تنوع نور حذف می‌شود.',
+        canvas: variants[VARIANT_BINARIZED],
+        metrics: grayStats(bw)
+      });
     }
     // v1.7.0: نسخه متن-روشن-روی-تیره برای نام سفید روی جعبه‌های رنگی
     if (settings.use_white_on_dark_variant) {
       var wod = whiteOnDark(gray, scaled.w, scaled.h, 51, 12);
       variants[VARIANT_WHITE_ON_DARK] = grayToCanvas(wod, scaled.w, scaled.h);
+      trace.push({
+        key: VARIANT_WHITE_ON_DARK,
+        title_fa: 'آستانه‌گذاری ویژهٔ متن روشن روی زمینهٔ تیره',
+        desc_fa: 'پنجرهٔ ۵۱ با آستانهٔ جبرانی ۱۲ و پلاریتی معکوس؛ ' +
+          'نام سفید روی جعبهٔ رنگی به جوهر تیره روی زمینهٔ روشن تبدیل می‌شود ' +
+          '(موتور OCR پلاریتی متن را خودش تشخیص می‌دهد).',
+        canvas: variants[VARIANT_WHITE_ON_DARK],
+        metrics: grayStats(wod)
+      });
     }
     // v1.8.0: جداسازی جوهر رنگی — 255 − بیشینهٔ کانال؛ متن رنگی (آبی/بنفش/
     // قرمز) روی جعبه سفید به جوهر تیره روی زمینه روشن تبدیل می‌شود.
     if (settings.use_ink_isolated_variant) {
       var ink = inkIsolate(scaled.ctx, scaled.w, scaled.h);
       variants[VARIANT_INK_ISOLATED] = grayToCanvas(ink, scaled.w, scaled.h);
+      trace.push({
+        key: VARIANT_INK_ISOLATED,
+        title_fa: 'جداسازی جوهر رنگی (ink_isolated)',
+        desc_fa: 'هر پیکسل = ۲۵۵ − بیشینهٔ کانال‌های (آبی، سبز، قرمز)؛ ' +
+          'هر جوهر رنگی (آبی/بنفش/قرمز) به جوهر تیره روی زمینهٔ روشن تبدیل می‌شود — ' +
+          'مناسب بسته‌هایی که متنشان با رنگ چاپ شده است.',
+        canvas: variants[VARIANT_INK_ISOLATED],
+        metrics: grayStats(ink)
+      });
     }
     return {
       variants: variants,
       width: scaled.w,
       height: scaled.h,
       scale: scaled.scale,
-      grayData: gray
+      grayData: gray,
+      trace: trace
     };
   }
 

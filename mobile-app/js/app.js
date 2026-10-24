@@ -71,8 +71,21 @@
     imageW: 0,
     imageH: 0,
     result: null,
-    busy: false
+    busy: false,
+    // v2.7.0: شفافیت پایپ‌لاین — تصویر خروجی هر عملیات پیش‌پردازش + خوانش خام
+    // هر نسخهٔ پردازشی (همتای opencv_trace / variant_readings دسکتاپ v2.6.0)
+    opencvTrace: [],
+    variantReadings: []
   };
+
+  // تصویر هر گام برای نمایش: منبع (img/canvas) روی بوم جدید کشیده می‌شود
+  function traceCanvasFrom(source, w, h) {
+    var c = document.createElement('canvas');
+    c.width = Math.max(1, w || 1);
+    c.height = Math.max(1, h || 1);
+    c.getContext('2d', { willReadFrequently: true }).drawImage(source, 0, 0, c.width, c.height);
+    return c;
+  }
 
   // ---------- ابزارهای UI ----------
   function show(el) { el.classList.remove('hidden'); }
@@ -596,6 +609,11 @@
     var qualityIssues = [], qualityMetrics = null;
     var deskewApplied = false, deskewAngle = 0.0;
     var cropApplied = false, cropBox = null;
+    // v2.7.0: مسیر گام‌به‌گام OpenCV + خوانش خام هر نسخه — در هر پردازش از صفر
+    var opencvTrace = [];
+    var variantReadings = [];
+    state.opencvTrace = [];
+    state.variantReadings = [];
 
     Promise.resolve()
       .then(function () {
@@ -603,12 +621,31 @@
         // اعلام مرحله ۱ (OpenCV) — ملزومات استاد
         stageRun('opencv');
         setProgress(2, 'مرحله ۱ از ۵ — پیش‌پردازش OpenCV: ارزیابی کیفیت و اصلاح زاویه…');
+        // v2.7.0: گام ۰ — تصویر ورودی (پس از اعتبارسنجی) برای دیدن تغییرات بعدی
+        opencvTrace.push({
+          key: 'input',
+          title_fa: 'تصویر ورودی (پس از اعتبارسنجی)',
+          desc_fa: 'تصویری که از فایل یا دوربین آمده و از گیت‌های اعتبارسنجی (فرمت، ابعاد، حجم) عبور کرده است؛ ' +
+            'تمام عملیات‌های بعدی روی همین تصویر انجام می‌شود و خروجی هر عملیات در کارت بعدی دیده می‌شود.',
+          canvas: traceCanvasFrom(state.imageSource, state.imageW, state.imageH),
+          metrics: null
+        });
         var pre = LBR.preprocess.drawScaled(state.imageSource, state.imageW, state.imageH, settings);
         if (settings.deskew_max_angle_deg > 0) {
           setProgress(4, 'بررسی چرخش تصویر…');
           var dk = LBR.preprocess.autoDeskew(pre.canvas, settings);
           deskewApplied = dk.angle !== 0;
           deskewAngle = dk.angle;
+          if (deskewApplied) {
+            opencvTrace.push({
+              key: 'deskew',
+              title_fa: 'صاف‌کردن چرخش کم‌زاویه (auto-deskew)',
+              desc_fa: 'زاویهٔ ' + dk.angle + ' درجه با واریانس پروفایل افقی نسخهٔ دودویی برآورد شد و با چرخش معکوس اصلاح گردید؛ ' +
+                'سطرهای متن افقی می‌شوند تا خوانش OCR دقیق‌تر شود.',
+              canvas: dk.canvas,
+              metrics: null
+            });
+          }
           return dk.canvas;
         }
         return pre.canvas;
@@ -624,6 +661,16 @@
           baseCanvas = LBR.preprocess.cropCanvas(baseCanvas, det.box);
           cropApplied = true;
           cropBox = det.box;
+          // v2.7.0: گام برش — خروجی تصویری حذف پس‌زمینه
+          opencvTrace.push({
+            key: 'crop',
+            title_fa: 'حذف پس‌زمینه (تشخیص خودکار ناحیهٔ برچسب)',
+            desc_fa: 'جعبهٔ برچسب با پروفایل ردیف/ستون تصویر دودویی پیدا شد (' +
+              det.box.x + ',' + det.box.y + '، عرض ' + det.box.w + '، ارتفاع ' + det.box.h +
+              ') و فقط همین ناحیه پردازش می‌شود؛ نویز اطراف جعبه از مسیر OCR حذف شد.',
+            canvas: baseCanvas,
+            metrics: null
+          });
         }
         return baseCanvas;
       })
@@ -644,7 +691,8 @@
           outputs: [
             'ناحیه برچسب: ' + (cropApplied ? 'شناسایی و پس‌زمینه حذف شد ✅' : 'کل تصویر پردازش شد (جعبه جدا نشد)'),
             deskewApplied ? 'چرخش کم‌زاویه تصویر (' + deskewAngle + ' درجه) اصلاح شد ✅' : 'اصلاح زاویه لازم نبود',
-            'تصویر برای OCR بهبود داده شد (مقیاس + CLAHE + تیزکردن در گذر بعد)'
+            'تصویر برای OCR بهبود داده شد (مقیاس + CLAHE + تیزکردن در گذر بعد)',
+            '🔬 تصویر خروجی هر عملیات + خوانش خام OCR در بخش «دیدن کار OpenCV» نمایش داده می‌شود (v2.7.0)'
           ],
           metrics: [
             { n: 'تیزی (واریانس لاپلاسین)', v: qualityMetrics.laplacian_var, status: qualityMetrics.laplacian_var >= settings.severe_blur_threshold ? 'ok' : 'warn' },
@@ -690,21 +738,45 @@
                   var bv = pass1.byVariant;
                   if (y2.score > best.score) { best = y2; pick = 2; pieces = pass2.pieces; bv = pass2.byVariant; }
                   if (y3.score > best.score) { best = y3; pick = 3; pieces = pass3.pieces; bv = pass3.byVariant; }
+                  if (pick === 2) {
+                    opencvTrace.push({
+                      key: 'rotate90',
+                      title_fa: 'چرخش ۹۰ درجه ساعتگرد (تلاش جهت دوم)',
+                      desc_fa: 'خوانش در جهت اصلی کم‌بازده بود (امتیاز ' + y1.score + ')؛ تصویر ۹۰ درجه چرخید و نسخه‌های پردازشی از همین جهت ساخته شدند (امتیاز ' + y2.score + ').',
+                      canvas: cw,
+                      metrics: null
+                    });
+                  } else if (pick === 3) {
+                    opencvTrace.push({
+                      key: 'rotate90',
+                      title_fa: 'چرخش ۹۰ درجه پادساعتگرد (تلاش جهت سوم)',
+                      desc_fa: 'خوانش در جهت اصلی و چرخش ساعتگرد کم‌بازده بود؛ تصویر در جهت مخالف چرخید و نسخه‌های پردازشی از همین جهت ساخته شدند (امتیاز ' + y3.score + ').',
+                      canvas: ccw,
+                      metrics: null
+                    });
+                  }
                   return {
-                    pieces: pieces, byVariant: bv, built: pass1.built, attempts: 3,
+                    pieces: pieces, byVariant: bv, built: pick === 2 ? pass2.built : (pick === 3 ? pass3.built : pass1.built), attempts: 3,
                     note: 'تصویر در ' + (pick === 1 ? 'جهت اصلی' :
                       (pick === 2 ? 'چرخش ۹۰ درجه ساعتگرد' : 'چرخش ۹۰ درجه پادساعتگرد')) +
                       ' بهتر خوانده شد (امتیاز ' + best.score + ' در برابر ' + y1.score + ').'
                   };
                 });
               }
+              opencvTrace.push({
+                key: 'rotate90',
+                title_fa: 'چرخش ۹۰ درجه ساعتگرد (تلاش جهت دوم)',
+                desc_fa: 'خوانش در جهت اصلی کم‌بازده بود (امتیاز ' + y1.score + ')؛ تصویر ۹۰ درجه چرخید و در این جهت بهتر خوانده شد (امتیاز ' + y2.score + ')؛ نسخه‌های پردازشی بعدی از همین جهت ساخته شدند.',
+                canvas: cw,
+                metrics: null
+              });
               return {
-                pieces: pass2.pieces, byVariant: pass2.byVariant, built: pass1.built, attempts: 2,
+                pieces: pass2.pieces, byVariant: pass2.byVariant, built: pass2.built, attempts: 2,
                 note: 'تصویر در چرخش ۹۰ درجه ساعتگرد بهتر خوانده شد ' +
                   '(امتیاز ' + y2.score + ' در برابر ' + y1.score + ').'
               };
             });
-          });
+          })
       })
       .then(function (winner) {
         durations.ocr_ms = Math.round(performance.now() - t0) - (durations.preprocess_ms || 0);
@@ -722,6 +794,33 @@
             variantLine = 'مقایسه نسخه‌های پردازشی (ادغام بهترین-اول): ' + parts.join(' | ');
           }
         }
+        // v2.7.0: خوانش خام هر نسخهٔ پردازشی (قبل از ادغام و رأی‌گیری) — قطعه‌ها
+        // بر اساس مختصات (y,x) مرتب و به متن پیوسته تبدیل می‌شوند
+        if (winner.byVariant) {
+          Object.keys(winner.byVariant).forEach(function (k) {
+            // قطعه‌های ocr.js مختصات تخت (x,y) دارند؛ قطعه‌های پل bbox تودرتو
+            var ry = function (p) { return (p.bbox ? p.bbox.y : p.y) || 0; };
+            var rx = function (p) { return (p.bbox ? p.bbox.x : p.x) || 0; };
+            var vps = (winner.byVariant[k] || []).slice().sort(function (a, b) {
+              var dy = ry(a) - ry(b);
+              return dy !== 0 ? dy : rx(a) - rx(b);
+            });
+            var confs = vps.filter(function (p) {
+              return p.confidence !== null && p.confidence !== undefined;
+            }).map(function (p) { return p.confidence; });
+            variantReadings.push({
+              variant: k,
+              text: vps.map(function (p) { return p.text || ''; }).join(' ').trim(),
+              pieces: vps.length,
+              mean_conf: confs.length ?
+                Math.round(confs.reduce(function (s, c) { return s + c; }, 0) / confs.length * 100) / 100 : null
+            });
+          });
+        }
+        // v2.7.0: مسیر گام‌به‌گام OpenCV از گذر برنده + اعلام در state برای رندر
+        opencvTrace = opencvTrace.concat(winner.built.trace || []);
+        state.opencvTrace = opencvTrace;
+        state.variantReadings = variantReadings;
         stageDone('ocr', {
           status: st2.pieces === 0 ? 'fail' : ((st2.mean_conf !== null && st2.mean_conf < 0.6) ? 'warn' : 'done'),
           duration_ms: durations.ocr_ms,
@@ -896,10 +995,102 @@
     // JSON
     $('json-pre').textContent = JSON.stringify(resultToJson(result), null, 2);
 
+    // v2.7.0: دیدن کار OpenCV و خوانش خام OCR (گام‌به‌گام)
+    renderOpenCvTrace();
+
     // دکمه اشتراک در صورت پشتیبانی
     if (navigator.share) show($('btn-share'));
 
     $('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ---------- v2.7.0: دیدن کار OpenCV و خوانش خام OCR (گام‌به‌گام) ----------
+  // همتای بخش «🔬 دیدن کار OpenCV» نسخهٔ دسکتاپ (v2.6.0): تصویر خروجی هر
+  // عملیات پیش‌پردازش با توضیح فارسی + متن خامی که OCR از هر نسخه خوانده است.
+  var VARIANT_FA = {
+    original: 'نسخهٔ اصلی',
+    gray_clahe: 'خاکستری + CLAHE',
+    sharpened: 'تیزشده',
+    binarized: 'دودویی (سیاه‌وسفید)',
+    white_on_dark: 'متن روشن روی زمینهٔ تیره',
+    ink_isolated: 'جوهر جداشدهٔ رنگی',
+    bridge: 'خوانش پل دسکتاپ'
+  };
+
+  function cvChip(text) {
+    var s = document.createElement('span');
+    s.className = 'cv-chip';
+    s.textContent = text;
+    return s;
+  }
+
+  function renderOpenCvTrace() {
+    var box = $('opencv-trace-box');
+    var list = $('opencv-trace-list');
+    var rlist = $('variant-readings-list');
+    var trace = state.opencvTrace || [];
+    var readings = state.variantReadings || [];
+    list.innerHTML = '';
+    rlist.innerHTML = '';
+    if (!trace.length && !readings.length) { hide(box); return; }
+    show(box);
+    // گام‌های پیش‌پردازش — تصویر خروجی هر عملیات + شرح عین همان عملیات
+    trace.forEach(function (step, i) {
+      var card = document.createElement('div');
+      card.className = 'cv-step';
+      var head = document.createElement('div');
+      head.className = 'cv-step-head';
+      var t = document.createElement('span');
+      t.className = 'cv-step-title';
+      t.textContent = 'گام ' + i + ' — ' + step.title_fa;
+      head.appendChild(t);
+      if (step.metrics) {
+        head.appendChild(cvChip('روشنایی ≈ ' + step.metrics.brightness));
+        head.appendChild(cvChip('کنتراست ≈ ' + step.metrics.contrast));
+      }
+      card.appendChild(head);
+      var d = document.createElement('p');
+      d.className = 'cv-step-desc';
+      d.textContent = step.desc_fa;
+      card.appendChild(d);
+      if (step.canvas) {
+        var wrap = document.createElement('div');
+        wrap.className = 'cv-step-imgwrap';
+        var c = step.canvas;
+        c.className = 'cv-step-img';
+        c.setAttribute('role', 'img');
+        c.setAttribute('aria-label', 'خروجی تصویری گام: ' + step.title_fa);
+        wrap.appendChild(c);
+        card.appendChild(wrap);
+      }
+      list.appendChild(card);
+    });
+    // خوانش خام هر نسخهٔ پردازشی (قبل از ادغام بهترین-اول و رأی‌گیری)
+    readings.forEach(function (r) {
+      var card = document.createElement('div');
+      card.className = 'vr-card';
+      var head = document.createElement('div');
+      head.className = 'cv-step-head';
+      var t = document.createElement('span');
+      t.className = 'cv-step-title';
+      t.textContent = 'خوانش خام نسخهٔ «' + (VARIANT_FA[r.variant] || r.variant) + '»';
+      head.appendChild(t);
+      head.appendChild(cvChip(r.pieces + ' قطعه'));
+      head.appendChild(cvChip(r.mean_conf === null ? 'اطمینان: —' : 'اطمینان میانگین ≈ ' + Math.round(r.mean_conf * 100) + '٪'));
+      card.appendChild(head);
+      var pre = document.createElement('p');
+      pre.className = 'vr-text';
+      pre.dir = 'auto';
+      pre.textContent = r.text ? r.text : '— این نسخه چیزی نخواند (ممکن است همهٔ قطعه‌هایش در گیت کیفیت رد شده باشند).';
+      card.appendChild(pre);
+      rlist.appendChild(card);
+    });
+    if (!readings.length) {
+      var none = document.createElement('p');
+      none.className = 'hint';
+      none.textContent = 'خوانش خام به‌تفکیک نسخه فقط با موتورهای مرورگری در دسترس است (در پل دسکتاپ، قطعه‌ها با برچسب «پل» در شواهد دیده می‌شوند).';
+      rlist.appendChild(none);
+    }
   }
 
   function escapeHtml(s) {

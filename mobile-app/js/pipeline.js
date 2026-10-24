@@ -665,7 +665,7 @@
         warnings_fa: extra.warningsFa || [],
         notes_fa: notes,
         timestamp_utc: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
-        app_version: '1.7.0-mobile'
+        app_version: '2.7.0-mobile'
       }
     };
   }

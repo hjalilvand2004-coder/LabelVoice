@@ -982,3 +982,37 @@ body.help-open { overflow: hidden; }
 }
 html.dark .models-table thead th { background: var(--surface-2, #14293d); }
 html.dark .models-table td code { background: var(--surface-2, #14293d); }
+
+/* ---------- ۲۰) دیدن کار OpenCV و خوانش خام OCR (v2.7.0 — شفافیت پایپ‌لاین) ---------- */
+#opencv-trace-box { margin-top: 1.2rem; }
+.cv-subtitle { margin: .9rem 0 .5rem; font-size: .86rem; color: var(--text); opacity: .85; }
+.cv-trace-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: .7rem; margin-top: .5rem;
+}
+.cv-step, .vr-card {
+  border: 1px solid var(--border); border-radius: var(--radius-md, 12px);
+  background: var(--surface, #fff); padding: .65rem .7rem; min-width: 0;
+}
+.cv-step-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .35rem;
+  margin-bottom: .35rem;
+}
+.cv-step-title { font-weight: 700; font-size: .8rem; color: var(--text); }
+.cv-chip {
+  font-size: .66rem; background: var(--gray-bg, #eef4fb); color: var(--text-soft, #475569);
+  border-radius: 999px; padding: .1rem .5rem; white-space: nowrap;
+}
+.cv-step-desc { font-size: .72rem; line-height: 1.9; color: var(--text-soft); margin: 0 0 .5rem; }
+.cv-step-imgwrap {
+  border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  background: #fff; line-height: 0;
+}
+.cv-step-img { width: 100%; height: auto; display: block; }
+.vr-text {
+  font-size: .74rem; line-height: 2; white-space: pre-wrap; word-break: break-word;
+  background: var(--gray-bg, #f8fafc); border-radius: 8px; padding: .5rem .6rem; margin: 0;
+}
+html.dark .cv-step, html.dark .vr-card { background: var(--surface-2, #14293d); }
+html.dark .cv-step-imgwrap { background: #0b1c2c; }
+html.dark .vr-text { background: rgba(255,255,255,.06); }
