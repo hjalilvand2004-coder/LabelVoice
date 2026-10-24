@@ -59,6 +59,7 @@ with zipfile.ZipFile(mobile_zip, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as 
     skip = {
         "label-reader-singlefile.html", "START-WINDOWS.bat",
         "server-windows.ps1", "شروع-در-ویندوز.bat", "شروع-در-لینوکس-مک.sh",
+        "START-BRIDGE.bat", "START-BRIDGE.sh",
     }
     for p in MOBILE.rglob("*"):
         if p.is_dir():
