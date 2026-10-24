@@ -7,11 +7,14 @@ from .base import OcrProvider, OcrUnavailableError
 from .easyocr_provider import EasyOcrProvider
 from .surya_provider import SuryaProvider
 from .tesseract_provider import TesseractProvider
+from .vlm_provider import QwenVlmProvider
 
 _PROVIDERS = {
     "tesseract": TesseractProvider,
     "easyocr": EasyOcrProvider,
     "surya": SuryaProvider,
+    # v2.3.0: موتور چهارم قابل انتخاب — Qwen/Qwen3-VL-2B-Instruct
+    "qwen3-vl": QwenVlmProvider,
 }
 
 
@@ -30,7 +33,7 @@ def make_provider(name: str, settings: Settings) -> OcrProvider:
     if cls is None:
         raise OcrUnavailableError(
             f"موتور OCR ناشناخته است: {name} "
-            f"(گزینه‌ها: tesseract، easyocr، surya، auto)")
+            f"(گزینه‌ها: tesseract، easyocr، surya، qwen3-vl، auto)")
     provider = cls(settings)
     ok, hint = provider.available()
     if not ok:

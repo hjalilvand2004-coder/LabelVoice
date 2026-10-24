@@ -16,7 +16,7 @@ HELP_CONTENT = {
 |---|---|---|---|
 | ۱. تصویر بسته‌بندی | دریافت، اعتبارسنجی (magic bytes، حجم، ابعاد) | `app.py` + `label_reader/validation.py` | `mobile-app/js/app.js` + `js/camera.js` |
 | ۲. OpenCV | تشخیص ناحیه برچسب، اصلاح زاویه، بهبود وضوح | `label_reader/preprocess.py` + `quality.py` | `mobile-app/js/preprocess.js` + `js/boxdetect.js` |
-| ۳. OCR | استخراج نام، اعداد و متن بسته‌بندی | `label_reader/ocr/*` (Tesseract 5 + EasyOCR + Surya اختیاری) | `mobile-app/js/ocr.js` (Tesseract.js/WASM) |
+| ۳. OCR | استخراج نام، اعداد و متن بسته‌بندی | `label_reader/ocr/*` (Tesseract 5 + EasyOCR + Surya + Qwen3-VL — همه به انتخاب کاربر) | `mobile-app/js/ocr.js` (Tesseract.js/WASM) |
 | ۴. پردازش متن و کنترل فیلدها | نرمال‌سازی نام، استخراج قدرت و تعداد درج‌شده | `label_reader/textnorm.py` + `extraction/*` | `mobile-app/js/textnorm.js` + `js/patterns.js` + `js/extractor.js` |
 | ۵. پاسخ فارسی + خوانش | بازگویی وفادار به متن + TTS | `label_reader/response/*` + `tts/*` | `mobile-app/js/responder.js` + `js/guard.js` |
 
@@ -28,7 +28,7 @@ HELP_CONTENT = {
   خوانش‌های تک‌منبعِ کم‌اطمینان حذف می‌شوند.
 - **موتور دوم مکمل**: EasyOCR نواحی ناخوانا را پر می‌کند (دسکتاپ).
 
-**کتابخانه‌ها:** opencv-python، pytesseract، easyocr (اختیاری)، surya-ocr (اختیاری)، pydantic، streamlit,
+**کتابخانه‌ها:** opencv-python، pytesseract، easyocr (اختیاری)، surya-ocr (اختیاری)، transformers+accelerate (برای Qwen3-VL اختیاری)، pydantic، streamlit,
 edge-tts، gTTS، Pillow (دسکتاپ) — Tesseract.js 6، Web Speech API،
 Vazirmatn (موبایل) — pytest، Node test runner (آزمون).
 
@@ -112,6 +112,17 @@ Vazirmatn (موبایل) — pytest، Node test runner (آزمون).
   «Surya» را انتخاب کنید؛ نصب: `pip install surya-ocr`. اولین اجرا وزن مدل‌ها
   را از Hugging Face دانلود می‌کند. خروجی سوریا از همان گیت کیفیت و رأی
   اجماعی عبور می‌کند و در خط‌زمان مراحل با نام خودش اعلام می‌شود.
+- **Qwen3-VL-2B-Instruct (v2.3.0 — اختیاری به انتخاب کاربر):** موتور چهارم
+  خوانش — مدل زبانی-بینایی Qwen/Qwen3-VL-2B-Instruct که کل تصویر را یکجا
+  سطر به سطر می‌خواند. در سایدبار گزینهٔ «Qwen3-VL» را انتخاب کنید؛ نصب:
+  `pip install "transformers>=4.57" accelerate` (نخستین اجرا ~۴-۵ گیگابایت
+  دانلود می‌کند و پس از آن آفلاین است). خروجی آن از همان گیت کیفیت و رأی
+  اجماعی عبور می‌کند؛ اگر همین مدل موتور اصلی باشد، دستیار مکمل دیگر دوباره
+  اجرا نمی‌شود.
+- **خلاصهٔ انتخاب موتور:** کاربر در سایدبار یکی از پنج گزینه را برمی‌گزیند —
+  Tesseract 5 (پیش‌فرض) · EasyOCR · Surya · Qwen3-VL-2B-Instruct · خودکار.
+  همهٔ موتورها همان خط پردازش مشترک (گیت کیفیت + رأی اجماعی + استخراج فیلد)
+  را طی می‌کنند و هر فیلد به شواهد همان موتورِ منتخب ردیابی‌پذیر است.
 - **واریانت‌های پیش‌پردازش:** اصلی، خاکستری+CLAHE، دودویی، سفید-روی-تیره، و
   جداسازی جوهر رنگی (255−max کانال) برای متن رنگی روی جعبه سفید.
 - **رأی‌گیری اجماعی:** هر ناحیه از چند پیکربندی (واریانت×PSM×موتور) خوانده
@@ -132,6 +143,7 @@ Vazirmatn (موبایل) — pytest، Node test runner (آزمون).
 | خواندن متن (موتور اول) | **Tesseract 5** — دادهٔ زبان `fas+eng` | گذرهای زبانی جدا + PSM 3/6/11 |
 | خواندن متن (موتور دوم) | **EasyOCR** — CRNN (fa+en) | اختیاری؛ مشارکت در رأی اجماعی |
 | خواندن متن (موتور سوم) | **Surya** — ترنسفورمری چندزبانه شامل فارسی | اختیاری؛ فقط به انتخاب کاربر؛ `pip install surya-ocr` |
+| خواندن متن (موتور چهارم) | **Qwen/Qwen3-VL-2B-Instruct** — مدل زبانی-بینایی | اختیاری؛ فقط به انتخاب کاربر (v2.3.0)؛ کل تصویر را یکجا می‌خواند؛ `pip install "transformers>=4.57" accelerate` |
 | دستیار خوانش دوم | **Qwen/Qwen3-VL-2B-Instruct** | اختیاری و پیش‌فرض خاموش؛ اجرای کاملاً محلی با transformers؛ فقط سطرهای تازه با شناسهٔ شاهد `vlm-*` |
 | پردازش متن و فیلدها | **الگوها و قواعد فارسی** (بدون مدل زبانی) | regex دو زبانه + گیت کیفیت + رأی اجماعی |
 | تولید پاسخ فارسی | **قالب‌ساز قاعده‌محور + نگهبان ایمنی** | بدون مدل ابری؛ (اختیاری) LLM سازگار با OpenAI API با تنظیم `LBR_LLM_*` |
@@ -142,6 +154,8 @@ Vazirmatn (موبایل) — pytest، Node test runner (آزمون).
 فعال‌سازی دستیار Qwen3-VL (اختیاری): `pip install "transformers>=4.57" accelerate`
 سپس در سایدبار «دستیار خوانش Qwen3-VL» را روشن کنید؛ مدل در نخستین اجرا از
 Hugging Face دانلود (~۴ تا ۵ گیگابایت) و پس از آن کاملاً آفلاین اجرا می‌شود.
+برای خوانش کامل با این مدل (v2.3.0): در «موتور OCR» گزینهٔ «Qwen3-VL-2B-Instruct»
+را انتخاب کنید — همان مدل کل تصویر را به‌عنوان موتور اصلی می‌خواند.
 فعال‌سازی Surya (اختیاری): `pip install surya-ocr` و انتخاب گزینهٔ «Surya»
 در سایدبار — مدل‌ها در نخستین اجرا دانلود و پس از آن آفلاین اجرا می‌شوند.
 پیاده‌سازی رجیستری: `label_reader/models_info.py` — تک‌منبع حقیقت شفافیت.

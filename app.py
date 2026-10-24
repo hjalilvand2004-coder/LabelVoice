@@ -106,21 +106,25 @@ with st.sidebar:
 
     st.divider()
     st.subheader("⚙️ تنظیمات پردازش")
-    _engine_opts = ["tesseract", "easyocr", "surya", "auto"]
+    _engine_opts = ["tesseract", "easyocr", "surya", "qwen3-vl", "auto"]
     engine_choice = st.radio(
-        "موتور OCR",
+        "موتور OCR — مدل خوانندهٔ متن را انتخاب کنید",
         _engine_opts,
         index=_engine_opts.index(settings.ocr_provider)
         if settings.ocr_provider in _engine_opts else 0,
         format_func=lambda v: {
-            "tesseract": "Tesseract (سبک — پیش‌فرض)",
-            "easyocr": "EasyOCR (عمیق — اختیاری)",
-            "surya": "Surya (ترنسفورمری — اختیاری)",
-            "auto": "خودکار",
+            "tesseract": "Tesseract 5 (سبک و سریع — پیش‌فرض)",
+            "easyocr": "EasyOCR — CRNN (عمیق — اختیاری)",
+            "surya": "Surya OCR — ترنسفورمری (اختیاری)",
+            "qwen3-vl": "Qwen3-VL-2B-Instruct — مدل زبانی-بینایی (اختیاری)",
+            "auto": "خودکار (اولین موتور در دسترس)",
         }.get(v, v),
-        help="tesseract سبک و سریع است؛ easyocr مدل عمیق CRNN با نصب سنگین‌تر؛ "
-             "surya موتور سوم ترنسفورمری است (به انتخاب کاربر؛ اولین اجرا وزن "
-             "مدل‌ها را دانلود می‌کند). هر سه از همان گیت کیفیت و رأی اجماعی عبور می‌کنند.",
+        help="هر موتور کل متن را می‌خواند و خروجی‌اش از همان گیت کیفیت و "
+             "رأی اجماعی عبور می‌کند: tesseract سبک و سریع است؛ easyocr مدل "
+             "عمیق CRNN با نصب سنگین‌تر؛ surya موتور ترنسفورمری چندزبانه؛ "
+             "qwen3-vl مدل زبانی-بینایی Qwen/Qwen3-VL-2B-Instruct است که کل "
+             "تصویر را یکجا می‌خواند (اولین اجرا وزن مدل را دانلود می‌کند). "
+             "در نسخهٔ مرورگر/موبایل همیشه Tesseract.js روی WASM اجرا می‌شود.",
     )
     voice = st.selectbox("صدای فارسی (edge-tts)", ["fa-IR-FaridNeural", "fa-IR-DilaraNeural"])
     rate = st.select_slider("سرعت خوانش", ["-15%", "-5%", "+0%", "+10%", "+20%"], value="+0%")
@@ -155,6 +159,9 @@ with st.sidebar:
         pass
     if vlm_on and not _vlm_ok:
         st.caption("⛔ " + _vlm_note)
+    elif vlm_on and engine_choice == "qwen3-vl":
+        st.caption("ℹ️ چون Qwen3-VL را به‌عنوان موتور اصلی خوانش انتخاب کرده‌اید، "
+                   "دستیار مکمل اجرای دوباره نمی‌شود — کل تصویر یکجا با همین مدل خوانده شده است.")
 
     st.subheader("🎨 نمایش")
     if st.toggle("🌙 حالت تاریک", key="dark_mode",

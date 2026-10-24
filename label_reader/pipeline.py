@@ -136,12 +136,18 @@ class LabelReaderPipeline:
         provider = self._resolve_provider(ocr_engine)
         # v2.2.0: سوریا سنگین است — فقط نسخه‌های تنظیم‌شده اجرا می‌شوند
         # (پیش‌فرض: original,gray_clahe)؛ «original» همیشه حاضر است.
-        surya_variant_set: set[str] | None = None
+        # v2.3.0: qwen3-vl هم کل تصویر را یکجا می‌خواند — فقط «original».
+        restricted_variant_set: set[str] | None = None
         if provider.name == "surya":
             _sv = str(getattr(self.settings, "surya_variants",
                               "original,gray_clahe"))
-            surya_variant_set = (
+            restricted_variant_set = (
                 {n.strip() for n in _sv.split(",") if n.strip()}
+                | {VARIANT_ORIGINAL})
+        elif provider.name == "qwen3-vl":
+            _vv = str(getattr(self.settings, "vlm_variants", VARIANT_ORIGINAL))
+            restricted_variant_set = (
+                {n.strip() for n in _vv.split(",") if n.strip()}
                 | {VARIANT_ORIGINAL})
         by_variant: dict[str, list] = {}
         for name, image in variants.items():
@@ -151,8 +157,8 @@ class LabelReaderPipeline:
                              for p in vps if p.confidence is not None]
                 if mean_conf and float(np.mean(mean_conf)) >= 0.8:
                     continue
-            if (surya_variant_set is not None
-                    and name not in surya_variant_set):
+            if (restricted_variant_set is not None
+                    and name not in restricted_variant_set):
                 continue
             by_variant[name] = self._filter_pieces(
                 provider.run(image, name),
@@ -212,7 +218,10 @@ class LabelReaderPipeline:
         # رد می‌شود؛ دستیار هرگز پردازش اصلی را نمی‌شکند.
         vlm_lines_added = 0
         vlm_note = ""
-        if getattr(self.settings, "vlm_assist", False):
+        # v2.3.0: اگر Qwen3-VL خودش موتور اصلی است، دستیار دوباره اجرا نمی‌شود
+        # (همان مدل قبلاً کل تصویر را خوانده).
+        if (getattr(self.settings, "vlm_assist", False)
+                and provider.name != "qwen3-vl"):
             try:
                 from .ocr.vlm_provider import QwenVlmProvider
                 _vlm = QwenVlmProvider(self.settings)

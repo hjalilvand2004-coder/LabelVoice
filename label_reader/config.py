@@ -43,7 +43,9 @@ class Settings(BaseSettings):
     use_ink_isolated_variant: bool = True
 
     # ---------- OCR ----------
-    # tesseract | easyocr | surya | auto (اولین موتور در دسترس)
+    # tesseract | easyocr | surya | qwen3-vl | auto (اولین موتور در دسترس)
+    # v2.3.0: qwen3-vl (Qwen/Qwen3-VL-2B-Instruct) هم به‌عنوان موتور اصلی
+    # قابل انتخاب است — علاوه بر نقش دستیار مکمل آن.
     ocr_provider: str = "tesseract"
     tessdata_dir: Path = PROJECT_ROOT / "models" / "tessdata"
     ocr_languages: str = "fas+eng"
@@ -109,6 +111,9 @@ class Settings(BaseSettings):
     vlm_assist: bool = False
     vlm_model_id: str = "Qwen/Qwen3-VL-2B-Instruct"
     vlm_max_lines: int = 60
+    # v2.3.0: وقتی Qwen3-VL موتور اصلی است، مدل کل تصویر را یکجا می‌خواند؛
+    # فقط این نسخه‌ها اجرا می‌شوند (سنگین است؛ یکی کافی است).
+    vlm_variants: str = "original"
 
 
 def load_settings() -> Settings:

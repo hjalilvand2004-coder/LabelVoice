@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
-"""دستیار خوانش دوم با مدل زبانی-بینایی (اختیاری — پیش‌فرض خاموش) — v2.0.0.
+"""موتور چهارم خوانش (قابل انتخاب کاربر) و دستیار مکمل — Qwen3-VL-2B-Instruct.
 
-مدل رسمی این دستیار: Qwen/Qwen3-VL-2B-Instruct (اجرای کاملاً محلی).
+مدل رسمی: Qwen/Qwen3-VL-2B-Instruct (اجرای کاملاً محلی با transformers).
+
+v2.3.0: این مدل علاوه بر نقش «دستیار مکمل» (v2.0.0)، حالا به‌عنوان
+«موتور اصلی خوانش» هم قابل انتخاب است — کاربر در سایدبار گزینهٔ
+«Qwen3-VL» را برمی‌گزیند و کل خوانش با همین مدل انجام می‌شود.
 
 قراردادهای مهم:
 - این ماژول lazy import می‌کند؛ نبود transformers/torch مسیر اصلی را نمی‌شکند.
 - خروجی فقط «بازنویسی وفادار به متنِ روی تصویر» است؛ مدل اجازه ندارد هیچ
   توصیه، دوز مصرف یا اطلاعاتی خارج از تصویر اضافه کند (سیستم‌پرامپت قید شده).
 - سطرهای خروجی با شناسهٔ شاهد «vlm-*» وارد می‌شوند تا ردیابی‌پذیری حفظ شود و
-  کاربر بداند این سطرها از دستیار بینایی آمده است.
+  کاربر بداند این سطرها از مدل بینایی آمده است.
 - اطمینان VLM «تخمینی» است (مدل‌های زبانی-بینایی عدد اطمینان کلاسیک ندارند)؛
   مقدار محافظه‌کارانهٔ VLM_CONFIDENCE_ESTIMATE ثبت می‌شود.
 """
@@ -17,7 +21,7 @@ from __future__ import annotations
 import numpy as np
 
 from ..config import Settings
-from .base import OcrUnavailableError
+from .base import OcrProvider, OcrRaw, OcrUnavailableError
 
 VLM_MODEL_ID = "Qwen/Qwen3-VL-2B-Instruct"
 VLM_CONFIDENCE_ESTIMATE = 0.60  # تخمین محافظه‌کارانه — در رابط «تخمینی» علامت می‌خورد
@@ -34,8 +38,12 @@ VLM_SYSTEM_PROMPT_FA = (
 )
 
 
-class QwenVlmProvider:
-    """پوشش مدل Qwen3-VL-2B-Instruct برای خوانش مکمل برچسب (کاملاً محلی)."""
+class QwenVlmProvider(OcrProvider):
+    """موتور/دستیار Qwen3-VL-2B-Instruct برای خوانش برچسب (کاملاً محلی).
+
+    v2.3.0: رابط کامل OcrProvider پیاده شد تا کاربر بتواند این مدل را
+    به‌عنوان موتور اصلی خوانش در سایدبار انتخاب کند (make_provider).
+    """
 
     name = "qwen3-vl"
     model_id = VLM_MODEL_ID
@@ -131,8 +139,23 @@ class QwenVlmProvider:
             lines.append({"text": t, "confidence": VLM_CONFIDENCE_ESTIMATE})
         return lines
 
-    # ---------- سازگاری با رابط OcrProvider (برای آزمون/تعویض‌پذیری) ----------
+    # ---------- رابط کامل OcrProvider (v2.3.0 — موتور اصلی قابل انتخاب) ----------
     def run(self, image_bgr: np.ndarray, variant: str) -> list:
-        """سازگاری ظاهری با رابط موتورها؛ برای دستیار استفاده نمی‌شود."""
-        raise OcrUnavailableError(
-            "دستیار بینایی جایگزین موتور OCR نیست؛ از read_lines استفاده کنید.")
+        """اجرای خوانش کامل با Qwen3-VL به‌عنوان موتور اصلی.
+
+        خروجی سطرهای مدل به قطعه‌های OcrRaw تبدیل می‌شود تا از همان
+        گیت کیفیت، ادغام بهترین-اول و رأی اجماعیِ موتورهای دیگر عبور کند.
+        مدل تصویر را یکجا (سطر به سطر) می‌خواند؛ کادر مکانی ندارد و
+        مختصات صفر ثبت می‌شود (گیت کیفیت روی متن/اطمینان قضاوت می‌کند).
+        """
+        lines = self.read_lines(image_bgr)
+        return [
+            OcrRaw(
+                text=line.get("text") or "",
+                confidence=line.get("confidence"),
+                x=0, y=0, w=0, h=0,
+                variant=variant,
+                engine=self.name,
+            )
+            for line in lines
+        ]

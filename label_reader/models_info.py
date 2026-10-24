@@ -130,10 +130,19 @@ MODEL_REGISTRY: list[dict] = [
         "optional": True,
     },
     {
+        "stage_fa": "۲. خواندن متن (OCR — موتور چهارم به انتخاب کاربر)",
+        "model": f"مدل زبانی-بینایی {VLM_MODEL_ID}",
+        "runtime": "qwen3-vl",
+        "role_fa": "گزینهٔ چهارم خوانش به انتخاب صریح کاربر (v2.3.0)؛ کل تصویر را یکجا سطر به سطر می‌خواند؛ خروجی با همان گیت کیفیت و رأی اجماعی ادغام می‌شود (فقط دسکتاپ)",
+        "where": "label_reader/ocr/vlm_provider.py",
+        "privacy_fa": "اجرای کاملاً محلی (پس از دانلود اولیهٔ وزن از Hugging Face)",
+        "optional": True,
+    },
+    {
         "stage_fa": "۲. دستیار خوانش دوم (اختیاری)",
         "model": f"مدل زبانی-بینایی {VLM_MODEL_ID}",
         "runtime": "vlm",
-        "role_fa": "خوانش مکمل سطرهایی که OCR از دست داده؛ فقط سطرهای تازه (بدون تکرار) با شناسهٔ شاهد vlm-* اضافه می‌شود",
+        "role_fa": "خوانش مکمل سطرهایی که OCR از دست داده؛ فقط سطرهای تازه (بدون تکرار) با شناسهٔ شاهد vlm-* اضافه می‌شود؛ وقتی همین مدل موتور اصلی است دوباره اجرا نمی‌شود",
         "where": "label_reader/ocr/vlm_provider.py",
         "privacy_fa": "اجرای کاملاً محلی؛ پیش‌فرض خاموش",
         "optional": True,
@@ -193,13 +202,13 @@ def models_table_rows() -> list[dict]:
     for m in MODEL_REGISTRY:
         if m["runtime"] is None:
             version = "— (قاعده‌محور، بدون مدل)"
-        elif m["runtime"] == "vlm":
+        elif m["runtime"] in ("vlm", "qwen3-vl"):
             ok, note = vlm_available()
             version = ("نصب و آماده ✅" if ok else
                        f"نصب نشده (اختیاری) — {note}")
         else:
             version = ver.get(m["runtime"], "نامشخص")
-        if m["runtime"] in ("easyocr", "surya") and version.startswith("نصب نشده"):
+        if m["runtime"] in ("easyocr", "surya", "qwen3-vl") and version.startswith("نصب نشده"):
             version = "اختیاری — " + version
         rows.append({
             "مرحله": m["stage_fa"],
@@ -222,12 +231,12 @@ def models_markdown_fa() -> str:
     for m in MODEL_REGISTRY:
         if m["runtime"] is None:
             version = "قاعده‌محور (بدون مدل)"
-        elif m["runtime"] == "vlm":
+        elif m["runtime"] in ("vlm", "qwen3-vl"):
             ok, _ = vlm_available()
             version = "نصب و آماده" if ok else "اختیاری — نصب نشده"
         else:
             version = ver.get(m["runtime"], "نامشخص")
-        if m["runtime"] in ("easyocr", "surya") and version.startswith("نصب نشده"):
+        if m["runtime"] in ("easyocr", "surya", "qwen3-vl") and version.startswith("نصب نشده"):
             version = "اختیاری — نصب نشده"
         lines.append(f"| {m['stage_fa']} | {m['model']} | {m['role_fa']} | {version} |")
     return "\n".join(lines)
