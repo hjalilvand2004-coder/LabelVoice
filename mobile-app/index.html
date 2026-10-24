@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0d7377">
+<meta name="theme-color" content="#0a1e33">
 <meta name="description" content="برچسب‌خوان هوشمند دارو و محصولات — نسخه موبایل؛ همه پردازش‌ها روی همین دستگاه انجام می‌شود.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,7 +12,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>برچسب‌خوان هوشمند دارو و محصولات</title>
-<link rel="stylesheet" href="css/style.css?v=1.8.3">
+<link rel="stylesheet" href="css/style.css?v=1.9.0">
 <script>
 /* اعمال زودهنگام حالت تاریک دستی (قبل از اولین رندر) — v1.8.2 */
 try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.classList.add('dark'); } catch (e) { /* نادیده */ }
@@ -31,28 +31,28 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
   </div>
   <nav class="sb-nav" aria-label="بخش‌های برنامه">
     <button type="button" class="snav-btn active" data-page="page-read">
-      <span class="snav-ic" aria-hidden="true">💊</span> خواندن دارو
+      <span class="snav-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6.3" y="2.9" width="11.5" height="18.2" rx="5.75" transform="rotate(45 12 12)"/><line x1="8.2" y1="15.8" x2="15.8" y2="8.2"/></svg></span> خواندن دارو
     </button>
     <button type="button" class="snav-btn" data-page="page-reports">
-      <span class="snav-ic" aria-hidden="true">📊</span> گزارشات و ارزیابی
+      <span class="snav-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> گزارشات و ارزیابی
     </button>
     <button type="button" class="snav-btn" data-page="page-docs">
-      <span class="snav-ic" aria-hidden="true">📚</span> راهنما و مستندات
+      <span class="snav-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> راهنما و مستندات
     </button>
     <button type="button" class="snav-btn" data-page="page-about">
-      <span class="snav-ic" aria-hidden="true">👥</span> دربارهٔ طراحان
+      <span class="snav-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> دربارهٔ طراحان
     </button>
   </nav>
   <div class="sb-group">
-    <div class="sb-group-title">🎨 نمایش</div>
+    <div class="sb-group-title">نمایش</div>
     <label class="sb-switch">
       <input type="checkbox" id="dark-toggle">
-      <span>🌙 حالت تاریک</span>
+      <span>حالت تاریک</span>
     </label>
   </div>
   <div class="sb-foot">
-    <div class="sb-ver">نسخهٔ وب ۱.۸.۳</div>
-    <div>👨‍💻 حمید جلیلوند و نوید بدری</div>
+    <div class="sb-ver">نسخهٔ وب ۱.۹.۰</div>
+    <div>حمید جلیلوند و نوید بدری</div>
     <div>همه پردازش‌ها روی همین دستگاه</div>
   </div>
 </aside>
@@ -63,7 +63,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     <div>
       <h1>برچسب‌خوان هوشمند</h1>
       <p class="subtitle">نسخهٔ وب قابل حمل — خواندن متن بسته، بدون ارسال هیچ داده‌ای</p>
-      <p class="authors">👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
+      <p class="authors">توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
     </div>
     <button type="button" class="help-btn header-help" data-help="about" aria-label="درباره برنامه و فناوری‌ها">؟</button>
   </div>
@@ -138,11 +138,11 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     </div>
     <!-- اعلام مرحله‌به‌مرحله پردازش و ارزیابی مرحله‌ای (v1.6.0) -->
     <div id="stages-box" class="stages-box hidden" aria-live="polite">
-      <h3 class="stages-title">🧭 اعلام مراحل پردازش (مطابق ملزومات استاد)</h3>
+      <h3 class="stages-title">اعلام مراحل پردازش (مطابق ملزومات استاد)</h3>
       <p class="stages-hint">تکمیل هر مرحله از ۵ مرحله نمودار معماری استاد اعلام می‌شود؛ خروجی و معیارهای ارزیابی کیفیت همان مرحله با دکمه «خروجی و ارزیابی» قابل مشاهده است.</p>
       <div id="stages-list"></div>
       <p id="stages-summary" class="stages-summary hidden" aria-live="polite"></p>
-      <button type="button" class="btn btn-ghost btn-small hidden" id="btn-stages-report">⬇️ دریافت گزارش ارزیابی مرحله‌ای (JSON)</button>
+      <button type="button" class="btn btn-ghost btn-small hidden" id="btn-stages-report">دریافت گزارش ارزیابی مرحله‌ای (JSON)</button>
       <button type="button" class="btn btn-ghost btn-small" data-help="stages">اعلام مراحل و ارزیابی مرحله‌ای چگونه کار می‌کند؟</button>
     </div>
     <p id="error-box" class="error-box hidden" role="alert"></p>
@@ -193,7 +193,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
   <!-- ============ صفحه ۲: گزارش‌ها و ارزیابی (v1.8.0) ============ -->
   <div id="page-reports" class="page hidden">
     <section class="card" aria-labelledby="reports-title">
-      <h2 id="reports-title">📊 گزارش‌ها، تحلیل‌ها و ارزیابی</h2>
+      <h2 id="reports-title">گزارش‌ها، تحلیل‌ها و ارزیابی</h2>
       <p class="hint">دقت در سطح فیلد سنجیده می‌شود و غیبت/تعارض هم خطا شمرده می‌شود —
       چون هر اشتباه در حوزه دارو می‌تواند آسیب‌زا باشد.</p>
       <div class="report-tiles" id="report-tiles">
@@ -212,7 +212,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
       <button type="button" class="btn btn-ghost btn-small" data-help="eval">روش و اصول ارزیابی مدل‌ها چگونه است؟</button>
     </section>
     <section class="card" aria-labelledby="eval-principles-title">
-      <h2 id="eval-principles-title">🔬 چرا این سخت‌گیری؟ خطر خطای دارویی</h2>
+      <h2 id="eval-principles-title">چرا این سخت‌گیری؟ خطر خطای دارویی</h2>
       <p>خطای خواندن قدرت دارو (مثلاً ۵ به‌جای ۳۰ میلی‌گرم) یا تعداد (۲۸ به‌جای ۲۰)
       می‌تواند به مصرف اشتباه بینجامد. به همین دلیل:</p>
       <ul class="plain-list">
@@ -229,24 +229,24 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
   <!-- ============ صفحه ۳: راهنما و مستندات فنی ============ -->
   <div id="page-docs" class="page hidden">
     <section class="card" aria-labelledby="docs-title">
-      <h2 id="docs-title">📚 راهنما و مستندات فنی</h2>
+      <h2 id="docs-title">راهنما و مستندات فنی</h2>
       <p class="hint">معماری سامانه، ملزومات استاد، نحوهٔ کار هر بخش و مستندات کامل.</p>
       <div class="docs-links">
-        <button type="button" class="btn btn-secondary" data-help="architecture">🏗️ معماری سامانه و خط پردازش</button>
-        <button type="button" class="btn btn-secondary" data-help="reqs">📌 ملزومات استاد و جدول انطباق</button>
-        <button type="button" class="btn btn-secondary" data-help="stages">🧭 مراحل رنگی پردازش</button>
-        <button type="button" class="btn btn-secondary" data-help="engine">🔤 موتورهای OCR (v1.8.0)</button>
-        <button type="button" class="btn btn-secondary" data-help="preprocess">🖼️ پیش‌پردازش OpenCV</button>
-        <button type="button" class="btn btn-secondary" data-help="fields">📋 فیلدها و شواهد</button>
-        <button type="button" class="btn btn-secondary" data-help="response">💬 پاسخ و نگهبان ایمنی</button>
-        <button type="button" class="btn btn-secondary" data-help="tts">🔊 خوانش صوتی</button>
-        <button type="button" class="btn btn-secondary" data-help="eval">📊 ارزیابی مدل‌ها</button>
+        <button type="button" class="btn btn-secondary" data-help="architecture">معماری سامانه و خط پردازش</button>
+        <button type="button" class="btn btn-secondary" data-help="reqs">ملزومات استاد و جدول انطباق</button>
+        <button type="button" class="btn btn-secondary" data-help="stages">مراحل رنگی پردازش</button>
+        <button type="button" class="btn btn-secondary" data-help="engine">موتورهای OCR (v1.8.0)</button>
+        <button type="button" class="btn btn-secondary" data-help="preprocess">پیش‌پردازش OpenCV</button>
+        <button type="button" class="btn btn-secondary" data-help="fields">فیلدها و شواهد</button>
+        <button type="button" class="btn btn-secondary" data-help="response">پاسخ و نگهبان ایمنی</button>
+        <button type="button" class="btn btn-secondary" data-help="tts">خوانش صوتی</button>
+        <button type="button" class="btn btn-secondary" data-help="eval">ارزیابی مدل‌ها</button>
       </div>
-      <a class="btn btn-primary docs-full-link" href="documentation.html">📖 مستندات فنی کامل (HTML مصور)</a>
+      <a class="btn btn-primary docs-full-link" href="documentation.html">مستندات فنی کامل (HTML مصور)</a>
     </section>
     <!-- بخش ملزومات استاد (از نسخه ۱.۵.۰) -->
     <section class="card" id="reqs-section" aria-labelledby="reqs-title">
-    <h2 id="reqs-title">📌 ملزومات طرح‌شده توسط استاد (استاد قربانی) و محل تحقق
+    <h2 id="reqs-title">ملزومات طرح‌شده توسط استاد (استاد قربانی) و محل تحقق
       <button type="button" class="help-btn" data-help="reqs" aria-label="راهنمای ملزومات استاد و جدول انطباق">؟</button>
     </h2>
     <details class="reqs-box" open>
@@ -278,7 +278,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
   <!-- ============ صفحه ۴: دربارهٔ طراحان (v1.8.0) ============ -->
   <div id="page-about" class="page hidden">
     <section class="card about-card" aria-labelledby="about-title">
-      <h2 id="about-title">👥 دربارهٔ طراحان</h2>
+      <h2 id="about-title">دربارهٔ طراحان</h2>
       <div class="author-grid">
         <div class="author-card">
           <div class="author-avatar">👨‍💻</div>
@@ -295,7 +295,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
       </div>
     </section>
     <section class="card" aria-labelledby="story-title">
-      <h2 id="story-title">💡 داستان پروژه</h2>
+      <h2 id="story-title">داستان پروژه</h2>
       <p>این پروژه با یک پرسش ساده شروع شد: «اگر نتوانید روی جعبه دارو را بخوانید چه؟»
       کاربر ممکن است کم‌بینا باشد، دستش بلرزد، یا برچسب خراب باشد. برچسب‌خوان متنِ
       «واقعاً قابل خواندن» روی بسته را استخراج می‌کند و دقیقاً همان را به فارسی
@@ -312,26 +312,26 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
 <!-- تب‌بار پایین (فقط موبایل — v1.8.0) -->
 <nav class="tab-bar" aria-label="ناوبری اصلی">
   <button type="button" class="tab-btn active" data-page="page-read">
-    <span class="tab-icon">💊</span><span class="tab-label">خواندن دارو</span>
+    <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6.3" y="2.9" width="11.5" height="18.2" rx="5.75" transform="rotate(45 12 12)"/><line x1="8.2" y1="15.8" x2="15.8" y2="8.2"/></svg></span><span class="tab-label">خواندن دارو</span>
   </button>
   <button type="button" class="tab-btn" data-page="page-reports">
-    <span class="tab-icon">📊</span><span class="tab-label">گزارش‌ها</span>
+    <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="tab-label">گزارش‌ها</span>
   </button>
   <button type="button" class="tab-btn" data-page="page-docs">
-    <span class="tab-icon">📚</span><span class="tab-label">راهنما</span>
+    <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="tab-label">راهنما</span>
   </button>
   <button type="button" class="tab-btn" data-page="page-about">
-    <span class="tab-icon">👥</span><span class="tab-label">طراحان</span>
+    <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="tab-label">طراحان</span>
   </button>
 </nav>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخهٔ وب ۱.۸.۳</p>
-  <p>👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
-  <p><button type="button" class="btn btn-ghost btn-small" data-help="stages">🧭 اعلام مراحل پردازش و ارزیابی مرحله‌ای</button></p>
-  <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">📌 ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
-  <p><button type="button" class="btn btn-ghost btn-small" data-help="eval">📊 ارزیابی و آزمون مدل‌ها</button></p>
-  <p><a href="documentation.html">📚 مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها، ملزومات استاد، ارزیابی)</a></p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخهٔ وب ۱.۹.۰</p>
+  <p>توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
+  <p><button type="button" class="btn btn-ghost btn-small" data-help="stages">اعلام مراحل پردازش و ارزیابی مرحله‌ای</button></p>
+  <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
+  <p><button type="button" class="btn btn-ghost btn-small" data-help="eval">ارزیابی و آزمون مدل‌ها</button></p>
+  <p><a href="documentation.html">مستندات فنی کامل (معماری، فایل‌ها، فناوری‌ها، ملزومات استاد، ارزیابی)</a></p>
   <p>همه پردازش‌ها (OCR، استخراج، صوت) روی همین دستگاه انجام می‌شود. این ابزار تأیید هویت یا اصالت محصول نیست.</p>
 </footer>
 
@@ -368,20 +368,20 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
   <div style="padding:1rem;text-align:center">این برنامه به جاوااسکریپت نیاز دارد. لطفاً جاوااسکریپت مرورگر را فعال کنید.</div>
 </noscript>
 
-<script src="js/textnorm.js?v=1.8.3"></script>
-<script src="js/patterns.js?v=1.8.3"></script>
-<script src="js/guard.js?v=1.8.3"></script>
-<script src="js/extractor.js?v=1.8.3"></script>
-<script src="js/responder.js?v=1.8.3"></script>
-<script src="js/pipeline.js?v=1.8.3"></script>
-<script src="js/preprocess.js?v=1.8.3"></script>
-<script src="js/boxdetect.js?v=1.8.3"></script>
+<script src="js/textnorm.js?v=1.9.0"></script>
+<script src="js/patterns.js?v=1.9.0"></script>
+<script src="js/guard.js?v=1.9.0"></script>
+<script src="js/extractor.js?v=1.9.0"></script>
+<script src="js/responder.js?v=1.9.0"></script>
+<script src="js/pipeline.js?v=1.9.0"></script>
+<script src="js/preprocess.js?v=1.9.0"></script>
+<script src="js/boxdetect.js?v=1.9.0"></script>
 <script src="js/samples-data.js"></script>
-<script src="js/offline-engine.js?v=1.8.3"></script>
+<script src="js/offline-engine.js?v=1.9.0"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
-<script src="js/ocr.js?v=1.8.3"></script>
-<script src="js/camera.js?v=1.8.3"></script>
-<script src="js/help.js?v=1.8.3"></script>
-<script src="js/app.js?v=1.8.3"></script>
+<script src="js/ocr.js?v=1.9.0"></script>
+<script src="js/camera.js?v=1.9.0"></script>
+<script src="js/help.js?v=1.9.0"></script>
+<script src="js/app.js?v=1.9.0"></script>
 </body>
 </html>

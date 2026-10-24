@@ -3,7 +3,7 @@
  * - موتور OCR و داده زبان: cache-first پس از نخستین بارگیری (پشتیبانی آفلاین کامل)
  * - هیچ درخواستی به سرور خارجی از این سرویس‌کار صادر نمی‌شود.
  */
-var CACHE = 'lbr-mobile-v11'; /* v1.8.3: بستهٔ قابل حمل اصلاح‌شده + مستندات */
+var CACHE = 'lbr-mobile-v12'; /* v1.9.0: تم مدرن + فونت‌های میانی */
 
 var SHELL = [
   './',
@@ -30,6 +30,9 @@ var SHELL = [
   './icons/icon-512.png',
   './icons/maskable-512.png',
   './assets/fonts/Vazirmatn-Regular.ttf',
+  './assets/fonts/Vazirmatn-Medium.ttf',
+  './assets/fonts/Vazirmatn-SemiBold.ttf',
+  './assets/fonts/Vazirmatn-ExtraBold.ttf',
   './assets/fonts/Vazirmatn-Bold.ttf'
 ];
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ساخت بستهٔ قابل حمل LabelVoice (Portable Web ZIP) — v1.8.3
+"""ساخت بستهٔ قابل حمل LabelVoice (Portable Web ZIP) — v1.9.0
 
 رفع باگ ۴۰۴ نسخهٔ v1.8.2:
   - چیدمان استاندارد: START-HERE.html + label-reader-singlefile.html + webapp/ + لانچرها + README
@@ -8,7 +8,7 @@
   - server-windows.ps1 اصلاح‌شده: مسیر «/» به‌طور خودکار webapp/index.html را پیدا می‌کند.
 
 کاربرد: python3 scripts/build_portable_zip.py [--apk path/to/apk]
-خروجی: /home/z/my-project/download/LabelVoice-v1.8.3-Portable-Web.zip
+خروجی: /home/z/my-project/download/LabelVoice-v1.9.0-Portable-Web.zip
 """
 import argparse
 import zipfile
@@ -19,7 +19,7 @@ MOBILE = REPO / 'mobile-app'
 PORTABLE = REPO / 'portable'
 OUT = Path('/home/z/my-project/download')
 
-VERSION = '1.8.3'
+VERSION = '1.9.0'
 ROOT_NAME = 'LabelVoice-Portable-Web'
 
 # فایل‌هایی که از mobile-app به ریشهٔ بسته می‌روند (نه داخل webapp/)
