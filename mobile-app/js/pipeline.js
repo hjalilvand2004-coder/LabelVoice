@@ -397,6 +397,26 @@
   // حذف خوانش‌های فازی مشابه در یک سطر (مثلاً دو psm)؛ حفظ اطمینان بالاتر.
   // فاصله امن: شباهت ≥ 0.8 فقط برای قطعه‌های طول ≥ 3 اعمال می‌شود تا
   // ارقام/حروف کوتاه متفاوت (مثل 5 و 6) اشتباهی ادغام نشوند.
+  // v2.10.0 (پاریتی با پایتون): قطعهٔ «تمام‌عددی» فقط با قرینهٔ هندسی
+  // (هم‌پوشانی/احتوای فیزیکی کادر) ادغام می‌شود؛ «۵۰» و «۵۰۰» دو مقدار
+  // متفاوت‌اند و جایگزینی هم نیازمند اطمینان دست‌کم برابر است.
+  function pureNumber(s) {
+    var t = (s || '').trim();
+    return t.length > 0 && /^[\d.,]+$/.test(t);
+  }
+
+  function boxesCorroborate(a, b) {
+    if (iou(a, b) > 0.30) return true;
+    var ax2 = a.x + a.w, ay2 = a.y + a.h;
+    var bx2 = b.x + b.w, by2 = b.y + b.h;
+    var ix = Math.max(0, Math.min(ax2, bx2) - Math.max(a.x, b.x));
+    var iy = Math.max(0, Math.min(ay2, by2) - Math.max(a.y, b.y));
+    var inter = ix * iy;
+    if (inter <= 0) return false;
+    return (inter / Math.max(1, a.w * a.h)) >= 0.50 ||
+      (inter / Math.max(1, b.w * b.h)) >= 0.50;
+  }
+
   function dedupeSimilarPieces(group) {
     var out = [];
     group.forEach(function (piece) {
@@ -410,15 +430,23 @@
           replaced = true;
           break;
         }
-        // قطعه کوتاهِ زیرمجموعه (مثل «2» داخل «B12») حذف می‌شود
-        if (b.length <= 3 && a.length >= 4 && a.indexOf(b) !== -1) {
-          replaced = true;
-          break;
+        var geoOk = boxesCorroborate(kept.bbox, piece.bbox);
+        // خوانش جزئی (b زیرمجموعهٔ a): با قرینهٔ هندسی همیشه؛ بدون هندسه فقط
+        // واژهٔ کوتاه غیرعددی — تا «۵۰» و «۵۰۰» هر دو بمانند
+        if (b.length < a.length && a.indexOf(b) !== -1) {
+          if (geoOk || (!pureNumber(b) && b.length <= 3 && a.length >= 4)) {
+            replaced = true;
+            break;
+          }
         }
-        if (a.length <= 3 && b.length >= 3 && b.indexOf(a) !== -1) {
-          out[i] = piece;
-          replaced = true;
-          break;
+        if (a.length < b.length && b.indexOf(a) !== -1) {
+          if (geoOk || (!pureNumber(a) && a.length <= 3 && b.length >= 3)) {
+            if ((piece.confidence || 0) >= (kept.confidence || 0) - 0.05) {
+              out[i] = piece;
+            }
+            replaced = true;
+            break;
+          }
         }
         if (a.length >= 3 && b.length >= 3 &&
           similarityRatio(a, b) >= 0.8) {
@@ -453,6 +481,59 @@
         if (!overlaps) out.push(piece);
       });
     return out;
+  }
+
+  // ---------- حذف دوقلوی سرگردان (v2.10.0 — معادل _collapse_location_duplicates) ----------
+  // دو خوانش هم‌متن با کادر جدا (IoU ≤ 0.4) که از ادغام ناحیه‌ای می‌گریزند،
+  // در ساخت سطر کنار هم می‌چسبند (الگوی «Keeping Keeping»). قاعدهٔ هندسه‌آگاه:
+  // هم‌متن + هم‌سطر (Δy ≤ 0.7h) + شکاف x ≤ 0.3h + دست‌کم یکی تک‌رأی ⇒ ادغام.
+  // تکرار واقعی برچسب (هر دو با رأی تکرارشده یا فاصلهٔ واژگانی معمول) می‌ماند.
+  function pieceStrength(p) {
+    var conf = (p.confidence === null || p.confidence === undefined) ? 0.4 : p.confidence;
+    return conf * (1.0 + 0.25 * ((p.support || 1) - 1));
+  }
+
+  function collapseLocationDuplicates(pieces, settings) {
+    var s = settings || {};
+    if (s.dedupe_ghost_duplicates === false) return 0;
+    var gapRatio = (typeof s.ghost_x_gap_ratio === 'number') ? s.ghost_x_gap_ratio : 0.3;
+    var yRatio = (typeof s.ghost_y_ratio === 'number') ? s.ghost_y_ratio : 0.7;
+    var byText = {};
+    pieces.forEach(function (p) {
+      var key = (p.normalized_text || '').trim().toLowerCase();
+      if (!key) return;
+      (byText[key] = byText[key] || []).push(p);
+    });
+    var removedIds = {};
+    Object.keys(byText).forEach(function (key) {
+      var group = byText[key];
+      if (group.length < 2) return;
+      for (var i = 0; i < group.length; i++) {
+        for (var j = i + 1; j < group.length; j++) {
+          var a = group[i], b = group[j];
+          if (removedIds[a.id] || removedIds[b.id]) continue;
+          if (!a.id || !b.id) {
+            // پیش از شناسه‌گذاری: مرجع مستقیم
+            if (removedIds[group.indexOf(a)] !== undefined) continue;
+          }
+          var hMax = Math.max(1, a.bbox.h, b.bbox.h);
+          var yDiff = Math.abs((a.bbox.y + a.bbox.h / 2) - (b.bbox.y + b.bbox.h / 2));
+          if (yDiff > yRatio * hMax) continue;
+          var gap = Math.max(0, Math.max(a.bbox.x, b.bbox.x) -
+            Math.min(a.bbox.x + a.bbox.w, b.bbox.x + b.bbox.w));
+          if (gap > gapRatio * hMax) continue;
+          if ((a.support || 1) >= 2 && (b.support || 1) >= 2) continue;
+          var weak = pieceStrength(b) >= pieceStrength(a) ? a : b;
+          var strong = weak === a ? b : a;
+          strong.support = Math.max(strong.support || 1, (weak.support || 1) + 1);
+          removedIds[weak.__uid || (weak.__uid = 'u' + Math.random())] = true;
+        }
+      }
+    });
+    if (!Object.keys(removedIds).length) return 0;
+    var kept = pieces.filter(function (p) { return !removedIds[p.__uid]; });
+    kept.length && Array.prototype.splice.apply(pieces, [0, pieces.length].concat(kept));
+    return Object.keys(removedIds).length;
   }
 
   // سطرهای منطقی ساخته‌شده از قطعات OCR — v1.8.0 (بازنویسی معادل پایتون):
@@ -586,6 +667,11 @@
     } else {
       pieces = mergePieces(rawPieces);
     }
+    // v2.10.0: حذف دوقلوی سرگردان قبل از ساخت سطرها (ریشهٔ «Keeping Keeping»)
+    collapseLocationDuplicates(pieces, settings);
+    // v2.10.0: شناسه‌گذاری قبل از ساخت سطرها (قبلاً جا افتاده بود و
+    // source_ids سطرهای موبایل خالی می‌ماند — پاریتی با _assign_ids)
+    assignIds(pieces);
     var rawLines = buildLines(pieces);
     var cls = extractor.classifyProductType(rawLines.map(function (l) { return l.normalized_text; }));
     var ex = extractor.extractFields(rawLines, cls.type, settings, imageH);
@@ -709,6 +795,10 @@
     mergePieces: mergePieces,
     assignIds: assignIds,
     dedupeSimilarPieces: dedupeSimilarPieces,
+    // v2.10.0
+    pureNumber: pureNumber,
+    boxesCorroborate: boxesCorroborate,
+    collapseLocationDuplicates: collapseLocationDuplicates,
     buildLines: buildLines,
     scoreOcrYield: scoreOcrYield,
     buildResultFromPieces: buildResultFromPieces,

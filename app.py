@@ -594,10 +594,22 @@ if page == "read":
                     _engs = " + ".join(_r.get("engines") or []) or "—"
                     _pieces = _r.get("pieces") or []
                     _dropped = _r.get("dropped", 0)
+                    # v2.10.0 — رکورد کامل اجرا در عنوان اکسپندر
+                    _langs = "+".join(_r.get("langs") or [])
+                    _psms = ",".join(str(x) for x in (_r.get("psm_list") or []))
+                    _dur = _r.get("duration_ms")
+                    _meta_bits = []
+                    if _langs:
+                        _meta_bits.append(f"زبان {_langs}")
+                    if _psms:
+                        _meta_bits.append(f"PSM {_psms}")
+                    if _dur is not None:
+                        _meta_bits.append(f"{_dur} میلی‌ثانیه")
+                    _meta_txt = (" — " + " · ".join(_meta_bits)) if _meta_bits else ""
                     with st.expander(
                             f"🔤 نسخهٔ «{_name}» — موتور {_engs} — "
                             f"{len(_pieces)} قطعه نگه‌داشته‌شده · "
-                            f"{_dropped} قطعه ردشده"):
+                            f"{_dropped} قطعه ردشده{_meta_txt}"):
                         _vimg = _variant_img.get(_name)
                         if _vimg is not None and _pieces:
                             st.image(
@@ -623,6 +635,20 @@ if page == "read":
                         else:
                             st.caption("این نسخه قطعهٔ قابل‌قبولی تولید نکرد "
                                        "(همه توسط گیت کیفیت رد شدند).")
+                        # v2.10.0 — تفکیک دلیل رد هر قطعه (شفافیت گیت کیفیت)
+                        _reasons = _r.get("drop_reasons") or {}
+                        if _reasons:
+                            _FA_REASON = {
+                                "empty": "متن خالی",
+                                "mixed_script": "ترکیب‌خطی (حرف/رقم دو خط نوشتار در یک قطعه)",
+                                "conf_floor": "اطمینان زیر کف مطلق",
+                                "no_alnum": "فقط نماد، بدون حرف/رقم",
+                                "short_low_conf": "کوتاه و کم‌اطمینان",
+                                "giant_box": "کادر غول‌پیکر (شکست تحلیل چیدمان)",
+                            }
+                            st.caption("🚫 قطعه‌های ردشدهٔ گیت کیفیت: " + " · ".join(
+                                f"{_FA_REASON.get(k, k)} ×{v}"
+                                for k, v in _reasons.items()))
 
         left_col, right_col = st.columns([3, 2])
 

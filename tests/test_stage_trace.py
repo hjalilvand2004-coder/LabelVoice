@@ -12,7 +12,7 @@ import io
 
 import numpy as np
 import pytest
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from label_reader.config import Settings
 from label_reader.pipeline import LabelReaderPipeline
@@ -31,6 +31,9 @@ def _small_image(w: int = 640, h: int = 420) -> Image.Image:
 # ۱) traced واریانت‌ها
 # ---------------------------------------------------------------------------
 def test_build_variants_traced_steps(settings):
+    # v2.10.0: رفتار قدیمی (ساخت همهٔ واریانت‌ها) با فلگ بازگشتی آزموده می‌شود؛
+    # رفتار مشروط در آزمون بعدی پوشش داده شده است.
+    settings.conditional_variants = False
     bgr = np.array(_small_image())[:, :, ::-1].copy()  # RGB→BGR
     variants, trace = build_variants_traced(bgr, settings, collect_trace=True)
 
@@ -51,6 +54,41 @@ def test_build_variants_traced_steps(settings):
         # تصویر گام همان واریانت ساخته‌شده است
         assert img.shape[:2] == variants[entry["step"]].shape[:2]
         assert "metrics" not in entry  # معیارها در خط لوله اضافه می‌شود
+
+
+def test_build_variants_conditional_skips_uniform_image(settings):
+    """v2.10.0 — پیش‌پردازش مشروط: تصویر یکنواخت روشن ⇒ واریانت‌های
+    shadow_free/white_on_dark/ink_isolated ساخته نمی‌شوند و دلیلشان ثبت می‌شود."""
+    bgr = np.array(_small_image())[:, :, ::-1].copy()
+    skipped: list[dict] = []
+    variants, trace = build_variants_traced(
+        bgr, settings, collect_trace=True, skipped_out=skipped)
+    steps = [t["step"] for t in trace]
+    assert "original" in steps and "gray_clahe" in steps  # مبنا همیشه هست
+    for name in ("shadow_free", "white_on_dark", "ink_isolated"):
+        assert name not in variants, f"«{name}» روی تصویر یکنواخت نباید ساخته شود"
+        assert name not in steps
+    skipped_names = {s["variant"] for s in skipped}
+    assert {"shadow_free", "white_on_dark", "ink_isolated"} <= skipped_names
+    for s in skipped:
+        assert s["reason_fa"], "هر رد باید دلیل فارسی داشته باشد"
+
+
+def test_build_variants_conditional_builds_for_dark_and_color(settings):
+    """v2.10.0 — تصویر با زمینهٔ تیره/جوهر رنگی ⇒ واریانت‌های مربوط ساخته می‌شوند."""
+    img = Image.new("RGB", (480, 360), (28, 60, 110))   # جعبهٔ آبی تیره
+    d = ImageDraw.Draw(img)
+    d.rectangle([40, 40, 440, 320], fill=(30, 30, 30))
+    d.text((90, 150), "PARACETAMOL", fill=(245, 245, 245),
+           font=ImageFont.truetype(
+               "/usr/share/fonts/truetype/freefont/FreeSans.ttf", 30))
+    bgr = np.array(img)[:, :, ::-1].copy()
+    skipped: list[dict] = []
+    variants, trace = build_variants_traced(
+        bgr, settings, collect_trace=True, skipped_out=skipped)
+    assert "white_on_dark" in variants
+    skipped_names = {s["variant"] for s in skipped}
+    assert "white_on_dark" not in skipped_names
 
 
 def test_build_variants_traced_matches_build_variants(settings):

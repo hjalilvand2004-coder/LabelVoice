@@ -147,13 +147,22 @@ def test_white_product_photo_no_false_bright_warning():
 
 
 def test_white_on_dark_variant_builds():
-    """واریانت متن-روشن-روی-تیره در build_variants تولید و بزرگ‌نمایی می‌شود."""
+    """واریانت متن-روشن-روی-تیره در build_variants تولید و بزرگ‌نمایی می‌شود.
+
+    v2.10.0: در مسیر قدیمی (conditional_variants=False) همیشه ساخته می‌شود؛
+    در مسیر مشروط فقط وقتی پس‌زمینهٔ تیره تشخیص داده شود.
+    """
     import numpy as np
     img = np.full((120, 120, 3), 150, dtype=np.uint8)
-    variants = build_variants(img, _settings())
+    s = _settings()
+    s.conditional_variants = False
+    variants = build_variants(img, s)
     assert "white_on_dark" in variants
     assert variants["white_on_dark"].shape[0] >= img.shape[0]
     assert variants["white_on_dark"].shape[1] >= img.shape[1]
+    # مسیر مشروط: خاکستری ۱۵۰ تیرهٔ معتبر نیست (آستانهٔ ۰٫۳۰) ⇒ ساخته نمی‌شود
+    s.conditional_variants = True
+    assert "white_on_dark" not in build_variants(img, s)
 
 
 def test_white_on_dark_threshold_keeps_bright_text_as_ink():

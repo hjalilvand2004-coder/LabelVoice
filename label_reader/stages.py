@@ -167,6 +167,9 @@ def build_stage_item(key: str, payload: dict) -> dict:
             outputs.append(
                 "🔬 مسیر گام‌به‌گام OpenCV: " + " ← ".join(_steps) +
                 " — تصویر و توضیح هر گام در بخش «🔬 دیدن کار OpenCV و خوانش خام OCR» نمایش داده می‌شود.")
+        # v2.10.0 — واریانت‌های ردشدهٔ پردازش مشروط با دلیل شفاف می‌شوند
+        for _sk in payload.get("conditional_skips") or []:
+            outputs.append(f"⏭ واریانت «{_sk['variant']}» ساخته نشد — {_sk['reason_fa']}")
         outputs.append("🖼 خروجی این مرحله: تصویر بهبودیافته (پس از مقیاس، "
                        "CLAHE و تیزکردن) در بخش «مشاهده خروجی» نمایش داده می‌شود.")
         if payload["issues_note"]:
@@ -225,12 +228,24 @@ def build_stage_item(key: str, payload: dict) -> dict:
             _read_bits = []
             for r in _readings:
                 _eng = (" + ".join(r.get("engines") or []) or "—")
+                # v2.10.0 — رکورد کامل: زبان/PSM/زمان اجرا/ابعاد
+                _lang = "+".join(r.get("langs") or []) or "—"
+                _psm = ",".join(str(x) for x in (r.get("psm_list") or [])) or "—"
+                _dur = r.get("duration_ms")
+                _dur_txt = "؟" if _dur is None else f"{_dur}ms"
                 _read_bits.append(
-                    f"«{r['variant']}»: {len(r.get('pieces') or [])} قطعه ({_eng})")
+                    f"«{r['variant']}»: {len(r.get('pieces') or [])} قطعه ({_eng}؛ "
+                    f"زبان {_lang}؛ PSM {_psm}؛ {_dur_txt})")
             outputs.append(
                 "🔍 خوانش خام هر نسخه (قبل از ادغام و رأی‌گیری): " +
                 " | ".join(_read_bits) +
                 f" — مجموع قطعه‌های ردشدهٔ گیت کیفیت: {_total_dropped} — جزئیات و تصویر کادرها در بخش «🔬 دیدن کار OpenCV و خوانش خام OCR».")
+        # v2.10.0 — شفافیت حذف دوقلوی سرگردان
+        _ghost = int(payload.get("ghost_duplicates_removed") or 0)
+        if _ghost:
+            outputs.append(
+                f"🧹 {_ghost} دوقلوی تجمیعی حذف شد (همان واژه که دو پیکربندی با "
+                "کادر جابه‌جا خوانده بود — قاعدهٔ هندسه‌آگاه؛ تکرار واقعی برچسب دست‌نخورده می‌ماند).")
         if payload.get("vlm_lines_added"):
             outputs.append(
                 "🤖 " + (payload.get("vlm_note") or "دستیار بینایی سطرهای مکمل ارائه کرد")

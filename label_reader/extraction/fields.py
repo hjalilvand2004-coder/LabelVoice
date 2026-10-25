@@ -269,8 +269,13 @@ def _line_has_corroboration(line: RawLine,
 
     پذیرفته می‌شود اگر:
     - همه‌ی قطعه‌های شاهد اطمینان ≥ ۰٫۵ داشته باشند (None = ۰٫۵)، و
-    - دست‌کم یک قطعه با support ≥ ۲ از موتور تسراکت یا support ≥ ۳ از هر
-      موتوری وجود باشد (خوانش تکرارشده در چند واریانت/PSM/موتور).
+    - دست‌کم یک قطعه با یکی از این شواهد تکرار وجود باشد:
+      (الف) support ≥ ۳ (خوانش تکرارشده در چند پیکربندی)؛
+      (ب) support ≥ ۲ از موتور تسراکت؛
+      (ج) v2.10.0: support ≥ ۲ با رأی از «دو واریانت مستقل» (vote_variants) —
+        چون از v2.10.0 شمار واریانت‌های اجراشده با تشخیص مسئله متغیر است
+        (۳ تا ۷)، معیار «دو واریانت مستقل هم‌ناحیه را خواندند» پایدارتر از
+        شمارش خام رأی است.
     """
     pieces = [pieces_by_id[sid] for sid in line.source_ids
               if sid in pieces_by_id]
@@ -286,6 +291,9 @@ def _line_has_corroboration(line: RawLine,
         if support >= 3:
             return True
         if support >= 2 and str(p.engine).startswith("tesseract"):
+            return True
+        if support >= 2 and len({v for v in getattr(p, "vote_variants", [])
+                                 if v}) >= 2:
             return True
     return False
 

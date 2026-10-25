@@ -1,0 +1,37 @@
+{
+  "report": "ab_evaluation_v210",
+  "date_utc_env": "2026-10-25",
+  "method": "scripts/evaluate.py --engine tesseract روی ۱۴ نمونهٔ sample_images — اجرای واقعی در همین محیط؛ فقط تغییر کد بین دو اجرا (git stash/pop روی 8eda215)",
+  "baseline": {
+    "version": "v2.9.0 (commit 8eda215)",
+    "field_accuracy": "9/14 = 64.3%",
+    "mean_time_ms": 6764,
+    "output": "scripts/evidence_v210/eval_before_v290_tesseract.txt"
+  },
+  "after": {
+    "version": "v2.10.0 (ممیزی مهندسی)",
+    "field_accuracy": "10/14 = 71.4%",
+    "mean_time_ms": 3718,
+    "output": "scripts/evidence_v210/eval_after_v210_tesseract.txt"
+  },
+  "delta": {
+    "field_accuracy": "+1 فیلد (64.3% ← 71.4%) — بهبود general_product.png از 0/1 به 1/1 (حذف نویز واریانت‌های بی‌هدف با پیش‌پردازش مشروط)",
+    "mean_time": "×1.82 سریع‌تر (6764ms ← 3718ms) — اجرای OCR روی واریانت‌های کمتر بدون افت پوشش",
+    "notable": {
+      "en_paracetamol_500mg": "4/4 → 4/4 (زمان 7162 ← 3935ms)",
+      "general_product": "0/1 → 1/1 (بهبود دقت)",
+      "mixed_bilingual": "1/1 → 1/1 (زمان 15558 ← 7241ms)",
+      "fa_apirex_500mg": "0/2 → 0/2 (بدون تغییر — ضعف شناخته‌شدهٔ ارقام فارسی در هر دو نسخه)",
+      "malicious_printed_text": "0/2 → 0/2 (بدون تغییر — فیلدهای تعمداً ناخوانا)"
+    }
+  },
+  "unit_tests": {
+    "pytest": "170 پاس + 3 skip (شامل ۱۶ آزمون جدید tests/test_dedupe_v210.py)",
+    "node": "70 پاس (شامل ۶ آزمون همتای JS)",
+    "streamlit_apptest": "0 استثنا"
+  },
+  "honest_limitations": [
+    "تصویر واقعی کاربر (نمونهٔ «Keeping Keeping Bones Bones») در دسترس نیست؛ رفع سازوکار تکرار تجمیعی با آزمون مصنوعی (تست واحد) اثبات شده و تأیید نهایی نیازمند همان تصویر است.",
+    "مقایسهٔ ۸۵٫۷٪ مستندات قدیمی (v1.6.0) با این اجرا معتبر نیست (وضعیت نمونه‌ها/کد متفاوت)؛ مقایسهٔ معتبر همان قبل/بعد v2.9.0 در برابر v2.10.0 با شرایط یکسان است."
+  ]
+}

@@ -157,8 +157,12 @@ def test_estimate_skew_rotated_close():
 # ۶) گیت اطمینان واریانت‌های مکمل
 # ---------------------------------------------------------------------------
 def _run_with_conf(conf: float) -> set:
+    # v2.10.0: گیت اطمینان مستقل از پیش‌پردازش مشروط آزموده می‌شود
+    # (تصویر فیکسچر یکنواخت است و در مسیر مشروط shadow_free اصلاً ساخته نمی‌شود)
+    _s = Settings(_env_file=None)
+    _s.conditional_variants = False
     pipe = LabelReaderPipeline(
-        Settings(_env_file=None), ocr_provider=FakeOcrProvider(
+        _s, ocr_provider=FakeOcrProvider(
             [("Paracetamol", conf), ("500 mg", conf), ("20 Tablets", conf)]))
     payloads: dict = {}
     pipe.process_pil(Image.new("RGB", (640, 420), (240, 244, 248)),

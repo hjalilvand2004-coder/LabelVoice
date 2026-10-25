@@ -570,6 +570,76 @@ test('assessQuality: عکس محصول روی میز روشن هشدار شست�
 });
 
 
+
+// ---------------------------------------------------------------------------
+// v2.10.0 — پاریتی با tests/test_dedupe_v210.py (F1 + F2)
+// ---------------------------------------------------------------------------
+function mkPieceV210(text, x, y, w, h, conf = 0.9, support = 1) {
+  return { id: '', text, normalized_text: text, bbox: { x, y, w, h },
+    confidence: conf, variant: 'original', engine: 'fake', support };
+}
+
+test('v2.10 pureNumber: «۵۰» عدد است، «mg» نیست', () => {
+  assertEq(pipe.pureNumber('50'), true);
+  assertEq(pipe.pureNumber('0.5'), true);
+  assertEq(pipe.pureNumber('1,000'), true);
+  assertEq(pipe.pureNumber('mg'), false);
+});
+
+test('v2.10 dedupeSimilarPieces: «50» با «500» ادغام نمی‌شود (بدون هندسه)', () => {
+  const out = pipe.dedupeSimilarPieces([
+    mkPieceV210('50', 20, 100, 40, 24, 0.9),
+    mkPieceV210('500', 200, 100, 70, 24, 0.5)
+  ]);
+  const texts = new Set(out.map((p) => p.text));
+  assert(texts.has('50') && texts.has('500'), JSON.stringify(texts));
+});
+
+test('v2.10 dedupeSimilarPieces: خوانش جزئی با احتوای کادر ادغام می‌شود', () => {
+  const out = pipe.dedupeSimilarPieces([
+    mkPieceV210('500', 20, 100, 70, 24, 0.7),
+    mkPieceV210('50', 20, 100, 45, 20, 0.6)
+  ]);
+  assertEq(out.length, 1, JSON.stringify(out.map((p) => p.text)));
+});
+
+test('v2.10 collapseLocationDuplicates: دوقلوی سرگردان ادغام می‌شود', () => {
+  const pieces = [
+    mkPieceV210('Keeping', 100, 100, 70, 20, 0.88),
+    mkPieceV210('Keeping', 174, 101, 68, 20, 0.72),
+    mkPieceV210('Bones', 260, 100, 60, 20, 0.9)
+  ];
+  const removed = pipe.collapseLocationDuplicates(pieces, {});
+  assertEq(removed, 1);
+  assertEq(pieces.filter((p) => p.text === 'Keeping').length, 1);
+  assert(pieces.some((p) => p.text === 'Bones'));
+});
+
+test('v2.10 collapseLocationDuplicates: تکرار واقعی با فاصلهٔ واژگانی می‌ماند', () => {
+  const pieces = [
+    mkPieceV210('Bones', 100, 100, 60, 20, 0.9, 2),
+    mkPieceV210('Bones', 260, 100, 60, 20, 0.9, 2)
+  ];
+  const removed = pipe.collapseLocationDuplicates(pieces, {});
+  assertEq(removed, 0);
+  assertEq(pieces.length, 2);
+});
+
+test('v2.10 collapseLocationDuplicates: سطر نهایی واژهٔ تکراری ندارد', () => {
+  const pieces = [
+    mkPieceV210('Keeping', 100, 100, 70, 20, 0.88),
+    mkPieceV210('Keeping', 174, 101, 68, 20, 0.72),
+    mkPieceV210('Bones', 260, 100, 60, 20, 0.9),
+    mkPieceV210('Strong', 330, 100, 62, 20, 0.85)
+  ];
+  pipe.collapseLocationDuplicates(pieces, {});
+  pipe.assignIds(pieces);
+  const lines = pipe.buildLines(pieces);
+  assertEq(lines.length, 1);
+  const words = lines[0].text.split(/\s+/);
+  assertEq(JSON.stringify(words), JSON.stringify(['Keeping', 'Bones', 'Strong']));
+});
+
 console.log('\nنتیجه: ' + passed + ' پاس، ' + failed + ' شکست');
 if (failed) {
   console.log('\nجزئیات شکست‌ها:');

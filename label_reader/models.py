@@ -62,6 +62,9 @@ class OcrPiece(BaseModel):
     variant: str                   # نسخه پردازشی تصویر (original / gray_clahe / ...)
     engine: str                    # tesseract:fas / tesseract:eng / easyocr
     support: int = 1               # v1.8.0: چند پیکربندی مستقل همین ناحیه را خواندند
+    # v2.10.0: نسخه‌های پردازشی که به این قطعه رأی دادند — برای تشخیص
+    # «رأی از دو واریانت مستقل» در گیت نام (به‌جای شمارش خام رأی‌ها)
+    vote_variants: list[str] = Field(default_factory=list)
 
 
 class RawLine(BaseModel):

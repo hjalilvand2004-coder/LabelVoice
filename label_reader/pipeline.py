@@ -21,7 +21,7 @@ from .ocr import make_provider
 from .ocr.base import OcrProvider, OcrUnavailableError
 from .ocr.easyocr_provider import EasyOcrProvider
 from .ocr.tesseract_provider import TesseractProvider
-from .preprocess import auto_deskew, build_variants, build_variants_traced, crop_fraction
+from .preprocess import auto_deskew, build_variants, build_variants_traced, crop_fraction, diagnose_image
 from .preprocess import (
     VARIANT_BINARIZED, VARIANT_GRAY_CLAHE, VARIANT_INK_ISOLATED, VARIANT_ORIGINAL,
     VARIANT_SHADOW_FREE, VARIANT_SHARPENED,
@@ -146,8 +146,14 @@ class LabelReaderPipeline:
                     bgr)
 
         # ۴) نسخه‌های پردازشی (با ردیابی گام‌به‌گام v2.6.0)
+        # v2.10.0: تشخیص مسئله + واریانت‌های مشروط — واریانت‌های ردشده با دلیل
+        # فارسی در conditional_skips ثبت می‌شوند (هیچ حذفی پنهان نیست).
+        conditional_skips: list[dict] = []
+        diagnostics = diagnose_image(bgr) if getattr(
+            self.settings, "conditional_variants", True) else None
         variants, variant_trace = build_variants_traced(
-            bgr, self.settings, collect_trace=True)
+            bgr, self.settings, collect_trace=True, diagnostics=diagnostics,
+            skipped_out=conditional_skips)
         for _entry in variant_trace:
             _entry["metrics"] = image_quality_metrics(_entry["image_bgr"])
             opencv_trace.append(_entry)
@@ -168,6 +174,8 @@ class LabelReaderPipeline:
             "variants": list(variants.keys()),
             "opencv_steps": [e["title_fa"] for e in opencv_trace],
             "opencv_trace": opencv_trace,
+            "conditional_skips": conditional_skips,
+            "diagnostics": diagnostics or {},
             "issues_note": issues_note,
             "duration_ms": durations["opencv_ms"],
             "image_bgr": bgr,
@@ -193,30 +201,51 @@ class LabelReaderPipeline:
                 {n.strip() for n in _vv.split(",") if n.strip()}
                 | {VARIANT_ORIGINAL})
         by_variant: dict[str, list] = {}
+        # v2.10.0: رکورد کامل هر اجرا (§۳ دستورالعمل ممیزی) — موتور/زبان/PSM،
+        # ابعاد ورودی، زمان اجرا و دلیل رد هر قطعه؛ در variant_readings منتشر می‌شود.
+        variant_run_info: dict[str, dict] = {}
         # v2.9.0: واریانت‌های «مکمل دامنهٔ خاکستری» (shadow_free/sharpened/binarized)
-        # وقتی خوانش نسخه‌های اصلی خوب است (میانگین اطمینان ≥ ۰٫۸) اجرا نمی‌شوند —
-        # سرعت بیشتر بدون از دست دادن پوشش. واریانت‌های پلاریتی متفاوت
-        # (white_on_dark/ink_isolated) همیشه اجرا می‌شوند چون نویز نجات‌دهندهٔ
-        # پلاریتی مخالف‌اند نه مکمل دامنهٔ خاکستری.
+        # وقتی خوانش نسخه‌های اصلی خوب است اجرا نمی‌شوند — سرعت بیشتر بدون از
+        # دست دادن پوشش. واریانت‌های پلاریتی متفاوت (white_on_dark/ink_isolated)
+        # همیشه اجرا می‌شوند چون نویز نجات‌دهندهٔ پلاریتی مخالف‌اند نه مکمل
+        # دامنهٔ خاکستری.
+        # v2.10.0: آستانهٔ گیت از پیکربندی می‌آید و مقیاس آن مستند است:
+        # اطمینان ۰..۱ (اطمینان خام تسراکت ۰..۱۰۰ تقسیم بر ۱۰۰).
         _gated_variants = {VARIANT_BINARIZED, VARIANT_SHADOW_FREE, VARIANT_SHARPENED}
+        _conf_gate = float(getattr(self.settings, "complement_conf_gate", 0.8))
         for name, image in variants.items():
             if name in _gated_variants:
                 # نسخه‌های مکمل فقط برای مقایسه؛ وقتی خوانش نسخه‌های اصلی ضعیف است
                 mean_conf = [p.confidence for vps in by_variant.values()
                              for p in vps if p.confidence is not None]
-                if mean_conf and float(np.mean(mean_conf)) >= 0.8:
+                if mean_conf and float(np.mean(mean_conf)) >= _conf_gate:
                     continue
             if (restricted_variant_set is not None
                     and name not in restricted_variant_set):
                 continue
+            _t_run = time.perf_counter()
             _raw = provider.run(image, name)
+            _run_ms = int((time.perf_counter() - _t_run) * 1000)
+            _drop_reasons: dict[str, int] = {}
             _kept = self._filter_pieces(
                 _raw,
                 image_area=int(variants[VARIANT_ORIGINAL].shape[0]) *
-                int(variants[VARIANT_ORIGINAL].shape[1]))
+                int(variants[VARIANT_ORIGINAL].shape[1]),
+                drop_reasons=_drop_reasons)
             by_variant[name] = _kept
             variant_drop_counts[name] = variant_drop_counts.get(name, 0) + \
                 (len(_raw) - len(_kept))
+            variant_run_info[name] = {
+                "engine": provider.name,
+                "langs": list(getattr(provider, "last_langs_used", []) or []),
+                "psm_list": list(getattr(provider, "last_psms", []) or []),
+                "input_h": int(image.shape[0]),
+                "input_w": int(image.shape[1]),
+                "duration_ms": _run_ms,
+                "raw_pieces": len(_raw),
+                "kept_pieces": len(_kept),
+                "drop_reasons": dict(_drop_reasons),
+            }
 
         # ۵-ب) موتور دوم مکمل (v1.8.0): EasyOCR فقط نواحی‌ای را پر می‌کند که
         # تسراکت ضعیف خوانده؛ در نبود کتابخانه/مدل، بی‌صدا رد می‌شود.
@@ -235,15 +264,35 @@ class LabelReaderPipeline:
                                     "original,gray_clahe")).split(",")
                         if n.strip() in variants]
                     for name in easy_names:
+                        _t_run = time.perf_counter()
                         _raw_e = easy.run(variants[name], name)
+                        _run_ms = int((time.perf_counter() - _t_run) * 1000)
+                        _drop_e: dict[str, int] = {}
                         _kept_e = self._filter_pieces(
                             _raw_e,
                             image_area=int(variants[VARIANT_ORIGINAL].shape[0]) *
-                            int(variants[VARIANT_ORIGINAL].shape[1]))
+                            int(variants[VARIANT_ORIGINAL].shape[1]),
+                            drop_reasons=_drop_e)
                         by_variant.setdefault(name, []).extend(_kept_e)
                         variant_drop_counts[name] = \
                             variant_drop_counts.get(name, 0) + \
                             (len(_raw_e) - len(_kept_e))
+                        _ri = variant_run_info.setdefault(name, {
+                            "engine": provider.name,
+                            "langs": list(getattr(provider, "last_langs_used", []) or []),
+                            "psm_list": list(getattr(provider, "last_psms", []) or []),
+                            "input_h": int(variants[name].shape[0]),
+                            "input_w": int(variants[name].shape[1]),
+                            "duration_ms": 0,
+                            "raw_pieces": 0, "kept_pieces": 0,
+                            "drop_reasons": {}})
+                        _ri["duration_ms"] += _run_ms
+                        _ri["raw_pieces"] += len(_raw_e)
+                        _ri["kept_pieces"] += len(_kept_e)
+                        for _k, _v in _drop_e.items():
+                            _ri["drop_reasons"][_k] = \
+                                _ri["drop_reasons"].get(_k, 0) + _v
+                        _ri["engine"] = provider.name + "+easyocr"
                     engines_used.append("easyocr")
                     easy_used = True
             except Exception:  # noqa: BLE001 — موتور دوم هرگز پردازش را نمی‌شکند
@@ -272,16 +321,28 @@ class LabelReaderPipeline:
                   "x": int(p.x), "y": int(p.y), "w": int(p.w), "h": int(p.h),
                   "engine": getattr(p, "engine", "")} for p in vps),
                 key=lambda d: (d["y"], d["x"]))
+            _run = variant_run_info.get(name, {})
             variant_readings.append({
                 "variant": name,
                 "engines": sorted({getattr(p, "engine", "") for p in vps
                                    if getattr(p, "engine", "")}),
                 "pieces": _plist,
                 "dropped": variant_drop_counts.get(name, 0),
+                # v2.10.0 — رکورد کامل اجرا (§۳): زبان، PSM، ابعاد ورودی،
+                # زمان اجرا و تفکیک دلیل رد قطعه‌ها
+                "langs": _run.get("langs", []),
+                "psm_list": _run.get("psm_list", []),
+                "input_dims": [_run.get("input_h"), _run.get("input_w")],
+                "duration_ms": _run.get("duration_ms"),
+                "raw_pieces": _run.get("raw_pieces"),
+                "drop_reasons": _run.get("drop_reasons", {}),
             })
 
         # ۶) ادغام «بهترین-اول»: مبنا بهترین واریانت؛ بقیه فقط مکمل بدون همپوشانی
         pieces = self._merge_pieces_best_first(by_variant)
+        # v2.10.0: حذف دوقلوی سرگردان (ریشهٔ الگوی «Keeping Keeping») —
+        # دو خوانش هم‌متن با کادر جدا از merge می‌گریزند؛ با هندسه ادغام می‌شوند.
+        ghost_removed = self._collapse_location_duplicates(pieces)
         self._assign_ids(pieces)
 
         # ۷) سطرهای منطقی
@@ -354,6 +415,7 @@ class LabelReaderPipeline:
             "lines_preview": [ln.text for ln in raw_lines[:6]],
             "variant_results": variant_results,
             "variant_readings": variant_readings,
+            "ghost_duplicates_removed": ghost_removed,
             "duration_ms": durations["ocr_ms"],
         })
 
@@ -511,7 +573,8 @@ class LabelReaderPipeline:
             return True
         return False
 
-    def _filter_pieces(self, raw: list, image_area: int | None = None) -> list:
+    def _filter_pieces(self, raw: list, image_area: int | None = None,
+                       drop_reasons: dict[str, int] | None = None) -> list:
         """گیت کیفیت قطعه‌های OCR (v1.7.0 + v1.8.0) — حذف زباله قبل از هر ادغام.
 
         - نمادهای محض بدون هیچ حرف/رقم (@ ، » ، ° و…) حذف می‌شوند؛
@@ -521,26 +584,39 @@ class LabelReaderPipeline:
           با کادر ۴۳۱×۳۹۴ که کل پایین تصویر را می‌بلعید) حذف می‌شود؛
         - v1.8.0: قطعهٔ ترکیب‌خطی (حرف فارسی + حرف لاتین همزمان) حذف می‌شود.
         این فیلتر جلوی تولید سطرهای فرانکشتاین را می‌گیرد.
+
+        v2.10.0: با دادن ``drop_reasons`` (dict) دلیل هر رد با کد ثبت می‌شود
+        تا در «خوانش خام» شفاف بماند (§۳ دستورالعمل ممیزی: علت انتخاب یا رد).
         """
+        def _drop(code: str) -> None:
+            if drop_reasons is not None:
+                drop_reasons[code] = drop_reasons.get(code, 0) + 1
+
         out = []
         for p in raw:
             text = (p.text or "").strip()
             if not text:
+                _drop("empty")
                 continue
             if self._is_mixed_script_garbage(text):
+                _drop("mixed_script")
                 continue
             if p.confidence is not None and \
                     p.confidence < self.settings.piece_conf_floor:
+                _drop("conf_floor")
                 continue
             if not any(ch.isalnum() for ch in text):
+                _drop("no_alnum")
                 continue
             alnum_n = sum(1 for ch in text if ch.isalnum())
             if len(text) <= self.settings.short_piece_max_len and \
                     (p.confidence is None or
                      p.confidence < self.settings.short_piece_conf_min):
+                _drop("short_low_conf")
                 continue
             if image_area and alnum_n <= 2 and \
                     (p.w * p.h) > 0.15 * image_area:
+                _drop("giant_box")
                 continue
             out.append(p)
         return out
@@ -662,6 +738,10 @@ class LabelReaderPipeline:
                                     ex.variant = rp.variant
                     # رأی اجماعی: پیکربندی دیگری هم این ناحیه را خواند
                     ex.support = getattr(ex, "support", 1) + 1
+                    # v2.10.0: نسخهٔ رأی‌دهنده ثبت می‌شود (برای گیت نام مبتنی بر
+                    # «دو واریانت مستقل» نه شمارش خام رأی)
+                    if rp.variant not in getattr(ex, "vote_variants", []):
+                        ex.vote_variants.append(rp.variant)
                     duplicated = True
                     break
                 if duplicated:
@@ -669,7 +749,8 @@ class LabelReaderPipeline:
                 kept.append(OcrPiece(
                     id="", text=rp.text, normalized_text=norm, bbox=bb,
                     confidence=rp.confidence, variant=rp.variant,
-                    engine=rp.engine, support=1))
+                    engine=rp.engine, support=1,
+                    vote_variants=[rp.variant]))
         # --- فیلتر اجماعی (v1.8.0): حذف نویز تک‌رأی کم‌اطمینان ---
         return self._apply_consensus_filter(kept)
 
@@ -909,12 +990,124 @@ class LabelReaderPipeline:
                 out.append(piece)
         return out
 
+    # ---------- حذف دوقلوی سرگردان (v2.10.0 — ریشهٔ تکرار تجمیعی) ----------
+    @staticmethod
+    def _pure_number(text: str) -> bool:
+        """آیا متن فقط از رقم/اعشار/جداساز ساخته شده است؟ («۵۰»، «0.5»، «1,000»).
+
+        اعداد حساس‌اند: دو عدد متفاوت («۵۰» در برابر «۵۰۰») نباید با قواعد
+        متنیِ containment/فازی ادغام شوند (§۷ دستورالعمل: «اختلاف ۵۰ و ۵۰۰
+        یا ۰٫۵ و ۵ را با شباهت فازی حل نکن») — مگر هندسه، احتوای فیزیکی را
+        اثبات کند (خوانش جزئی همان عدد).
+        """
+        import re
+        t = (text or "").strip()
+        return bool(t) and re.fullmatch(r"[\d.,]+", t) is not None
+
+    @staticmethod
+    def _boxes_corroborate(a: BoundingBox, b: BoundingBox) -> bool:
+        """قرینهٔ هندسی برای «خوانش جزئی همان جایگاه»: هم‌پوشانی/احتوای فیزیکی.
+
+        خوانش جزئی (مثل «2» داخل «B12» یا «50» داخل «500» که تسراکت کادرش را
+        کوچک گرفته) کادر کوچک‌تر را داخل/هم‌پوشان با کادر بزرگ‌تر می‌گذارد؛
+        دو عدد واقعاً متفاوت در یک سطر کادرهای مجزا دارند.
+        """
+        if a.iou(b) > 0.30:
+            return True
+        ix = max(0, min(a.x2, b.x2) - max(a.x, b.x))
+        iy = max(0, min(a.y2, b.y2) - max(a.y, b.y))
+        inter = float(ix * iy)
+        if inter <= 0:
+            return False
+        area_a = float(max(1.0, a.w * a.h))
+        area_b = float(max(1.0, b.w * b.h))
+        return (inter / area_a) >= 0.50 or (inter / area_b) >= 0.50
+
+    @staticmethod
+    def _piece_strength(p: OcrPiece) -> float:
+        """قدرت قطعه برای انتخاب میان دو خوانش: اطمینان × وزن رأی اجماعی."""
+        conf = p.confidence if p.confidence is not None else 0.4
+        return conf * (1.0 + 0.25 * (getattr(p, "support", 1) - 1))
+
+    def _collapse_location_duplicates(self, pieces: list[OcrPiece]) -> int:
+        """حذف «دوقلوی سرگردان» با مکان و هندسه (v2.10.0).
+
+        سازوکار تکرار تجمیعی (الگوی گزارش‌شده «Keeping Keeping Bones Bones»):
+        دو پیکربندی (PSM/واریانت/موتور) واژهٔ واحد را با کادر جابه‌جا می‌خوانند؛
+        اگر کادرها IoU > 0.4 نداشته باشند، از ادغام ناحیه‌ای می‌گریزند و
+        ساخت‌ساز سطر، هر دو را کنار هم می‌چسباند. قاعدهٔ هندسه‌آگاه:
+          - متن نرمال‌شده یکسان،
+          - مرکز y هم‌سطر (اختلاف ≤ ghost_y_ratio × ارتفاع بزرگ‌تر)،
+          - شکاف افقی کادرها ≤ ghost_x_gap_ratio × ارتفاع بزرگ‌تر
+            (کادرهای هم‌پوشان شکاف صفر دارند)،
+          - دست‌کم یکی تک‌رأی (support == 1) باشد؛ اگر هر دو رأی تکرارشده
+            (support ≥ 2) دارند، احتمالاً واقعاً روی برچسب تکرار چاپ شده‌اند
+            و حفظ می‌شوند (§۶: تکرار واقعی نباید حذف شود).
+        برنده: قدرت بیشتر (اطمینان × وزن رأی)؛ رأی بازنده به برنده منتقل
+        می‌شود تا فیلتر اجماعی آن را نویز نپندارد.
+        بازگشت: تعداد قطعه‌های ادغام‌شده (برای شفافیت در گزارش مرحلهٔ OCR).
+        """
+        if not getattr(self.settings, "dedupe_ghost_duplicates", True):
+            return 0
+        gap_ratio = float(getattr(self.settings, "ghost_x_gap_ratio", 0.3))
+        y_ratio = float(getattr(self.settings, "ghost_y_ratio", 0.7))
+        by_text: dict[str, list[OcrPiece]] = {}
+        for p in pieces:
+            key = (p.normalized_text or "").strip().lower()
+            if not key:
+                continue
+            by_text.setdefault(key, []).append(p)
+        removed_ids: set[int] = set()
+        for _key, group in by_text.items():
+            if len(group) < 2:
+                continue
+            for i in range(len(group)):
+                for j in range(i + 1, len(group)):
+                    a, b = group[i], group[j]
+                    if id(a) in removed_ids or id(b) in removed_ids:
+                        continue
+                    h_max = max(1, a.bbox.h, b.bbox.h)
+                    y_diff = abs(
+                        (a.bbox.y + a.bbox.h / 2.0) - (b.bbox.y + b.bbox.h / 2.0))
+                    if y_diff > y_ratio * h_max:
+                        continue
+                    gap = max(0, max(a.bbox.x, b.bbox.x) -
+                              min(a.bbox.x2, b.bbox.x2))
+                    if gap > gap_ratio * h_max:
+                        continue
+                    if getattr(a, "support", 1) >= 2 and \
+                            getattr(b, "support", 1) >= 2:
+                        continue  # هر دو رأی تکرارشده دارند — تکرار واقعی
+                    weak, strong = (
+                        (a, b) if self._piece_strength(b) >= self._piece_strength(a)
+                        else (b, a))
+                    strong.support = max(
+                        getattr(strong, "support", 1),
+                        getattr(weak, "support", 1) + 1)
+                    for _v in getattr(weak, "vote_variants", []):
+                        if _v not in getattr(strong, "vote_variants", []):
+                            strong.vote_variants.append(_v)
+                    removed_ids.add(id(weak))
+        if removed_ids:
+            pieces[:] = [p for p in pieces if id(p) not in removed_ids]
+        return len(removed_ids)
+
     @staticmethod
     def _dedupe_similar_pieces(group: list[OcrPiece]) -> list[OcrPiece]:
         """حذف خوانش‌های فازی مشابه در یک سطر (مثلاً دو psm)؛ حفظ اطمینان بالاتر.
 
         فاصله امن: شباهت ≥ 0.8 فقط برای قطعه‌های طول ≥ 3 اعمال می‌شود تا
         ارقام/حروف کوتاه متفاوت (مثل 5 و 6) اشتباهی ادغام نشوند.
+
+        v2.10.0 — دو قاعدهٔ ایمنی جدید (§۷/§۸ دستورالعمل ممیزی):
+        ۱) قطعهٔ «تمام‌عددی» کوتاه فقط با قرینهٔ هندسی (هم‌پوشانی/احتوای فیزیکی
+           کادر) در قطعهٔ بلندتر ادغام می‌شود؛ بدون هندسه، «۵۰» و «۵۰۰» دو
+           مقدار متفاوت‌اند و هر دو حفظ می‌شوند (خط قرمز: اعداد با شباهت فازی
+           حل نمی‌شوند).
+        ۲) جایگزینی خوانش کوتاه با بلندتر (خوانش جزئی) فقط اگر اطمینان خوانش
+           جدید دست‌کم برابر باشد (با تلورانس ۰٫۰۵)؛ قبلاً جایگزینی بدون
+           بررسی اطمینان انجام می‌شد و خوانش پراطمینانِ درست با خوانش
+           کم‌اطمینانِ بلندتر له می‌شد.
         """
         import difflib
 
@@ -929,14 +1122,29 @@ class LabelReaderPipeline:
                         out[i] = piece
                     replaced = True
                     break
-                # قطعه کوتاهِ زیرمجموعه (مثل «2» داخل «B12») حذف می‌شود
-                if len(b) <= 3 and len(a) >= 4 and b in a:
-                    replaced = True
-                    break
-                if len(a) <= 3 and len(b) >= 3 and a in b:
-                    out[i] = piece
-                    replaced = True
-                    break
+                geo_ok = LabelReaderPipeline._boxes_corroborate(
+                    kept.bbox, piece.bbox)
+                # خوانش جزئی همان جایگاه (b زیرمجموعهٔ a):
+                # - با قرینهٔ هندسی (احتوای فیزیکی کادر) همیشه ادغام می‌شود؛
+                # - بدون هندسه فقط برای واژهٔ کوتاه غیرعددی (مثل «2» داخل «B123»)
+                #   تا «۵۰» و «۵۰۰» دو مقدار متفاوت بمانند (خط قرمز اعداد).
+                if len(b) < len(a) and b in a:
+                    if geo_ok or (
+                            (not LabelReaderPipeline._pure_number(b)) and
+                            len(b) <= 3 and len(a) >= 4):
+                        replaced = True
+                        break
+                    # عدد متفاوت («۵۰» در برابر «۵۰۰») — هر دو حفظ می‌شوند
+                if len(a) < len(b) and a in b:
+                    if geo_ok or (
+                            (not LabelReaderPipeline._pure_number(a)) and
+                            len(a) <= 3 and len(b) >= 3):
+                        # کامل‌ترِ هم‌اطمینان جانشین می‌شود (نه خوانش کم‌اطمینانِ بلندتر)
+                        if (piece.confidence or 0) >= \
+                                (kept.confidence or 0) - 0.05:
+                            out[i] = piece
+                        replaced = True
+                        break
                 if len(a) >= 3 and len(b) >= 3 and \
                         difflib.SequenceMatcher(None, a, b).ratio() >= 0.8:
                     if (piece.confidence or 0) > (kept.confidence or 0):

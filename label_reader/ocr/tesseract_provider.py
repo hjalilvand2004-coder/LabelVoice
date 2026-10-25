@@ -51,6 +51,8 @@ class TesseractProvider(OcrProvider):
         self._langs = settings.ocr_languages
         # زبان‌های به‌کاررفته در آخرین اجرا (برای متادیتا و شفافیت)
         self.last_langs_used: list[str] = []
+        # v2.10.0: فهرست PSM به‌کاررفته در آخرین اجرا (برای رکورد کامل خوانش خام)
+        self.last_psms: list[int] = []
         # تصمیم زبان در اولین اجرا گرفته می‌شود و برای واریانت‌های بعدیِ
         # «همین تصویر» کش می‌شود (نمونهٔ provider به‌ازای هر تصویر تازه است)
         self._decided_langs: list[str] | None = None
@@ -173,6 +175,7 @@ class TesseractProvider(OcrProvider):
             self._decided_langs = self._decide_langs(image_bgr)
         langs = self._decided_langs
         self.last_langs_used = list(langs)
+        self.last_psms = list(self._psm_list())
         pieces: list[OcrRaw] = []
         for lang in langs:
             for psm in self._psm_list():

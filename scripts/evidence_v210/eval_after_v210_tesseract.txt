@@ -1,0 +1,19 @@
+تصویر                                  | حالت               | فیلد | زمان | موتور
+-----------------------------------------------------------------------------------------------
+ambiguous_date.png                     | ambiguous_date     | 1/1  | 3006ms  | tesseract
+combo_strength.png                     | combo_strength     | 1/1  | 3090ms  | tesseract
+en_blurry.png                          | blurry             | 0/0  | 3217ms  | tesseract
+en_glare.png                           | glare              | 0/0  | 3158ms  | tesseract
+en_paracetamol_500mg.png               | clear_english      | 4/4  | 3935ms  | tesseract
+en_rotated.png                         | rotated            | 0/0  | 3921ms  | tesseract
+fa_apirex_500mg.png                    | clear_persian      | 0/2  | 4135ms  | tesseract
+general_product.png                    | non_medicine       | 1/1  | 4060ms  | tesseract
+malicious_printed_text.png             | malicious_text     | 0/2  | 3932ms  | tesseract
+mcg_label.png                          | mcg_vs_mg          | 2/2  | 2825ms  | tesseract
+mixed_bilingual.png                    | mixed_fa_en        | 1/1  | 7241ms  | tesseract
+multi_product.png                      | multi_product      | 0/0  | 3649ms  | tesseract
+no_strength_count.png                  | missing_strength   | 0/0  | 3353ms  | tesseract
+no_text.png                            | no_text            | 0/0  | 2529ms  | tesseract
+-----------------------------------------------------------------------------------------------
+دقت فیلد: 10/14 = 71.4%
+میانگین زمان پردازش: 3718 ms (اجرای واقعی در همین محیط)

@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw
 
 from label_reader.config import Settings
 from label_reader.preprocess import (
-    VARIANT_WHITE_ON_DARK, build_variants, white_on_dark,
+    VARIANT_WHITE_ON_DARK, build_variants, build_variants_traced, white_on_dark,
 )
 from label_reader.pipeline import LabelReaderPipeline
 from label_reader.quality import assess_quality
@@ -39,15 +39,28 @@ def _label_image() -> Image.Image:
 
 
 def test_white_on_dark_three_channel_and_variant_added():
-    """نسخهٔ «متن روشن روی زمینهٔ تیره» سه‌کاناله است و در واریانت‌ها هست."""
+    """نسخهٔ «متن روشن روی زمینهٔ تیره» سه‌کاناله است و در واریانت‌ها هست.
+
+    v2.10.0: مسیر قدیمی (ساخت همیشگی) با فلگ آزموده می‌شود؛ در مسیر مشروط
+    برچسب سفید، این واریانت با دلیل ساخته نمی‌شود.
+    """
     bgr = np.asarray(_label_image())[:, :, ::-1].copy()
     s = _settings()
     out = white_on_dark(bgr)
     assert out.ndim == 3 and out.shape[2] == 3
     assert out.shape[:2] == bgr.shape[:2]
+    s.conditional_variants = False
     variants = build_variants(bgr, s)
     assert VARIANT_WHITE_ON_DARK in variants
     assert variants[VARIANT_WHITE_ON_DARK].shape[:2] == variants["original"].shape[:2]
+    # مسیر مشروط: برچسب با زمینهٔ روشن ⇒ این واریانت ساخته نمی‌شود
+    s.conditional_variants = True
+    skipped: list = []
+    variants_c, _ = build_variants_traced(bgr, s, collect_trace=False,
+                                          skipped_out=skipped)
+    assert VARIANT_WHITE_ON_DARK not in variants_c
+    assert any(sk["variant"] == VARIANT_WHITE_ON_DARK and sk["reason_fa"]
+               for sk in skipped)
 
 
 def test_no_false_bright_warning_on_light_scene():
@@ -102,5 +115,7 @@ def test_stage_emission_live_pipeline():
     assert {"original", "gray_clahe"} <= set(ov["variants"])
     assert ov["quality_before"]["sharpness"] >= 0
 
-    assert result.metadata.app_version == "2.8.0"
+    # v2.10.0: مقایسه با نسخهٔ واقعی بسته — رشتهٔ ثابت با هر bump نسخه می‌شکست
+    from label_reader import __version__ as _pkg_version
+    assert result.metadata.app_version == _pkg_version
     assert result.response_fa

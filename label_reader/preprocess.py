@@ -253,13 +253,56 @@ def shadow_free(bgr: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(flat, cv2.COLOR_GRAY2BGR)
 
 
+# ---------------------------------------------------------------------------
+# تشخیص مسئله برای پیش‌پردازش مشروط (v2.10.0)
+# ---------------------------------------------------------------------------
+def diagnose_image(bgr: np.ndarray) -> dict:
+    """سنجش ارزانِ «مشکلات قابل تشخیص» تصویر برای ساخت مشروط واریانت‌ها.
+
+    سه سنجه (همگی روی نسخهٔ کوچک‌شده برای سرعت):
+    - bg_std: انحراف معیار پس‌زمینهٔ برآوردی؛ زیاد ⇒ سایه/گرادیان روشنایی
+      (هدف واریانت shadow_free).
+    - dark_bg_ratio: نسبت پیکسل‌های تیره؛ زیاد ⇒ زمینهٔ تیره (هدف
+      white_on_dark برای متن روشن روی جعبهٔ آبی/سبز/مشکی).
+    - color_ink_ratio: نسبت پیکسل‌های رنگی (پراکندگی بیشینه/کمینهٔ کانال > ۴۰)
+      که تیره‌اند؛ زیاد ⇒ جوهر رنگی روی زمینه روشن (هدف ink_isolated).
+    این سنجه تصمیم «ساخت/ساخت‌نکردن» می‌دهند؛ معیار دقت متن نیستند.
+    """
+    h, w = bgr.shape[:2]
+    s = 400.0 / max(h, w)
+    if s < 1.0:
+        small = cv2.resize(bgr, (max(1, int(w * s)), max(1, int(h * s))),
+                           interpolation=cv2.INTER_AREA)
+    else:
+        small = bgr
+    gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+    # پس‌زمینهٔ روشنایی: close با هستهٔ بزرگ متن را از برآورد حذف می‌کند
+    k = _odd(max(15, min(small.shape[:2]) // 8))
+    bg = cv2.morphologyEx(gray, cv2.MORPH_CLOSE,
+                          cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k)))
+    bg_std = float(bg.std())
+    dark_bg_ratio = float((gray < 100).sum()) / float(gray.size)
+    max_ch = cv2.max(cv2.max(small[:, :, 0], small[:, :, 1]), small[:, :, 2])
+    min_ch = cv2.min(cv2.min(small[:, :, 0], small[:, :, 1]), small[:, :, 2])
+    spread = max_ch.astype(np.int16) - min_ch.astype(np.int16)
+    colored_dark = ((spread > 40) & (gray < 200)).sum()
+    color_ink_ratio = float(colored_dark) / float(gray.size)
+    return {
+        "bg_std": round(bg_std, 2),
+        "dark_bg_ratio": round(dark_bg_ratio, 4),
+        "color_ink_ratio": round(color_ink_ratio, 4),
+    }
+
+
 def build_variants(bgr: np.ndarray, settings: Settings) -> dict[str, np.ndarray]:
     """ساخت نسخه‌های پردازشی؛ تصویر اصلی حفظ و بازگردانده می‌شود.
 
     واریانت white_on_dark برای متن روشن روی جعبه‌های تیره (v1.7.0)،
     ink_isolated برای جوهر رنگی روی زمینه روشن (v1.8.0) و
     shadow_free/sharpened برای عکس‌های سایه‌دار/نرم موبایل (v2.9.0)
-    اضافه شده‌اند.
+    اضافه شده‌اند. از v2.10.0 واریانت‌های ویژه «مشروط» ساخته می‌شوند:
+    فقط وقتی تشخیص خودکار، مسئلهٔ هدف آن‌ها را ببیند
+    (با LBR_CONDITIONAL_VARIANTS=0 رفتار قدیمی برمی‌گردد).
     """
     variants, _trace = build_variants_traced(bgr, settings, collect_trace=False)
     return variants
@@ -267,6 +310,7 @@ def build_variants(bgr: np.ndarray, settings: Settings) -> dict[str, np.ndarray]
 
 def build_variants_traced(
     bgr: np.ndarray, settings: Settings, collect_trace: bool = True,
+    diagnostics: dict | None = None, skipped_out: list | None = None,
 ) -> tuple[dict[str, np.ndarray], list[dict]]:
     """نسخهٔ ردیابی‌شدهٔ build_variants (v2.6.0) — برای نمایش گام‌به‌گام.
 
@@ -275,13 +319,35 @@ def build_variants_traced(
     کاربر «تغییراتی که OpenCV روی تصویر ایجاد می‌کند» را ببیند.
     تصاویر اشاره‌گرِ همان آرایه‌های در حال پردازش‌اند (بدون کپی اضافی)؛
     با collect_trace=False فقط واریانت‌ها ساخته می‌شود.
+
+    v2.10.0 (پیش‌پردازش مشروط):
+    - ``diagnostics`` خروجی diagnose_image است؛ اگر داده نشود و پردازش مشروط
+      فعال باشد، همین‌جا محاسبه می‌شود.
+    - واریانت‌های ویژه (shadow_free/white_on_dark/ink_isolated) فقط وقتی
+      ساخته می‌شوند که سنجهٔ مربوط، مسئلهٔ هدف‌شان را تأیید کند؛ واریانت‌های
+      ردشده با دلیل فارسی در ``skipped_out`` (اگر داده شود) ثبت می‌شوند تا
+      در رابط کاربری و گزارش شفاف بمانند — هیچ نسخه‌ای «پنهانی» حذف نمی‌شود.
+    - original و gray_clahe همیشه ساخته می‌شوند (مبنای مقایسه).
     """
     trace: list[dict] = []
+    skips = skipped_out if skipped_out is not None else []
 
     def _add(step: str, title_fa: str, desc_fa: str, image: np.ndarray) -> None:
         if collect_trace:
             trace.append({"step": step, "title_fa": title_fa,
                           "desc_fa": desc_fa, "image_bgr": image})
+
+    conditional = bool(getattr(settings, "conditional_variants", True))
+    if conditional and diagnostics is None:
+        diagnostics = diagnose_image(bgr)
+    diag = diagnostics or {}
+
+    def _skip_needed(variant: str, ok: bool, reason_fa: str) -> bool:
+        """True ⇒ واریانت رد شد (فقط در حالت مشروط)؛ دلیل ثبت می‌شود."""
+        if not conditional or ok:
+            return False
+        skips.append({"variant": variant, "reason_fa": reason_fa})
+        return True
 
     # ---- گام ۱: بزرگ‌نمایی کنترل‌شده ----
     min_side = min(bgr.shape[:2])
@@ -317,18 +383,30 @@ def build_variants_traced(
         "هم اکنون پرکنتراست است.",
         variants[VARIANT_GRAY_CLAHE])
 
-    # ---- گام ۳ (جدید v2.9.0): یکنواخت‌سازی نور خالص (حذف سایه) ----
-    variants[VARIANT_SHADOW_FREE] = shadow_free(base)
-    _add(
-        VARIANT_SHADOW_FREE, "حذف سایه و یکنواخت‌سازی نور (تقسیم بر پس‌زمینه)",
-        "cv2.morphologyEx CLOSE با هستهٔ بیضوی بزرگ، پس‌زمینهٔ روشنایی را "
-        "برآورد می‌کند (متن تیره از برآورد حذف می‌شود)؛ سپس cv2.divide تصویر "
-        "را بر پس‌زمینه تقسیم می‌کند: نتیجه، جعبه‌ای است که انگار با نور یکنواخت "
-        "عکس گرفته شده — سایهٔ گوشهٔ تصویر و گرادیان نور حذف و متن تیرهٔ "
-        "پرکنتراست می‌شود. این نسخه برای عکس‌های با سایهٔ سنگین نجات‌دهنده است.",
-        variants[VARIANT_SHADOW_FREE])
+    # ---- گام ۳ (v2.9.0؛ از v2.10.0 مشروط): یکنواخت‌سازی نور خالص (حذف سایه) ----
+    # هدف قابل تشخیص: گرادیان روشنایی/سایه — سنجه: انحراف معیار پس‌زمینهٔ برآوردی.
+    # روی تصویر یکنواخت، این واریانت فقط دانهٔ نویز را تقویت می‌کند و ساخته نمی‌شود.
+    need_shadow = (not conditional) or \
+        float(diag.get("bg_std", 0.0)) >= float(settings.cond_shadow_bg_std)
+    if not _skip_needed(
+            VARIANT_SHADOW_FREE, need_shadow,
+            f"پس‌زمینهٔ تصویر یکنواخت است (انحراف معیار روشنایی پس‌زمینهٔ "
+            f"{diag.get('bg_std', 0.0)} < {settings.cond_shadow_bg_std})؛ "
+            "سایه‌ای برای حذف‌کردن دیده نشد و این نسخه ساخته نشد."):
+        variants[VARIANT_SHADOW_FREE] = shadow_free(base)
+        _add(
+            VARIANT_SHADOW_FREE, "حذف سایه و یکنواخت‌سازی نور (تقسیم بر پس‌زمینه)",
+            f"تشخیص خودکار: انحراف معیار روشنایی پس‌زمینه {diag.get('bg_std', 0.0)} "
+            f"(آستانه {settings.cond_shadow_bg_std}) ⇒ گرادیان نور/سایه هست. "
+            "cv2.morphologyEx CLOSE با هستهٔ بیضوی بزرگ، پس‌زمینهٔ روشنایی را "
+            "برآورد می‌کند (متن تیره از برآورد حذف می‌شود)؛ سپس cv2.divide تصویر "
+            "را بر پس‌زمینه تقسیم می‌کند: نتیجه، جعبه‌ای است که انگار با نور یکنواخت "
+            "عکس گرفته شده — سایهٔ گوشهٔ تصویر و گرادیان نور حذف و متن تیرهٔ "
+            "پرکنتراست می‌شود. این نسخه برای عکس‌های با سایهٔ سنگین نجات‌دهنده است.",
+            variants[VARIANT_SHADOW_FREE])
 
-    # ---- گام ۴ (جدید v2.9.0): تیزکردن لبه‌ها (Unsharp Mask) ----
+    # ---- گام ۴ (v2.9.0؛ همیشه): تیزکردن لبه‌ها (Unsharp Mask) ----
+    # برای عکس‌های موبایل کم‌خطر و ارزان است؛ مبنای مقایسه باقی می‌ماند.
     gc_gray = cv2.cvtColor(
         variants[VARIANT_GRAY_CLAHE], cv2.COLOR_BGR2GRAY)
     variants[VARIANT_SHARPENED] = cv2.cvtColor(
@@ -355,22 +433,45 @@ def build_variants_traced(
             "می‌تواند شکل نویسه را تغییر دهد.",
             variants[VARIANT_BINARIZED])
 
-    # ---- گام ۶: متن روشن روی زمینهٔ تیره ----
-    variants[VARIANT_WHITE_ON_DARK] = white_on_dark(base)
-    _add(
-        VARIANT_WHITE_ON_DARK, "متن روشن روی زمینهٔ تیره (معکوس‌سازی تطبیقی)",
-        "GaussianBlur(3×3) + cv2.adaptiveThreshold با THRESH_BINARY_INV "
-        "(بلوک ۵۱، C=۱۲) + medianBlur(3) و در پایان bitwise_not. برای نام‌های "
-        "سفید روی جعبهٔ آبی/سبز: پیکسل‌های روشن‌تر از همسایگی (متن سفید) "
-        "علامت می‌خورند و سپس معکوس می‌شوند تا OCR ورودی استاندارد "
-        "(متن تیره روی زمینهٔ روشن) ببیند.",
-        variants[VARIANT_WHITE_ON_DARK])
+    # ---- گام ۶ (از v2.10.0 مشروط): متن روشن روی زمینهٔ تیره ----
+    # هدف قابل تشخیص: پس‌زمینهٔ تیرهٔ معتبر — سنجه: نسبت پیکسل‌های تیره (<۱۰۰).
+    # روی جعبهٔ سفید، معکوس‌سازی تطبیقی فقط نویز زمینه تولید می‌کند.
+    use_wod = getattr(settings, "use_white_on_dark_variant", True)
+    need_wod = (not conditional) or \
+        float(diag.get("dark_bg_ratio", 0.0)) >= float(settings.cond_dark_bg_ratio)
+    if use_wod and not _skip_needed(
+            VARIANT_WHITE_ON_DARK, need_wod,
+            f"زمینهٔ تصویر روشن است (نسبت پیکسل‌های تیره "
+            f"{diag.get('dark_bg_ratio', 0.0)} < {settings.cond_dark_bg_ratio})؛ "
+            "متن روشن روی زمینهٔ تیره دیده نشد و این نسخه ساخته نشد."):
+        variants[VARIANT_WHITE_ON_DARK] = white_on_dark(base)
+        _add(
+            VARIANT_WHITE_ON_DARK, "متن روشن روی زمینهٔ تیره (معکوس‌سازی تطبیقی)",
+            f"تشخیص خودکار: نسبت پیکسل‌های تیره {diag.get('dark_bg_ratio', 0.0)} "
+            f"(آستانه {settings.cond_dark_bg_ratio}) ⇒ زمینهٔ تیرهٔ معتبر هست. "
+            "GaussianBlur(3×3) + cv2.adaptiveThreshold با THRESH_BINARY_INV "
+            "(بلوک ۵۱، C=۱۲) + medianBlur(3) و در پایان bitwise_not. برای نام‌های "
+            "سفید روی جعبهٔ آبی/سبز: پیکسل‌های روشن‌تر از همسایگی (متن سفید) "
+            "علامت می‌خورند و سپس معکوس می‌شوند تا OCR ورودی استاندارد "
+            "(متن تیره روی زمینهٔ روشن) ببیند.",
+            variants[VARIANT_WHITE_ON_DARK])
 
-    # ---- گام ۷: جداسازی جوهر رنگی ----
-    if getattr(settings, "use_ink_isolated_variant", True):
+    # ---- گام ۷ (از v2.10.0 مشروط): جداسازی جوهر رنگی ----
+    # هدف قابل تشخیص: جوهر رنگی — سنجه: نسبت پیکسل‌های رنگیِ تیره (پراکندگی کانال).
+    # روی برچسب تک‌رنگ، خروجی تقریباً همان خاکستری است و اجرای آن اتلاف است.
+    use_ink = getattr(settings, "use_ink_isolated_variant", True)
+    need_ink = (not conditional) or \
+        float(diag.get("color_ink_ratio", 0.0)) >= float(settings.cond_color_ink_ratio)
+    if use_ink and not _skip_needed(
+            VARIANT_INK_ISOLATED, need_ink,
+            f"جوهر رنگی معناداری دیده نشد (نسبت پیکسل‌های رنگی "
+            f"{diag.get('color_ink_ratio', 0.0)} < {settings.cond_color_ink_ratio})؛ "
+            "این نسخه ساخته نشد."):
         variants[VARIANT_INK_ISOLATED] = ink_isolated(base)
         _add(
             VARIANT_INK_ISOLATED, "جداسازی جوهر رنگی (255 − max(B,G,R))",
+            f"تشخیص خودکار: نسبت پیکسل‌های رنگی {diag.get('color_ink_ratio', 0.0)} "
+            f"(آستانه {settings.cond_color_ink_ratio}) ⇒ جوهر رنگی هست. "
             "بیشینهٔ سه کانال رنگی گرفته می‌شود و از ۲۵۵ کم می‌شود: هر جوهر "
             "رنگی (آبی/بنفش/قرمز/سبز) که در خاکستری کم‌کنتراست می‌شود، به "
             "جوهر تیره روی زمینهٔ روشن تبدیل می‌شود؛ زمینهٔ سفید در هر سه "
