@@ -3,7 +3,7 @@
  * - موتور OCR و داده زبان: cache-first پس از نخستین بارگیری (پشتیبانی آفلاین کامل)
  * - هیچ درخواستی به سرور خارجی از این سرویس‌کار صادر نمی‌شود.
  */
-var CACHE = 'lbr-mobile-v23'; /* v2.10.1: رفع «لانچر نسخهٔ قدیم را نشان می‌دهد» — فلگ پاکسازی وابسته به نسخه در START-HERE + رفرش خودکار یک‌باره هنگام تحویل‌گرفتن کنترل توسط SW جدید + راهنمای چیدمان Full-Project در لانچر قابل‌حمل */
+var CACHE = 'lbr-mobile-v24'; /* v2.11.0: همان مدل صوتی دسکتاپ در موبایل (Edge TTS فارسی) — حذف speechSynthesis/TTS بومی گوشی؛ ماژول جدید js/tts.js (پل /api/tts + کلاینت مستقیم Edge) */
 
 var SHELL = [
   './',
@@ -20,6 +20,7 @@ var SHELL = [
   './js/preprocess.js',
   './js/boxdetect.js',
   './js/samples-data.js',
+  './js/tts.js',
   './js/ocr.js',
   './js/camera.js',
   './js/help.js',
