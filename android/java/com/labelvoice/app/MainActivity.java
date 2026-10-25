@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
-import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -20,7 +18,6 @@ import android.webkit.ValueCallback;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -30,15 +27,18 @@ import java.util.Map;
  * Serves https://appassets.local/ from the APK assets via
  * shouldInterceptRequest, so the web app runs in a secure context with
  * everything local: Tesseract.js (WASM) + Persian/English language data.
- * No Python, no server, no internet required.
  *
  * v1.2.0: پشتیبانی دوربین زنده (getUserMedia) — مجوز CAMERA در مانیفست +
  * پیاده‌سازی onPermissionRequest تا WebView اجازه video capture بدهد.
  *
- * v2.5.0: رفع «پخش صوتی پاسخ در موبایل اپلیکیشن کار نمی‌کند» —
- * speechSynthesis داخل WebView اندروید روی بسیاری از دستگاه‌ها بی‌صداست؛
- * پس پل بومی TextToSpeech اندروید با نام LabelVoiceTts به جاوااسکریپت
- * معرفی می‌شود و صفحه اول همین پل را به کار می‌گیرد (speak/stop/ready).
+ * v2.11.0: «همان مدل صوتی دسکتاپ در موبایل — بدون TTS خود گوشی» —
+ * پل بومی TextToSpeech (نسخهٔ v2.5.0) به‌کلی حذف شد؛ پخش صوتی حالا فقط با
+ * مدل دسکتاپ (صداهای نورال فارسی Microsoft Edge) انجام می‌شود:
+ *   ۱) کلاینت مستقیم داخل js/tts.js (WebSocket wss به سرویس Edge) —
+ *      سرویس فقط درخواست‌های با UA حاوی «Edg/» را می‌پذیرد (آزمون‌شده)،
+ *      پس نشانهٔ «Edg/143.0.3650.75» به UA همین WebView اضافه می‌شود؛
+ *   ۲) یا پل دسکتاپ (POST /api/tts) اگر در دسترس باشد.
+ * نیازمند اینترنت (مجوز INTERNET موجود است).
  */
 public class MainActivity extends Activity {
 
@@ -51,11 +51,6 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> filePathCallback;
     /** درخواست دوربین WebView که منتظر تأیید کاربر است. */
     private PermissionRequest pendingCameraRequest;
-
-    /** v2.5.0: موتور متن‌به‌گفتار بومی اندروید + وضعیت آماده‌سازی/زبان. */
-    private TextToSpeech ttsEngine;
-    private volatile boolean ttsReady = false;
-    private volatile boolean ttsFaOk = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -73,9 +68,14 @@ public class MainActivity extends Activity {
         // پخش زنده پیش‌نمایش دوربین بدون نیاز به حرکت کاربر
         s.setMediaPlaybackRequiresUserGesture(false);
 
-        // v2.5.0: پل TTS بومی — صفحه (app.js) اول LabelVoiceTts را امتحان می‌کند
-        initNativeTts();
-        webView.addJavascriptInterface(new TtsBridge(), "LabelVoiceTts");
+        // v2.11.0: نشانهٔ Edge به UA — سرویس TTS مایکروسافت فقط درخواست‌های
+        // با UA حاوی «Edg/» (هماهنگ با Sec-MS-GEC-Version در js/tts.js) را
+        // می‌پذیرد؛ بدون این نشانه مسیر مستقیم صوتی با ۴۰۳ رد می‌شود.
+        // (تست‌شده: UA کروم/فایرفاکس = 403؛ فقط UA با Edg/ پذیرفته می‌شود.)
+        String baseUa = s.getUserAgentString();
+        if (baseUa != null && !baseUa.contains("Edg/")) {
+            s.setUserAgentString(baseUa + " Edg/143.0.3650.75");
+        }
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -233,90 +233,5 @@ public class MainActivity extends Activity {
         } else {
             super.onBackPressed();
         }
-    }
-
-    // ================= v2.5.0: پل TTS بومی اندروید =================
-
-    /** راه‌اندازی موتور متن‌به‌گفتار سیستم؛ اولویت با صدای فارسی (fa-IR). */
-    private void initNativeTts() {
-        try {
-            ttsEngine = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
-                @Override
-                public void onInit(int status) {
-                    if (status != TextToSpeech.SUCCESS) {
-                        ttsReady = false;
-                        return;
-                    }
-                    ttsReady = true;
-                    try {
-                        int r = ttsEngine.setLanguage(new Locale("fa", "IR"));
-                        ttsFaOk = !(r == TextToSpeech.LANG_MISSING_DATA
-                                || r == TextToSpeech.LANG_NOT_SUPPORTED);
-                        if (!ttsFaOk) {
-                            // فارسی نصب نیست؛ صدای پیش‌فرض دستگاه بهتر از هیچ است
-                            ttsEngine.setLanguage(Locale.getDefault());
-                        }
-                    } catch (Exception ignored) {
-                        ttsFaOk = false;
-                    }
-                }
-            });
-        } catch (Exception ignored) {
-            ttsReady = false;
-        }
-    }
-
-    /** پل جاوااسکریپت ↔ TextToSpeech (v2.5.0) — فقط متدهای مشخص و ایمن. */
-    private class TtsBridge {
-        /** خواندن متن با موتور صوتی سیستم؛ true یعنی فرمان پخش پذیرفته شد. */
-        @JavascriptInterface
-        public boolean speak(String text) {
-            if (!ttsReady || ttsEngine == null || text == null || text.trim().isEmpty()) {
-                return false;
-            }
-            try {
-                ttsEngine.stop();
-                int r = ttsEngine.speak(text, TextToSpeech.QUEUE_FLUSH, null,
-                        "lv-" + System.currentTimeMillis());
-                return r == TextToSpeech.SUCCESS;
-            } catch (Exception ignored) {
-                return false;
-            }
-        }
-
-        /** توقف فوری پخش جاری. */
-        @JavascriptInterface
-        public void stop() {
-            try {
-                if (ttsReady && ttsEngine != null) ttsEngine.stop();
-            } catch (Exception ignored) {
-            }
-        }
-
-        /** آیا موتور صوتی سیستم آماده است؟ (صفحه قبل از speak بررسی می‌کند) */
-        @JavascriptInterface
-        public boolean ready() {
-            return ttsReady;
-        }
-
-        /** «fa» اگر صدای فارسی دستگاه پشتیبانی شود؛ در غیر این صورت «default». */
-        @JavascriptInterface
-        public String langStatus() {
-            return ttsFaOk ? "fa" : "default";
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (ttsEngine != null) {
-            try {
-                ttsEngine.stop();
-                ttsEngine.shutdown();
-            } catch (Exception ignored) {
-            }
-            ttsEngine = null;
-            ttsReady = false;
-        }
-        super.onDestroy();
     }
 }

@@ -63,6 +63,17 @@ def main() -> None:
         assert e.code == 400
         print("unknown-engine OK → 400:", json.load(e)["error_fa"][:60])
 
+    # ---- v2.11.0: POST /api/tts — بدون رضایت → ۴۰۳ (حریم خصوصی) ----
+    body = json.dumps({"text": "سلام", "consent": False}).encode("utf-8")
+    req3 = urllib.request.Request(
+        base + "/api/tts", data=body, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req3, timeout=15) as r:
+            assert False, "بدون رضایت باید ۴۰۳ می‌داد"
+    except urllib.error.HTTPError as e:
+        assert e.code == 403, e.code
+        print("tts-consent OK → 403:", json.load(e)["error_fa"][:60])
+
     server.shutdown()
     print("ALL BRIDGE TESTS PASSED")
 

@@ -12,7 +12,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>برچسب‌خوان هوشمند دارو و محصولات</title>
-<link rel="stylesheet" href="css/style.css?v=2.10.1">
+<link rel="stylesheet" href="css/style.css?v=2.11.0">
 <script>
 /* اعمال زودهنگام حالت تاریک دستی (قبل از اولین رندر) — v1.8.2 */
 try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.classList.add('dark'); } catch (e) { /* نادیده */ }
@@ -51,7 +51,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     </label>
   </div>
   <div class="sb-foot">
-    <div class="sb-ver">نسخهٔ وب ۲.۱۰.۱</div>
+    <div class="sb-ver">نسخهٔ وب ۲.۱۱.۰</div>
     <div>حمید جلیلوند و نوید بدری</div>
     <div>همه پردازش‌ها روی همین دستگاه</div>
   </div>
@@ -194,7 +194,32 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
         <button type="button" class="btn btn-ghost btn-small" data-help="tts">فناوری پخش صوتی</button>
         <button type="button" class="btn btn-ghost btn-small" data-help="json">فناوری خروجی JSON</button>
       </div>
-      <p class="hint" id="tts-note">پخش صوتی روی همین دستگاه انجام می‌شود؛ هیچ داده‌ای به سرور ارسال نمی‌شود.</p>
+      <!-- v2.11.0: همان مدل صوتی دسکتاپ (Edge TTS فارسی) — بدون TTS خود گوشی.
+           رضایت صریح لازم است چون متن پاسخ برای تبدیل گفتار به سرویس ابری می‌رود. -->
+      <div class="tts-controls" id="tts-controls">
+        <label class="tts-consent-row">
+          <input type="checkbox" id="tts-consent">
+          <span>می‌پذیرم متن پاسخ برای تبدیل گفتار به سرویس ابری <b>Microsoft Edge TTS</b> (همان مدل دسکتاپ، صدای فارسی) ارسال شود. بدون این رضایت صوتی تولید نمی‌شود.</span>
+        </label>
+        <div class="tts-selects">
+          <label>صدا:
+            <select id="tts-voice">
+              <option value="fa-IR-FaridNeural" selected>فرید (مرد)</option>
+              <option value="fa-IR-DilaraNeural">دلارا (زن)</option>
+            </select>
+          </label>
+          <label>سرعت خوانش:
+            <select id="tts-rate">
+              <option value="-15%">آهسته (−۱۵٪)</option>
+              <option value="-5%">کمی آهسته (−۵٪)</option>
+              <option value="+0%" selected>معمولی</option>
+              <option value="+10%">تند (+۱۰٪)</option>
+              <option value="+20%">تندتر (+۲۰٪)</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <p class="hint" id="tts-note">صدا با همان مدل دسکتاپ (صداهای نورال فارسی Microsoft Edge) ساخته می‌شود؛ از موتور صوتی خود گوشی استفاده نمی‌شود. برای پخش: پل دسکتاپ (START-BRIDGE) فعال باشد یا صفحه در مرورگر Edge باز شده باشد (در نسخهٔ اندروید: اینترنت روشن باشد).</p>
     </div>
 
     <h3>فیلدهای خوانده‌شده
@@ -297,7 +322,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
       <ul class="req-map">
         <li>دوربین به سمت جعبه ← <code>js/camera.js</code> (زنده + تیزترین فریم) ⇄ <code>app.py</code> (دسکتاپ) — ۱۶ آزمون E2E ✅</li>
         <li>استخراج نام و فیلدها ← <code>js/ocr.js</code> + <code>js/extractor.js</code> ⇄ <code>label_reader/ocr/*</code> + <code>extraction/*</code> ✅</li>
-        <li>خواندن فارسی ← <code>js/responder.js</code> + speechSynthesis ⇄ <code>response/builder.py</code> + <code>tts/*</code> ✅</li>
+        <li>خواندن فارسی ← <code>js/responder.js</code> + <code>js/tts.js</code> (Edge TTS — همان مدل دسکتاپ) ⇄ <code>response/builder.py</code> + <code>tts/*</code> ✅</li>
         <li>نام، قدرت درج‌شده، تعداد ← هسته مدل داده (name/strength/count) با ۱۴ نمونه زمینه‌سنجی‌شده ✅</li>
         <li>جداسازی از توصیه پزشکی ← نگهبان <code>js/guard.js</code> ⇄ <code>response/guard.py</code> (ممنوع‌واژه «دوز مصرف»، رد صفر، اعداد فقط از شواهد) ✅</li>
       </ul>
@@ -310,7 +335,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
         <li>OCR ← <code>js/ocr.js</code> (Tesseract.js/WASM) ⇄ <code>label_reader/ocr/*</code> (Tesseract 5 + EasyOCR) ✅</li>
         <li>پردازش متن و کنترل فیلدها ← <code>js/textnorm.js</code> + <code>js/patterns.js</code> ⇄ <code>textnorm.py</code> + <code>extraction/*</code> ✅</li>
         <li>پاسخ فارسی ← <code>js/responder.js</code> + <code>js/guard.js</code> ⇄ <code>response/builder.py</code> + <code>guard.py</code> (+ <code>llm/rewriter.py</code> اختیاری/خاموش — انطباق با «یا» ملزومات) ✅</li>
-        <li>TTS + Streamlit ← speechSynthesis ⇄ <code>label_reader/tts/*</code> + <code>app.py</code> ✅</li>
+        <li>TTS + Streamlit ← <code>js/tts.js</code> + پل <code>/api/tts</code> ⇄ <code>label_reader/tts/*</code> + <code>app.py</code> ✅</li>
       </ul>
     </details>
     <p class="hint">جدول انطباق کامل (الزام ← تحقق ← فایل ← آزمون ← وضعیت): <a href="documentation.html#considerations">مستندات فنی، بخش «ملزومات استاد»</a></p>
@@ -327,7 +352,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
           <tr><td>خواندن متن (OCR)</td><td><code>Tesseract.js 6.0.1 (WebAssembly)</code> — مدل و زبان به انتخاب کاربر: سریع/دقیق (LSTM) · <code>fas</code>/<code>eng</code>/<code>fas+eng</code> (v2.5.0 — ۹ گزینه: ۵ مرورگری + ۴ پل دسکتاپ)</td><td>خوانش چندگذری داخل مرورگر، کاملاً آفلاین</td></tr>
           <tr><td>پردازش متن و فیلدها</td><td>الگوها و قواعد فارسی (<code>patterns.js + extractor.js</code>)</td><td>استخراج نام، قدرت، تعداد — بدون مدل زبانی</td></tr>
           <tr><td>تولید پاسخ فارسی</td><td>قالب‌ساز قاعده‌محور + نگهبان ایمنی (<code>responder.js + guard.js</code>)</td><td>پاسخ فقط از شواهد OCR</td></tr>
-          <tr><td>خوانش صوتی</td><td><code>Web Speech API (speechSynthesis)</code></td><td>صدای فارسی روی خود دستگاه</td></tr>
+          <tr><td>خوانش صوتی (v2.11.0)</td><td><code>Microsoft Edge TTS</code> — صداهای نورال فارسی <code>fa-IR-FaridNeural</code>/<code>fa-IR-DilaraNeural</code> — <b>همان مدل دسکتاپ</b>؛ از موتور صوتی خود گوشی استفاده نمی‌شود. مسیرها: پل دسکتاپ <code>POST /api/tts</code> یا کلاینت مستقیم (مرورگر Edge/APK)</td><td>خروجی صوتی یکسان در همهٔ رابط‌ها؛ فقط با رضایت صریح کاربر</td></tr>
           <tr><td>نسخهٔ دسکتاپ (Streamlit)</td><td><code>Tesseract 5</code> · <code>EasyOCR</code> · <code>Surya</code> · <code>Qwen/Qwen3-VL-2B-Instruct</code> — <b>هر چهار موتور به انتخاب کاربر</b> از منوی «موتور OCR» سایدبار</td><td>خوانش با گیت کیفیت و رأی اجماعی مشترک؛ دستیار مکمل اختیاری؛ صدای edge-tts/gTTS با رضایت</td></tr>
         </tbody>
       </table>
@@ -387,7 +412,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
 </nav>
 
 <footer class="app-footer">
-  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخهٔ وب ۲.۵.۰</p>
+  <p>برچسب‌خوان هوشمند دارو و محصولات — نسخهٔ وب ۲.۱۱.۰</p>
   <p>توسعه و طراحی: حمید جلیلوند و نوید بدری</p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="stages">اعلام مراحل پردازش و ارزیابی مرحله‌ای</button></p>
   <p><button type="button" class="btn btn-ghost btn-small" data-help="reqs">ملزومات طرح‌شده توسط استاد و جدول انطباق</button></p>
@@ -430,20 +455,21 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
   <div style="padding:1rem;text-align:center">این برنامه به جاوااسکریپت نیاز دارد. لطفاً جاوااسکریپت مرورگر را فعال کنید.</div>
 </noscript>
 
-<script src="js/textnorm.js?v=2.10.1"></script>
-<script src="js/patterns.js?v=2.10.1"></script>
-<script src="js/guard.js?v=2.10.1"></script>
-<script src="js/extractor.js?v=2.10.1"></script>
-<script src="js/responder.js?v=2.10.1"></script>
-<script src="js/pipeline.js?v=2.10.1"></script>
-<script src="js/preprocess.js?v=2.10.1"></script>
-<script src="js/boxdetect.js?v=2.10.1"></script>
+<script src="js/textnorm.js?v=2.11.0"></script>
+<script src="js/patterns.js?v=2.11.0"></script>
+<script src="js/guard.js?v=2.11.0"></script>
+<script src="js/extractor.js?v=2.11.0"></script>
+<script src="js/responder.js?v=2.11.0"></script>
+<script src="js/pipeline.js?v=2.11.0"></script>
+<script src="js/preprocess.js?v=2.11.0"></script>
+<script src="js/boxdetect.js?v=2.11.0"></script>
 <script src="js/samples-data.js"></script>
-<script src="js/offline-engine.js?v=2.10.1"></script>
+<script src="js/offline-engine.js?v=2.11.0"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
-<script src="js/ocr.js?v=2.10.1"></script>
-<script src="js/camera.js?v=2.10.1"></script>
-<script src="js/help.js?v=2.10.1"></script>
-<script src="js/app.js?v=2.10.1"></script>
+<script src="js/ocr.js?v=2.11.0"></script>
+<script src="js/camera.js?v=2.11.0"></script>
+<script src="js/help.js?v=2.11.0"></script>
+<script src="js/tts.js?v=2.11.0"></script>
+<script src="js/app.js?v=2.11.0"></script>
 </body>
 </html>

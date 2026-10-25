@@ -640,6 +640,15 @@ test('v2.10 collapseLocationDuplicates: سطر نهایی واژهٔ تکرار�
   assertEq(JSON.stringify(words), JSON.stringify(['Keeping', 'Bones', 'Strong']));
 });
 
+// ---------- v2.11.0: آزمون پاریتی TTS (توکن Sec-MS-GEC v2 و ابزار متن) ----------
+try {
+  require('./tts_v2110.js');
+  passed++;
+} catch (e) {
+  failed++;
+  failures.push('tts_v2110: ' + (e && e.message ? e.message : e));
+}
+
 console.log('\nنتیجه: ' + passed + ' پاس، ' + failed + ' شکست');
 if (failed) {
   console.log('\nجزئیات شکست‌ها:');

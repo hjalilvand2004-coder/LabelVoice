@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-"""پل OCR محلی — اجرای موتورهای سنگین دسکتاپ برای نسخهٔ وب/موبایل (v2.5.0)
+"""پل OCR و TTS محلی — اجرای موتورهای سنگین دسکتاپ برای نسخهٔ وب/موبایل (v2.11.0)
 
-خواستهٔ کاربر: «جایی باشد که انتخاب مدل OCR واقعاً صورت بگیرد — هم در موبایل
+خواستهٔ کاربر (v2.5.0): «جایی باشد که انتخاب مدل OCR واقعاً صورت بگیرد — هم در موبایل
 اپلیکیشن و هم در وب‌سایت». موتورهای مرورگری (Tesseract.js) داخل خود مرورگر اجرا
 می‌شوند؛ اما EasyOCR و Surya و Qwen3-VL-2B-Instruct مدل‌های پایتونی‌اند و داخل
 مرورگر قابل اجرا نیستند. راه‌حل صادقانه: «پل محلی».
+
+خواستهٔ کاربر (v2.11.0): «همان مدل صوتی دسکتاپ در موبایل، بدون TTS خود گوشی» —
+مسیر POST /api/tts با همان کد label_reader/tts (edge-tts با صداهای
+fa-IR-FaridNeural/fa-IR-DilaraNeural و جایگزین gTTS) صدا را در رایانهٔ دسکتاپ
+می‌سازد و mp3 به صفحهٔ موبایل می‌دهد؛ یعنی صدای موبایل دقیقاً همان مدل دسکتاپ است.
+(مسیر دوم صدا: کلاینت مستقیم Edge در js/tts.js — فقط در مرورگر Edge/APK.)
 
 سرورِ کوچکِ همین ماژول روی رایانهٔ دسکتاپ بالا می‌آید (از دکمهٔ سایدبار
 Streamlit یا START-BRIDGE.bat) و نسخهٔ وب/موبایل تصویر پیش‌پردازش‌شده را برای
@@ -12,9 +18,10 @@ Streamlit یا START-BRIDGE.bat) و نسخهٔ وب/موبایل تصویر پی
 اطمینان؛ بقیهٔ خط لوله (استخراج فیلد، نگهبان، پاسخ) همان مسیر محلی مرورگر
 می‌ماند — یعنی موتور انتخابی فقط «خواننده» است و از هیچ گواری میان‌بر نمی‌زند.
 
-حریم خصوصی: تصویر فقط بین دستگاه کاربر و رایانهٔ خودش روی شبکهٔ محلی رد و بدل
+حریم خصوصی: تصویر و متن فقط بین دستگاه کاربر و رایانهٔ خودش روی شبکهٔ محلی رد و بدل
 می‌شود؛ هیچ ذخیره‌سازی یا لاگ محتوایی انجام نمی‌شود (فایل‌ها بلافاصله از حافظه
-پاک می‌شوند؛ لاگ فقط تعداد و مدت است).
+پاک می‌شوند؛ لاگ فقط تعداد و مدت است). TTS فقط با رضایت صریح (consent=true)
+اجرا می‌شود و متن برای همان یک درخواست به سرویس ابری صوتی می‌رود.
 
 اجرا:
     python -m label_reader.bridge --port 8770
@@ -31,12 +38,16 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .config import Settings
 from .ocr import OcrUnavailableError, make_provider
+from .tts import TtsError, synthesize_with_fallback
+from .tts.base import EDGE_VOICES
 
 __all__ = ["BridgeServer", "start_bridge_server", "list_engines", "main"]
 
-BRIDGE_VERSION = "2.5.0"
+BRIDGE_VERSION = "2.11.0"
 DEFAULT_PORT = 8770
 MAX_BODY = 20 * 1024 * 1024  # سقف امن حجم تصویر (۲۰MB)
+MAX_TTS_BODY = 64 * 1024     # سقف امن حجم بدنهٔ TTS (۶۴KB)
+MAX_TTS_CHARS = 6000         # سقف طول متن هر درخواست TTS
 
 ENGINE_CATALOG_FA = [
     {"id": "tesseract", "fa": "Tesseract 5 — LSTM (سبک و سریع)"},
@@ -61,7 +72,7 @@ def list_engines(settings: Settings | None = None) -> list[dict]:
 
 
 class BridgeServer(BaseHTTPRequestHandler):
-    """فقط دو مسیر: GET /ping و POST /ocr — بدون ذخیره‌سازی، بدون لاگ محتوا."""
+    """مسیرها: GET /ping، POST /ocr، POST /api/tts — بدون ذخیره‌سازی، بدون لاگ محتوا."""
 
     server_version = "LabelVoiceBridge/" + BRIDGE_VERSION
     settings: Settings  # توسط start_bridge_server تزریق می‌شود
@@ -96,7 +107,8 @@ class BridgeServer(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         path = self.path.split("?")[0]
         if path != "/ping":
-            self._json({"ok": False, "error_fa": "مسیر ناشناخته؛ فقط /ping و /ocr."},
+            self._json({"ok": False,
+                        "error_fa": "مسیر ناشناخته؛ فقط GET /ping و POST /ocr و POST /api/tts."},
                        status=404)
             return
         try:
@@ -105,19 +117,119 @@ class BridgeServer(BaseHTTPRequestHandler):
             self._json({"ok": False, "error_fa": f"خطای فهرست موتورها: {exc}"},
                        status=500)
             return
+        from .tts import make_tts_provider
+        _prov = make_tts_provider(self.settings.tts_provider)
+        _tts_ok, _tts_hint = _prov.available()
         self._json({
             "ok": True,
             "server": "labelvoice-bridge",
             "version": BRIDGE_VERSION,
             "engines": engines,
+            # v2.11.0: وضعیت TTS برای صفحهٔ موبایل — همان مدل دسکتاپ از همین مسیر
+            "tts": {
+                "provider": _prov.name,
+                "voice": self.settings.tts_voice,
+                "rate": self.settings.tts_rate,
+                "voices": list(EDGE_VOICES),
+                "available": _tts_ok,
+                "hint_fa": _tts_hint,
+            },
         })
 
-    # ---------- POST /ocr?engine=<id> ----------
+    # ---------- POST /api/tts (v2.11.0 — همان مدل صوتی دسکتاپ برای موبایل/وب) ----------
+    def _handle_tts(self) -> None:
+        """بدنهٔ JSON: {text, consent, voice?, rate?} → audio/mpeg یا خطای فارسی.
+
+        همان تابع synthesize_with_fallback دسکتاپ صدا را می‌سازد (edge → gtts)؛
+        یعنی صدای موبایل دقیقاً همان مدل دسکتاپ است. بدون consent=true هیچ متنی
+        به سرویس ابری نمی‌رود (خط قرمز حریم خصوصی). محتوای متن لاگ نمی‌شود.
+        """
+        import json as _json
+        import re as _re
+
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0:
+            self._json({"ok": False, "error_fa": "بدنهٔ درخواست TTS خالی است."},
+                       status=400)
+            return
+        if length > MAX_TTS_BODY:
+            self._json({"ok": False,
+                        "error_fa": "بدنهٔ درخواست TTS بیش از حد بزرگ است (سقف ۶۴ کیلوبایت)."},
+                       status=413)
+            return
+        raw = self.rfile.read(length)
+        try:
+            payload = _json.loads(raw.decode("utf-8"))
+        except Exception:  # noqa: BLE001
+            self._json({"ok": False, "error_fa": "بدنهٔ JSON نامعتبر است."},
+                       status=400)
+            return
+        if payload.get("consent") is not True:
+            self._json({"ok": False,
+                        "error_fa": ("بدون رضایت صریح (consent=true) متن به سرویس صوتی "
+                                     "ارسال نمی‌شود — حریم خصوصی.")},
+                       status=403)
+            return
+        text = str(payload.get("text") or "").strip()
+        if not text:
+            self._json({"ok": False, "error_fa": "متنی برای خواندن وجود ندارد."},
+                       status=400)
+            return
+        if len(text) > MAX_TTS_CHARS:
+            self._json({"ok": False,
+                        "error_fa": f"متن بیش از حد طولانی است (سقف {MAX_TTS_CHARS} نویسه)."},
+                       status=400)
+            return
+
+        voice = str(payload.get("voice") or self.settings.tts_voice).strip()
+        rate = str(payload.get("rate") or self.settings.tts_rate).strip()
+        if voice not in EDGE_VOICES:
+            self._json({"ok": False,
+                        "error_fa": ("صدای ناشناخته است؛ گزینه‌های معتبر: "
+                                     + "، ".join(EDGE_VOICES))},
+                       status=400)
+            return
+        if not _re.fullmatch(r"[+-]\d{1,3}%", rate):
+            self._json({"ok": False,
+                        "error_fa": "قالب سرعت نامعتبر است؛ نمونهٔ درست: «+10%» یا «-15%»."},
+                       status=400)
+            return
+
+        settings = self.settings.model_copy(
+            update={"tts_voice": voice, "tts_rate": rate})
+        t0 = time.perf_counter()
+        try:
+            audio, used = synthesize_with_fallback(text, settings)
+        except TtsError as exc:
+            self._json({"ok": False, "error_fa": str(exc.message_fa)},
+                       status=502)
+            return
+        except Exception as exc:  # noqa: BLE001 — خطای ناشناخته → پیام شفاف
+            self._json({"ok": False,
+                        "error_fa": f"خطای ناشناختهٔ تولید صدا: {exc}"},
+                       status=500)
+            return
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+
+        self.send_response(200)
+        self.send_header("Content-Type", "audio/mpeg")
+        self.send_header("Content-Length", str(len(audio)))
+        self.send_header("X-LabelVoice-Provider", used)
+        self.send_header("X-LabelVoice-Voice", voice)
+        self.send_header("X-LabelVoice-Duration-Ms", str(duration_ms))
+        self._cors()
+        self.end_headers()
+        self.wfile.write(audio)
+
+    # ---------- POST /ocr?engine=<id>  و  POST /api/tts ----------
     def do_POST(self) -> None:  # noqa: N802
         path, _, query = self.path.partition("?")
+        if path == "/api/tts":
+            self._handle_tts()
+            return
         if path != "/ocr":
             self._json({"ok": False,
-                        "error_fa": "مسیر ناشناخته؛ فقط POST /ocr?engine=…"},
+                        "error_fa": "مسیر ناشناخته؛ فقط POST /ocr?engine=… و POST /api/tts"},
                        status=404)
             return
         engine = "tesseract"
@@ -224,7 +336,7 @@ def main() -> None:
     args = ap.parse_args()
 
     server = start_bridge_server(port=args.port, host=args.host)
-    print("🛰️  پل OCR برچسب‌خوان راه‌اندازی شد (Ctrl+C برای توقف):")
+    print("🛰️  پل برچسب‌خوان (OCR + TTS) راه‌اندازی شد (Ctrl+C برای توقف):")
     print(f"   • روی همین رایانه:  http://127.0.0.1:{args.port}/ping")
     print(f"   • از گوشی (همان Wi-Fi): http://{lan_ip()}:{args.port}/ping")
     print("   موتورهای آمادهٔ این دستگاه:")

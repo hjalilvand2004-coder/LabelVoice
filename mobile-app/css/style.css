@@ -1022,3 +1022,26 @@ html.dark .models-table td code { background: var(--surface-2, #14293d); }
 html.dark .cv-step, html.dark .vr-card { background: var(--surface-2, #14293d); }
 html.dark .cv-step-imgwrap { background: #0b1c2c; }
 html.dark .vr-text { background: rgba(255,255,255,.06); }
+
+/* ============ v2.11.0: کنترل‌های خوانش صوتی (Edge TTS — همان مدل دسکتاپ) ============ */
+.tts-controls {
+  margin-top: .55rem; padding: .55rem .6rem;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--gray-bg, #f8fafc);
+}
+.tts-consent-row {
+  display: flex; gap: .45rem; align-items: flex-start;
+  font-size: .76rem; line-height: 1.9; color: var(--text-soft, #475569);
+  cursor: pointer;
+}
+.tts-consent-row input[type="checkbox"] { margin-top: .35rem; flex: none; width: 16px; height: 16px; accent-color: #2563eb; }
+.tts-selects {
+  display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .45rem;
+  font-size: .78rem; color: var(--text-soft, #475569);
+}
+.tts-selects select {
+  font: inherit; font-size: .78rem; padding: .2rem .4rem;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface, #fff); color: var(--text, #1e293b);
+}
+html.dark .tts-controls { background: rgba(255,255,255,.05); }

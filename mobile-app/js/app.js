@@ -275,7 +275,7 @@
     { key: 'tts', num: '۵', color: '#db2777', icon: '🔊',
       title: 'خوانش صوتی و نمایش (TTS + رابط)',
       req: 'TTS + Streamlit (خواندن اطلاعات و نمایش متن استخراج‌شده)',
-      files: 'js/app.js (speechSynthesis) ⇄ desktop: label_reader/tts/* + app.py' }
+      files: 'js/tts.js (Edge TTS — همان مدل دسکتاپ) ⇄ desktop: label_reader/tts/* + app.py' }
   ];
   var STAGE_BY_KEY_FA = {};
   STAGES_FA.forEach(function (s) { STAGE_BY_KEY_FA[s.key] = s; });
@@ -868,16 +868,17 @@
         renderResult();
         // اعلام مرحله ۵ (TTS + نمایش) — پایان همه مراحل
         stageRun('tts');
-        var ttsOk = 'speechSynthesis' in window;
+        var directTts = window.LVTts && window.LVTts.edgeDirectSupported();
         stageDone('tts', {
           status: 'done',
           duration_ms: 0,
           outputs: [
-            'متن استخراج‌شده نمایش داده شد (بخش «پاسخ»).' + (ttsOk ? ' پخش صوتی با دکمه «پخش صوتی پاسخ» انجام می‌شود.' : ' این مرورگر پخش صوتی ندارد.'),
-            'پخش صوتی روی همین دستگاه انجام می‌شود؛ هیچ داده‌ای ارسال نمی‌شود.'
+            'متن استخراج‌شده نمایش داده شد (بخش «پاسخ»). پخش صوتی با دکمه «پخش صوتی پاسخ» انجام می‌شود.',
+            'صدا با همان مدل دسکتاپ (صداهای نورال فارسی Microsoft Edge) ساخته می‌شود؛ از TTS خود گوشی استفاده نمی‌شود. متن فقط با رضایت شما به سرویس صوتی می‌رود.'
           ],
           metrics: [
-            { n: 'موتور خوانش', v: ttsOk ? 'speechSynthesis (روی دستگاه)' : 'پشتیبانی نمی‌شود', status: ttsOk ? 'ok' : 'warn' },
+            { n: 'موتور خوانش', v: 'Edge TTS فارسی (fa-IR-FaridNeural/DilaraNeural — همان مدل دسکتاپ)', status: 'ok' },
+            { n: 'مسیر پخش', v: directTts ? 'مستقیم (این مرورگر Edge/APK) یا پل دسکتاپ' : 'پل دسکتاپ (/api/tts) — در این مرورگر مسیر مستقیم پذیرفته نمی‌شود', status: directTts ? 'ok' : 'warn' },
             { n: 'طول متن پاسخ', v: result.response_fa.length + ' نویسه', status: 'ok' }
           ]
         });
@@ -1226,90 +1227,65 @@
   }
 
   // ---------- عملکردهای پاسخ ----------
-  // v2.5.0: رفع «پخش صوتی در موبایل اپلیکیشن کار نمی‌کند»
-  // در APK (WebView اندروید) speechSynthesis روی بسیاری از دستگاه‌ها بی‌صداست؛
-  // پس اول پل بومی TTS اندروید (LabelVoiceTts از MainActivity) آزمایش می‌شود،
-  // بعد speechSynthesis مرورگر (PWA)، و در بدترین حالت پیام راهنمای شفاف.
-  function nativeTtsAvailable() {
-    var b = window.LabelVoiceTts;
-    return !!(b && typeof b.ready === 'function' && b.ready() === true);
+  // v2.11.0: «همان مدل صوتی دسکتاپ در موبایل — بدون TTS خود گوشی»
+  // پخش فقط با صداهای نورال فارسی Microsoft Edge (fa-IR-FaridNeural/DilaraNeural)
+  // انجام می‌شود، از یکی از دو مسیر زیر (هر دو «همان مدل دسکتاپ»اند):
+  //   ۱) پل دسکتاپ: POST {پل}/api/tts — همان کد label_reader/tts دسکتاپ
+  //   ۲) کلاینت مستقیم Edge (js/tts.js) — فقط در مرورگر Edge یا WebView اندروید
+  // speechSynthesis مرورگر و پل بومی TextToSpeech اندروید دیگر استفاده نمی‌شوند
+  // (خواستهٔ صریح کاربر: «از قابلیت گفتار به صدای گوشی استفاده نکن»).
+  function ttsSettings() {
+    var st = { voice: window.LVTts ? window.LVTts.defaultVoice : 'fa-IR-FaridNeural', rate: '+0%' };
+    try {
+      var v = localStorage.getItem('lbr_tts_voice');
+      if (v && window.LVTts && window.LVTts.voices.indexOf(v) >= 0) st.voice = v;
+      var r = localStorage.getItem('lbr_tts_rate');
+      if (r && /^[+-]\d{1,3}%$/.test(r)) st.rate = r;
+    } catch (e) { /* نادیده */ }
+    return st;
   }
 
   function stopSpeaking() {
-    try {
-      if (window.LabelVoiceTts && typeof window.LabelVoiceTts.stop === 'function') {
-        window.LabelVoiceTts.stop();
-      }
-    } catch (e) { /* نادیده */ }
-    if ('speechSynthesis' in window) {
-      try { window.speechSynthesis.cancel(); } catch (e) { /* نادیده */ }
-    }
+    if (window.LVTts) { try { window.LVTts.stop(); } catch (e) { /* نادیده */ } }
   }
 
   function speakResponse() {
     var note = $('tts-note');
     var text = state.result ? state.result.response_fa : '';
     if (!text) return;
-    stopSpeaking();
-
-    // ۱) پل بومی اندروید (APK) — موتور صوتی خود دستگاه
-    if (window.LabelVoiceTts && typeof window.LabelVoiceTts.speak === 'function') {
-      if (!nativeTtsAvailable()) {
-        note.textContent = 'موتور صوتی اندروید هنوز آماده نشده است؛ یک لحظه بعد دوباره بزنید. ' +
-          'اگر تکرار شد، از تنظیمات سیستم بخش «موتور متن‌به‌گفتار» را بررسی کنید.';
-        return;
-      }
-      var okNative = false;
-      try { okNative = window.LabelVoiceTts.speak(text) === true; } catch (e) { okNative = false; }
-      if (okNative) {
-        note.textContent = 'پخش با موتور صوتی اندروید (TTS سیستم). ' +
-          'اگر صدای فارسی روی دستگاه نصب نباشد ممکن است با صدای پیش‌فرض خوانده شود. هیچ داده‌ای ارسال نمی‌شود.';
-        return;
-      }
-      // اگر پل بومی شکست خورد، ادامه با speechSynthesis
-    }
-
-    // ۲) speechSynthesis مرورگر (PWA/مرورگر موبایل)
-    if (!('speechSynthesis' in window)) {
-      note.textContent = 'این مرورگر پخش صوتی ندارد. در نسخهٔ اندروید (APK) پخش با موتور صوتی سیستم انجام می‌شود.';
+    if (!window.LVTts) {
+      note.textContent = 'ماژول صوتی (js/tts.js) بارگیری نشده است؛ صفحه را دوباره باز کنید.';
       return;
     }
-    var voices = window.speechSynthesis.getVoices() || [];
-    var faVoice = null;
-    for (var i = 0; i < voices.length; i++) {
-      if (voices[i].lang && voices[i].lang.toLowerCase().indexOf('fa') === 0) {
-        faVoice = voices[i];
-        break;
-      }
-    }
-    var u = new SpeechSynthesisUtterance(text);
-    if (faVoice) {
-      u.voice = faVoice;
-      u.lang = faVoice.lang;
-      note.textContent = 'پخش با صدای فارسی دستگاه («' + faVoice.name + '»). هیچ داده‌ای ارسال نمی‌شود.';
-    } else {
-      u.lang = 'fa-IR';
-      note.textContent = 'صدای فارسی روی این دستگاه نصب نیست؛ تلاش با صدای پیش‌فرض. ' +
-        'برای صدای فارسی، بسته صوتی فارسی سیستم را نصب کنید. هیچ داده‌ای ارسال نمی‌شود.';
-    }
-    u.rate = 0.95;
-    u.onerror = function (ev) {
-      note.textContent = 'پخش صوتی با خطا متوقف شد' + (ev && ev.error ? ' (' + ev.error + ').' : '.') +
-        ' اگر «not-allowed» بود، صفحه را یک بار لمس/اسکرول کنید و دوباره دکمه را بزنید.';
-    };
-    window.speechSynthesis.speak(u);
-    // تشخیص سکوتِ بی‌خطا (WebViewهایی که utterance را بی‌صدا می‌خورند)
-    setTimeout(function () {
-      try {
-        if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending &&
-            !(window.LabelVoiceTts && typeof window.LabelVoiceTts.speak === 'function')) {
-          if (voices.length === 0) {
-            note.textContent = 'هیچ موتور صوتی‌ای روی این دستگاه فعال نیست. ' +
-              'در تنظیمات سیستم بخش «موتور متن‌به‌گفتار» (مثلاً Google TTS) را نصب/فعال کنید.';
-          }
-        }
-      } catch (e) { /* نادیده */ }
-    }, 700);
+    var consentEl = $('tts-consent');
+    var consent = !!(consentEl && consentEl.checked);
+    var st = ttsSettings();
+    var bridgeHost = '';
+    try { bridgeHost = localStorage.getItem('lbr_bridge_host') || ''; } catch (e) { /* نادیده */ }
+    var btn = $('btn-tts');
+    var oldLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ در حال ساخت صدا…';
+    LVTts.speak(text, {
+      consent: consent,
+      voice: st.voice,
+      rate: st.rate,
+      bridgeHost: bridgeHost || null,
+      onStatus: function (m) { note.textContent = m; }
+    }).then(function (res) {
+      LVTts.playBytes(res.bytes);
+      btn.disabled = false;
+      btn.textContent = oldLabel;
+      note.textContent = (res.via === 'bridge'
+        ? 'پخش با همان مدل دسکتاپ (از پل، صدای ' + st.voice + '). '
+        : 'پخش با مدل Edge (همان مدل دسکتاپ، صدای ' + st.voice + '). ')
+        + 'متن فقط با رضایت شما و فقط برای همین یک درخواست به سرویس صوتی ارسال شد؛ ذخیره نمی‌شود.';
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = oldLabel;
+      note.textContent = (err && err.fa) ? err.fa
+        : 'تولید صدا ناموفق بود. اتصال اینترنت یا پل دسکتاپ (START-BRIDGE) را بررسی کنید.';
+    });
   }
 
   function copyResponse() {
@@ -1446,12 +1422,26 @@
     var pingBtn = $('btn-bridge-ping');
     if (pingBtn) pingBtn.addEventListener('click', pingBridge);
 
-    // پیش‌بارگیری صداهای دستگاه
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
-      if (typeof window.speechSynthesis.onvoiceschanged === 'undefined') {
-        window.speechSynthesis.onvoiceschanged = function () { /* نادیده */ };
-      }
+    // v2.11.0: ذخیرهٔ فوری تنظیمات صدا (نوع صدا و سرعت خوانش)
+    var ttsVoiceSel = $('tts-voice');
+    if (ttsVoiceSel) {
+      try {
+        var savedVoice = localStorage.getItem('lbr_tts_voice');
+        if (savedVoice) ttsVoiceSel.value = savedVoice;
+      } catch (e) { /* نادیده */ }
+      ttsVoiceSel.addEventListener('change', function () {
+        try { localStorage.setItem('lbr_tts_voice', ttsVoiceSel.value); } catch (e) { /* نادیده */ }
+      });
+    }
+    var ttsRateSel = $('tts-rate');
+    if (ttsRateSel) {
+      try {
+        var savedRate = localStorage.getItem('lbr_tts_rate');
+        if (savedRate) ttsRateSel.value = savedRate;
+      } catch (e) { /* نادیده */ }
+      ttsRateSel.addEventListener('change', function () {
+        try { localStorage.setItem('lbr_tts_rate', ttsRateSel.value); } catch (e) { /* نادیده */ }
+      });
     }
 
     // پیش‌بارگیری موتور OCR پس از بار اول صفحه (پس‌زمینه، بدون رابط)

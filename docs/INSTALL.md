@@ -146,7 +146,7 @@ python scripts/evaluate.py             # جدول واقعی دقت/زمان ر�
 | `LBR_OCR_PROVIDER` | tesseract | tesseract / easyocr / surya / auto |
 | `LBR_OCR_LANGUAGES` | fas+eng | زبان‌های Tesseract |
 | `LBR_TTS_PROVIDER` | edge | edge / gtts / none |
-| `LBR_TTS_VOICE` | fa-IR-FaridNeural | صدای فارسی edge-tts |
+| `LBR_TTS_VOICE` | fa-IR-FaridNeural | صدای فارسی edge-tts (فرید)؛ گزینهٔ دیگر: fa-IR-DilaraNeural (دلارا) |
 | `LBR_MAX_FILE_MB` | 10 | سقف حجم فایل تصویر |
 | `LBR_LLM_ENABLED` | false | فعال‌سازی بازنویسی LLM |
 | `LBR_SURYA_VARIANTS` | original,gray_clahe | نسخه‌های پردازشی که سوریا اجرا می‌کند (v2.2.0) |
@@ -158,4 +158,5 @@ python scripts/evaluate.py             # جدول واقعی دقت/زمان ر�
 - **«tesseract نصب نیست»**: مسیر باینری در PATH نیست؛ در ویندوز مسیر نصب را اضافه کنید.
 - **«داده زبان فارسی یافت نشد»**: `python scripts/download_tessdata.py` را اجرا کنید.
 - **«سرویس edge-tts پاسخ نداد»**: اینترنت لازم است؛ نتیجه متنی همچنان نمایش داده می‌شود و gTTS جایگزین می‌شود.
+- **«پخش صوتی مستقیم در این مرورگر ممکن نیست» (وب/موبایل)**: سرویس صوتی فقط درخواست‌های مرورگر Edge را می‌پذیرد؛ «START-BRIDGE» را روی رایانه اجرا کنید و نشانی آن را در تنظیمات موبایل وارد کنید، یا صفحه را در Edge باز کنید (در APK اینترنت گوشی کافی است).
 - **خوانش ضعیف ارقام فارسی**: محدودیت شناخته‌شده Tesseract است؛ موتور easyocr را امتحان کنید یا فیلد را با «اصلاح دستی» تصحیح کنید (docs/LIMITATIONS.md).
