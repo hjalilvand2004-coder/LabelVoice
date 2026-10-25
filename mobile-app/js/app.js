@@ -425,7 +425,7 @@
       stages: stageRecords,
       metadata: {
         total_ms: state.result && state.result.metadata ? state.result.metadata.durations_ms.total_ms : null,
-        app_version: '2.8.0-mobile',
+        app_version: '2.9.0-mobile',
         timestamp_utc: new Date().toISOString()
       }
     };

@@ -262,6 +262,9 @@ section.block { padding: 3.2rem 0 0; }
 .filetable td { padding: .5rem 1.15rem; border-top: 1px solid rgba(120, 220, 220, .09); vertical-align: top; }
 .filetable td.p { width: 44%; font-size: .82rem; }
 .filetable td.d { font-size: .87rem; color: var(--muted); }
+/* v2.9.0 — درخت مخزن (بخش WBS) */
+.treewrap { background: rgba(2, 12, 20, .55); border: 1px solid rgba(120, 220, 220, .16); border-radius: 14px; padding: 1rem 1.1rem; overflow-x: auto; }
+.treewrap .tree { font-family: 'Vazirmatn', monospace; font-size: .78rem; line-height: 1.75; color: #a8f0e8; white-space: pre; margin: 0; direction: ltr; text-align: left; unicode-bidi: isolate; }
 @media (max-width: 620px) {
   .filetable td { display: block; width: 100%; border-top: none; padding-bottom: .1rem; }
   .filetable tr { display: block; border-top: 1px solid rgba(120, 220, 220, .09); padding: .45rem 1rem; }
@@ -332,6 +335,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
       <a href="#architecture">معماری</a>
       <a href="#considerations">ملزومات استاد</a>
       <a href="#pipeline">چگونه کار می‌کند</a>
+      <a href="#wbs">ساختار پروژه</a>
       <a href="#files">فایل‌ها</a>
       <a href="#tech">فناوری‌ها</a>
       <a href="#models">مدل‌ها</a>
@@ -345,7 +349,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 
 <header class="hero" id="top">
   <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
-  <span class="kicker">📘 سند فنی رسمی — نسخه ۲.۲.۰</span>
+  <span class="kicker">📘 سند فنی رسمی — نسخه ۲.۹.۰</span>
   <h1>برچسب‌خوان هوشمند دارو و محصولات<br><span class="grad">LabelVoice — معماری، کارکرد و فناوری</span></h1>
   <p class="lede">
     سامانه‌ای دو زیرسیستمی (دسکتاپ + موبایل) که فقط «متن روی بسته» را با OCR می‌خواند،
@@ -369,7 +373,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
   <div class="stats">
     <div class="stat"><div class="num">۲</div><div class="lbl">زیرسیستم هم‌منطق (دسکتاپ + موبایل)</div></div>
     <div class="stat"><div class="num">۱۲۷+</div><div class="lbl">فایل در مخزن رسمی</div></div>
-    <div class="stat"><div class="num">۱۴۹</div><div class="lbl">آزمون خودکار (pytest + Node + E2E)</div></div>
+    <div class="stat"><div class="num">۲۳۸</div><div class="lbl">آزمون خودکار (۱۵۲ pytest + ۶۸ Node + ۱۸ E2E)</div></div>
     <div class="stat"><div class="num">۸۵٫۷٪</div><div class="lbl">دقت فیلد روی مجموعه آزمون استاندارد</div></div>
   </div>
 </header>
@@ -586,7 +590,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
       <p>تاری، تاریکی و انعکاس نور سنجیده می‌شود؛ هشدارها به‌صورت چیپ رنگی نمایش داده می‌شوند تا کاربر در صورت نیاز عکس بهتری بگیرد.</p></div>
     <div class="step reveal"><span class="n">۳</span>
       <h4>پیش‌پردازش <span class="chip">OpenCV / Canvas</span></h4>
-      <p>مقیاس هوشمند تا ۱۲۰۰px کوتاه‌ترین ضلع، CLAHE (دسکتاپ)، تیزکردن Unsharp، صاف‌کردن چرخش ±۱۵° و ساخت نسخه‌های اصلی/تیزشده/دودویی.</p></div>
+      <p>مقیاس هوشمند تا ۱۰۰۰px کوتاه‌ترین ضلع (درون‌یابی لانسزوس)، حذف سایه و یکنواخت‌سازی نور (تقسیم بر پس‌زمینهٔ برآوردی — v2.9.0)، CLAHE، تیزکردن Unsharp، صاف‌کردن چرخش ±۱۵° و ساخت ۷ نسخه پردازشی (اصلی/خاکستری+CLAHE/حذف سایه/تیزشده/دودویی/متن روشن روی تیره/جداسازی جوهر).</p></div>
     <div class="step reveal"><span class="n">۴</span>
       <h4>تشخیص و برش جعبه دارو <span class="chip">سوبل + مورفولوژی</span></h4>
       <p>ناحیه بسته با لبه‌یابی سوبل، آستانه درصدی، اتساع و بزرگ‌ترین جزء همبند پیدا و از پس‌زمینه برش داده می‌شود — نویز OCR به‌شدت کم می‌شود.</p></div>
@@ -608,10 +612,84 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
   </div>
 </section>
 
+<!-- ================= ساختار شکست کار (WBS) و درخت مخزن — v2.9.0 ================= -->
+<section class="block" id="wbs">
+  <div class="block-head reveal">
+    <div class="eyebrow">■ بخش ۵</div>
+    <h2>ساختار شکست کار (WBS) و نقشهٔ درختی مخزن</h2>
+    <p class="sub">پروژه با روش «ساختار شکست کار» (Work Breakdown Structure) مدیریت می‌شود: کل کار به بسته‌های کاری (WBS-1 تا WBS-12) شکسته شده و هر بسته کاری دقیقاً به پوشه‌ها و فایل‌های همان ساختار درختی نگاشت می‌شود — یعنی جای هر فایل در مخزن، حکم شمارهٔ آن در طرح شکست کار است. این نگاشت در جدول زیر و در انتهای همین بخش (درخت با کد WBS) قابل ردیابی است.</p>
+  </div>
+
+  <div class="table-wrap reveal">
+    <table>
+      <thead>
+        <tr><th>کد</th><th>بستهٔ کاری</th><th>خروجی و تحویل‌شدنی</th><th>پوشه‌ها / فایل‌ها (نگاشت درختی)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><b>WBS-1</b></td><td>مدیریت پروژه، نسخه‌گذاری و انتشار</td><td>README، شماره نسخه واحد، اسکریپت‌های ساخت ZIP/تک‌فایل/Release، لانچرهای شروع</td><td><code>README.md</code> · <code>VERSION.txt</code> · <code>scripts/build_*.py</code> · <code>scripts/make_release_*.py</code> · <code>mobile-app/START-*</code></td></tr>
+        <tr><td><b>WBS-2</b></td><td>تحلیل نیازمندی‌ها (ملزومات استاد)</td><td>نگاشت الزام‌به‌فایل، اعلام مرحله‌به‌مرحلهٔ پردازش، جدول انطباق</td><td><code>label_reader/stages.py</code> · بخش «ملزومات استاد» در <code>app.py</code> / <code>index.html</code> / همین سند</td></tr>
+        <tr><td><b>WBS-3</b></td><td>معماری و مدل داده</td><td>سند معماری، مدل‌های Pydantic با ردیابی شواهد، پیکربندی مرکزی</td><td><code>docs/ARCHITECTURE.md</code> · <code>label_reader/models.py</code> · <code>label_reader/config.py</code></td></tr>
+        <tr><td><b>WBS-4</b></td><td>اعتبارسنجی و پیش‌پردازش تصویر (OpenCV)</td><td>magic bytes/سقف حجم، سنجش تاری/نور/انعکاس، مقیاس لانسزوس، حذف سایه، CLAHE، تیزکردن، deskew، ۷ نسخهٔ پردازشی + مسیر گام‌به‌گام</td><td><code>label_reader/validation.py</code> · <code>quality.py</code> · <code>preprocess.py</code> ⇄ <code>mobile-app/js/boxdetect.js</code> + <code>preprocess.js</code></td></tr>
+        <tr><td><b>WBS-5</b></td><td>موتورهای OCR (چهار موتور + پل مرورگر)</td><td>Tesseract (پیش‌فرض)، EasyOCR، Surya، Qwen3-VL-2B-Instruct — همه از گیت کیفیت و رأی اجماعی عبور می‌کنند</td><td><code>label_reader/ocr/*</code> ⇄ <code>mobile-app/js/ocr.js</code> · <code>models/tessdata/</code> · <code>mobile-app/vendor/ + lang/</code></td></tr>
+        <tr><td><b>WBS-6</b></td><td>پردازش متن، استخراج فیلد و پاسخ ایمن</td><td>نرمال‌سازی نویسه، الگوهای دو زبانه، وضعیت پنج‌گانهٔ فیلد، تناقض‌یابی، نگهبان ایمنی، LLM اختیاری وفادار</td><td><code>label_reader/textnorm.py</code> · <code>extraction/*</code> · <code>response/*</code> · <code>llm/*</code> ⇄ <code>js/textnorm · patterns · extractor · responder · guard</code></td></tr>
+        <tr><td><b>WBS-7</b></td><td>رابط دسکتاپ (Streamlit)</td><td>سایدبار RTL، برش دستی، خط‌زمان ۵ مرحله، بخش «🔬 دیدن کار OpenCV»، مودال‌های راهنما، JSON</td><td><code>app.py</code> · <code>label_reader/ui_helpers.py</code> · <code>ui_theme.py</code> · <code>help_content.py</code> · <code>.streamlit/config.toml</code></td></tr>
+        <tr><td><b>WBS-8</b></td><td>زیرسیستم وب/موبایل (PWA)</td><td>رابط تک‌صفحه‌ای RTL، دوربین زنده، TTS، PWA نصب‌شدنی آفلاین، نسخهٔ تک‌فایلی بدون پایتون</td><td><code>mobile-app/index.html</code> · <code>css/</code> · <code>js/app · camera · pipeline · help</code> · <code>manifest.webmanifest</code> · <code>sw.js</code> · <code>label-reader-singlefile.html</code></td></tr>
+        <tr><td><b>WBS-9</b></td><td>بستهٔ اندروید (APK)</td><td>WebView با دوربین و پل TTS بومی، ساخت بدون Gradle با aapt2/d8/apksigner</td><td><code>android/MainActivity.java</code> · <code>AndroidManifest.xml</code> · <code>build_apk.sh</code> · <code>README-ANDROID-fa.md</code></td></tr>
+        <tr><td><b>WBS-10</b></td><td>خوانش صوتی فارسی (TTS)</td><td>edge-tts (عصبی) با جایگزین gTTS — فقط با رضایت صریح کاربر</td><td><code>label_reader/tts/*</code> · <code>response/tts_prep.py</code></td></tr>
+        <tr><td><b>WBS-11</b></td><td>آزمون و تضمین کیفیت</td><td>۱۵۲ pytest + ۶۸ Node + ۱۸ E2E مرورگر، ۱۴ نمونهٔ برچسب، ارزیابی CER/دقت فیلد</td><td><code>tests/</code> · <code>tests-js/</code> · <code>sample_images/</code> · <code>docs/evaluation/</code> · <code>scripts/evaluate.py</code></td></tr>
+        <tr><td><b>WBS-12</b></td><td>مستندسازی</td><td>همین سند (HTML + PDF)، راهنمای نصب، محدودیت‌ها، تاریخچهٔ نسخه‌ها</td><td><code>docs/*.md</code> · <code>docs/*.pdf</code> · <code>mobile-app/documentation.html</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note reveal">
+    <b>چطور این جدول را بخوانیم؟</b> ستون «نگاشت درختی» همان مسیر فایل در مخزن است؛ علامت <code>⇄</code> یعنی همان بستهٔ کاری در دو زیرسیستم دسکتاپ (پایتون) و وب/موبایل (جاوااسکریپت) با منطق عیناً یکسان پیاده‌سازی شده و آزمون‌های پاریتی <code>tests-js/</code> همین هم‌ارزی را تضمین می‌کنند. به این ترتیب «ساختار شکست کار» و «ساختار درختی پوشه‌ها» دو نمای یکی هستند: نمای منطقی (چه کاری) و نمای فیزیکی (کدام فایل).
+  </div>
+
+  <h3 class="reveal" style="margin-top:1.6rem">نقشهٔ درختی پوشه‌ها و فایل‌ها (با کد بستهٔ کاری)</h3>
+  <div class="treewrap reveal" dir="ltr">
+<pre class="tree">LabelVoice/
+├─ README.md · VERSION.txt · requirements*.txt        [WBS-1]
+├─ app.py                                             [WBS-7]  رابط Streamlit دسکتاپ
+├─ label_reader/                                      ← هستهٔ پایتون (WBS-2..7,10)
+│   ├─ config.py · models.py                          [WBS-3]  پیکربندی و مدل داده
+│   ├─ stages.py                                      [WBS-2]  اعلام ۵ مرحله + ارزیابی هر مرحله
+│   ├─ validation.py · quality.py                     [WBS-4]  اعتبارسنجی ورودی و سنجش کیفیت
+│   ├─ preprocess.py                                  [WBS-4]  OpenCV: لانسزوس، حذف سایه، CLAHE،
+│   │                                                          تیزکردن، deskew، ۷ نسخه + opencv_trace
+│   ├─ ocr/                                           [WBS-5]  tesseract/easyocr/surya/vlm providers
+│   ├─ textnorm.py · extraction/                      [WBS-6]  نرمال‌سازی + استخراج فیلد و تناقض
+│   ├─ response/ · llm/                               [WBS-6]  پاسخ فارسی + نگهبان ایمنی (+LLM اختیاری)
+│   ├─ tts/                                           [WBS-10] edge-tts / gTTS
+│   └─ ui_helpers.py · ui_theme.py · help_content.py  [WBS-7]  اجزای رابط و راهنما
+├─ mobile-app/                                        ← زیرسیستم وب/موبایل (WBS-8)
+│   ├─ index.html · css/ · manifest.webmanifest       [WBS-8]  پوستهٔ PWA
+│   ├─ js/  (textnorm · patterns · extractor ·        [WBS-5,6] پورت عین قواعد پایتون
+│   │        responder · guard · pipeline ·
+│   │        preprocess · boxdetect · ocr · camera)
+│   ├─ sw.js · vendor/ · lang/                        [WBS-8]  آفلاین کامل (کش + WASM + دادهٔ زبان)
+│   ├─ START-WINDOWS.bat · server-windows.ps1 · …     [WBS-1]  لانچرهای بدون پایتون
+│   ├─ label-reader-singlefile.html                   [WBS-8]  نسخهٔ تک‌فایلی
+│   └─ documentation.html                             [WBS-12] همین سند
+├─ android/                                           [WBS-9]  WebView + پل TTS بومی + build_apk.sh
+├─ models/tessdata/                                   [WBS-5]  fas + eng (tessdata_best)
+├─ sample_images/                                     [WBS-11] ۱۴ نمونهٔ برچسب آزمون
+├─ tests/                                             [WBS-11] pytest (۱۵۲ آزمون)
+├─ tests-js/                                          [WBS-11] Node + E2E (۸۲ آزمون)
+├─ docs/                                              [WBS-12] معماری، نصب، محدودیت‌ها، PDFها، ارزیابی
+└─ scripts/                                           [WBS-1,11] ساخت/انتشار/ارزیابی/اثبات‌ها
+</pre>
+  </div>
+
+  <div class="note reveal">
+    <b>سه قاعدهٔ حاکم بر این ساختار:</b> ۱) هر زیرسیستم منطقی یک پوشهٔ اختصاصی دارد و مرزها با <code>__init__.py</code> / IIFE مشخص است؛ ۲) هر قاعدهٔ پردازشی دقیقاً دو بار (پایتون و جاوااسکریپت) با آزمون پاریتی پیاده شده تا خروجی دسکتاپ و موبایل یکی باشد؛ ۳) داده‌های حجیم و غیرکد (مدل، فونت، وندور) از کد تفکیک شده‌اند تا مخزن و ZIP قابل حمل سبک بمانند. جزئیات نقش هر فایل در بخش بعدی (بخش ۶) آمده است.
+  </div>
+</section>
+
 <!-- ================= فایل‌های سامانه ================= -->
 <section class="block" id="files">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۵</div>
+    <div class="eyebrow">■ بخش ۶</div>
     <h2>فایل‌های سامانه — مرجع کامل</h2>
     <p class="sub">تک‌تک فایل‌های مخزن به تفکیک دسته، همراه با نقش هر فایل. پوشه‌های داده حجیم (مدل‌ها، نمونه‌ها، آیکون‌ها) به‌صورت گروهی معرفی شده‌اند.</p>
   </div>
@@ -625,7 +703,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
       <tr><td class="p"><code>textnorm.py</code></td><td class="d">نرمال‌سازی نویسه: ي→ی، ك→ک، ارقام فارسی/عربی→لاتین، فاصله‌ها</td></tr>
       <tr><td class="p"><code>validation.py</code></td><td class="d">اعتبارسنجی: magic bytes، سقف حجم/ابعاد، ImageValidationError با پیام فارسی</td></tr>
       <tr><td class="p"><code>quality.py</code></td><td class="d">تاری (لاپلاسین)، تاریکی، انعکاس؛ هیوریستیک پس‌زمینه‌آگاه و شدت‌ها</td></tr>
-      <tr><td class="p"><code>preprocess.py</code></td><td class="d">OpenCV: مقیاس هوشمند، CLAHE، حذف نویز، تیزکردن، deskew، سه نسخه خروجی</td></tr>
+      <tr><td class="p"><code>preprocess.py</code></td><td class="d">OpenCV: مقیاس لانسزوس، حذف سایه و یکنواخت‌سازی نور (v2.9.0)، CLAHE، حذف نویز، تیزکردن Unsharp، deskew پروفایلی، ۷ نسخه خروجی + مسیر گام‌به‌گام (build_variants_traced)</td></tr>
       <tr><td class="p"><code>pipeline.py</code></td><td class="d">هماهنگ‌کننده کل خط: اعتبارسنجی→کیفیت→پیش‌پردازش→OCR→استخراج→پاسخ</td></tr>
       <tr><td class="p"><code>ui_helpers.py</code></td><td class="d">کمک‌های رابط: RTL، جدول فیلدها، رسم کادرهای OCR روی تصویر، برچسب‌های فارسی</td></tr>
       <tr><td class="p"><code>extraction/__init__.py</code></td><td class="d">امضای عمومی زیربسته استخراج</td></tr>
@@ -670,7 +748,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
       <tr><td class="p"><code>js/extractor.js</code></td><td class="d">استخراج فیلدها + تشخیص تناقض + محافظ مقدار صفر</td></tr>
       <tr><td class="p"><code>js/responder.js</code></td><td class="d">قالب‌های پاسخ فارسی + مقدمه نوع محصول</td></tr>
       <tr><td class="p"><code>js/pipeline.js</code></td><td class="d">ارزیابی کیفیت، امتیاز بازده OCR، ساخت نتیجه، اصلاح کاربر</td></tr>
-      <tr><td class="p"><code>js/preprocess.js</code></td><td class="d">Canvas: مقیاس، خاکستری، Unsharp، دودویی، deskew، rotate90، برش</td></tr>
+      <tr><td class="p"><code>js/preprocess.js</code></td><td class="d">Canvas: مقیاس، خاکستری، یکنواخت‌سازی نور (v2.9.0)، Unsharp، دودویی، deskew، rotate90، برش + مسیر گام‌به‌گام (trace)</td></tr>
       <tr><td class="p"><code>js/boxdetect.js</code></td><td class="d">تشخیص جعبه دارو: سوبل + آستانه درصدی + اتساع + جزء همبند</td></tr>
       <tr><td class="p"><code>js/ocr.js</code></td><td class="d">پوشش Tesseract.js: نسخه‌ها، دو PSM، PSM 11، ادغام فازی، پیشرفت</td></tr>
       <tr><td class="p"><code>js/camera.js</code></td><td class="d">دوربین زنده getUserMedia: فلاش، زوم، تعویض دوربین، ۳ فریم و انتخاب تیزترین</td></tr>
@@ -729,7 +807,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= فناوری‌ها ================= -->
 <section class="block" id="tech">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۶</div>
+    <div class="eyebrow">■ بخش ۷</div>
     <h2>کتابخانه‌ها، ابزارها و فناوری‌ها</h2>
     <p class="sub">همه چیزهایی که این سامانه روی آن ساخته شده — با نقش دقیق و محل استفاده در پروژه.</p>
   <div class="note reveal" style="margin-top:.9rem">
@@ -755,15 +833,15 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <div class="techcard reveal" style="--tc:#f472b6"><div class="glyph">SW</div><h4>PWA + Service Worker</h4><div class="role">نصب روی گوشی (A2HS) و اجرای آفلاین cache-first</div><span class="where">manifest.webmanifest · sw.js</span></div>
     <div class="techcard reveal" style="--tc:#0ea5a4"><div class="glyph">وز</div><h4>فونت وزیرمتن (Vazirmatn)</h4><div class="role">فونت فارسی متن‌باز — محلی و آفلاین در هر دو زیرسیستم</div><span class="where">assets/fonts/ · mobile-app/assets/fonts/</span></div>
     <div class="techcard reveal" style="--tc:#84cc16"><div class="glyph">WV</div><h4>Android WebView</h4><div class="role">پوسته اپ اندروید با مجوز دوربین برای نسخه APK</div><span class="where">android/MainActivity.java</span></div>
-    <div class="techcard reveal" style="--tc:#16a34a"><div class="glyph">✓</div><h4>pytest</h4><div class="role">۱۱۷ آزمون دسکتاپ: امنیت، نگهبان، فیلدها، رجیستری مدل‌ها، دستیار VLM</div><span class="where">tests/</span></div>
-    <div class="techcard reveal" style="--tc:#68a063"><div class="glyph">Nd</div><h4>Node.js</h4><div class="role">۶۴ آزمون واحد موبایل + اجرای E2E مرورگر</div><span class="where">tests-js/</span></div>
+    <div class="techcard reveal" style="--tc:#16a34a"><div class="glyph">✓</div><h4>pytest</h4><div class="role">۱۵۲ آزمون دسکتاپ: امنیت، نگهبان، فیلدها، رجیستری مدل‌ها، دستیار VLM، کیفیت OpenCV</div><span class="where">tests/</span></div>
+    <div class="techcard reveal" style="--tc:#68a063"><div class="glyph">Nd</div><h4>Node.js</h4><div class="role">۶۸ آزمون واحد موبایل + اجرای E2E مرورگر</div><span class="where">tests-js/</span></div>
   </div>
 </section>
 
 <!-- ================= مدل‌ها و موتورها (شفافیت — v2.0.0) ================= -->
 <section class="block" id="models">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۶-ب</div>
+    <div class="eyebrow">■ بخش ۷-ب</div>
     <h2>🧠 مدل‌ها و موتورها — شفافیت کامل (از v2.0.0)</h2>
     <p class="sub">کاربر همیشه باید بداند برای هر بخش از چه مدل یا موتوری استفاده می‌شود — این جدول رسمی سامانه است و در رابط کاربری (سایدبار دسکتاپ + بخش راهنمای وب) و حین مراحل پردازش نیز اعلام می‌شود. نسخه‌ها در زمان اجرا از دستگاه کاربر خوانده می‌شوند (تک‌منبع حقیقت: <code>label_reader/models_info.py</code>).</p>
   </div>
@@ -795,7 +873,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= ایمنی و حریم خصوصی ================= -->
 <section class="block" id="safety">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۷</div>
+    <div class="eyebrow">■ بخش ۸</div>
     <h2>حریم خصوصی و خطوط ایمنی</h2>
     <p class="sub">ایمنی در این پروژه ویژگی افزودنی نیست؛ ستون معماری است و با آزمون‌های اختصاصی (test_security.py و نگهبان JS) محافظت می‌شود.</p>
   </div>
@@ -814,7 +892,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= ارزیابی و آزمون مدل‌ها ================= -->
 <section class="block" id="evaluation">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۸</div>
+    <div class="eyebrow">■ بخش ۹</div>
     <h2>ارزیابی و آزمون مدل‌ها — نتایج واقعی و اصول سنجش</h2>
     <p class="sub">موضوع این سامانه دارو است و هر اشتباه می‌تواند آسیب‌زا باشد؛ بنابراین ارزیابی بر اساس اصول بنیادین و منطقی سنجش سامانه‌های حساس انجام شده است: زمینه‌سنجی برچسب‌خورده، سنجش در سطح فیلد، شمردن غیبت و تعارض به‌عنوان خطا، و هیچ عدد جعلی. همه اعداد این بخش از اجرای واقعی در محیط توسعه به‌دست آمده و با <code>scripts/evaluate.py</code> قابل بازتولید است.</p>
   </div>
@@ -897,7 +975,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= محدودیت‌ها ================= -->
 <section class="block" id="limits">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۹</div>
+    <div class="eyebrow">■ بخش ۱۰</div>
     <h2>محدودیت‌های شناخته‌شده (شفافیت کامل)</h2>
   </div>
   <div class="grid2">
@@ -915,7 +993,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= نصب ================= -->
 <section class="block" id="install">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۱۰</div>
+    <div class="eyebrow">■ بخش ۱۱</div>
     <h2>نصب و اجرا</h2>
   </div>
   <div class="grid3">
@@ -933,10 +1011,14 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 <!-- ================= نسخه‌ها ================= -->
 <section class="block" id="history">
   <div class="block-head reveal">
-    <div class="eyebrow">■ بخش ۱۱</div>
+    <div class="eyebrow">■ بخش ۱۲</div>
     <h2>تاریخچه نسخه‌ها</h2>
   </div>
   <div class="timeline">
+    <div class="tl-item reveal"><h4>توسعهٔ کیفیت پایپ‌لاین OpenCV + ساختار شکست کار (WBS) و درخت مخزن در مستندات <span class="ver">v2.9.0</span></h4>
+      <p>بازخورد کاربر: «خروجی مرتبط با OpenCV کیفیت لازم را ندارد… مستندات فنی PDF و HTML را بروز کن و ساختار شکست پروژه و فایل‌ها با ساختار درختی در آن توضیح داده شود». پاسخ در دو محور: (۱) <b>کیفیت OpenCV</b> — تابع جدید <code>flatten_illumination</code> (یکنواخت‌سازی نور: برآورد پس‌زمینه با morphological close بیضوی ≈۱/۸ ضلع و تقسیم تصویر بر آن → حذف سایه و گرادیان روشنایی عکس موبایل)، واریانت‌های جدید <code>shadow_free</code> و <code>sharpened</code> (Unsharp Mask — هم‌راستا با موبایل)، تزریق حذف سایه به <code>gray_clahe</code> و <code>binarized</code>، بلوک آستانه‌گذاری متناسب با ابعاد تصویر (۳۱..۹۱) + medianBlur نمک‌وفلفل، بزرگ‌نمایی <code>INTER_LANCZOS4</code>، و صاف‌کردن چرخش دومرحله‌ای (minAreaRect + پالایش پروفایلی ±۲°)؛ گیت هوشمند: واریانت‌های مکمل فقط وقتی خوانش اصلی ضعیف است (اطمینان &lt; ۰٫۸) اجرا می‌شوند؛ اثبات واقعی روی نمونهٔ سایه‌دار ۵۸٪: خوانش خام original آشغال (اطمینان ۰٫۲۳، صفر برخورد) در برابر خوانش صحیح «استامینوفن… تاریخ انقضا: ۱۴۰۶/۰۵» با واریانت‌های جدید (اطمینان تا ۰٫۷۴، ۳ برخورد) — شواهد در <code>scripts/evidence_v290/</code>؛ (۲) <b>مستندات</b> — بخش جدید «ساختار شکست کار (WBS) و نقشهٔ درختی مخزن» (بخش ۵ سند) با ۱۲ بستهٔ کاری WBS-1..12 و جدول نگاشت الزام‌به‌فایل و درخت کامل پوشه/فایل با کد WBS هر شاخه، در هر دو نسخهٔ HTML و PDF؛ همین سند به ۱۳ بخش رسیده است؛ ۱۴ آزمون pytest + ۴ آزمون Node جدید (مجموع ۱۵۲ pytest + ۶۸ Node + ۱۸ E2E پاس).</p></div>
+    <div class="tl-item reveal"><h4>دکمهٔ «👁 نمایش تصویر پس از این عملیات» برای هر گام OpenCV + لانچر نسخه‌محور <span class="ver">v2.8.0</span></h4>
+      <p>تکمیل خواستهٔ کاربر («در بخشی که مراحل طی می‌شود دقیقاً یک دکمه به معنای نمایش خود تصویر بعد از انجام عملیات»): در دسکتاپ به‌ازای هر گام مسیر OpenCV یک دکمهٔ «👁 نمایش تصویر پس از این عملیات» اضافه شد که با کلیک، تصویرِ خروجی همان گام را نشان می‌دهد (با کلید «نمایش همهٔ تصاویر یک‌جا»)؛ در وب/موبایل هم همین الگوی دکمه‌ای روی تایم‌لاین گام‌ها اعمال شد؛ لانچر START-WINDOWS نسخه‌محور شد تا همیشه صفحهٔ شروعِ هم‌نسخهٔ خودش را باز کند.</p></div>
     <div class="tl-item reveal"><h4>«دیدن کار OpenCV و خوانش خام OCR» در وب/موبایل هم آمد <span class="ver">v2.7.0</span></h4>
       <p>بازخورد کاربر: «در نسخهٔ جدید این مهم هنوز انجام نشده» — قابلیت شفافیت v2.6.0 فقط در نسخهٔ دسکتاپ (Streamlit) بود و کاربر نسخهٔ موبایل/وب را اجرا می‌کرد. اکنون بخش <b>«🔬 دیدن کار OpenCV و خوانش خام OCR (گام‌به‌گام)»</b> در نتیجهٔ پردازشِ وب تک‌فایلی/PWA/APK هم هست: (۱) <b>تصویر پس از هر عملیات پیش‌پردازش</b> روی همان تصویر اولیهٔ کاربر — تصویر ورودی (پس از اعتبارسنجی)، صاف‌کردن چرخش کم‌زاویه با ذکر زاویه، حذف پس‌زمینه با مختصات جعبه، و نسخه‌های پردازشی (اصلی بزرگ‌نمایی‌شده، خاکستری+CLAHE کاشی ۸×۸، تیزکردن Unsharp ۳×۳، آستانه‌گذاری تطبیقی پنجرهٔ ۳۱/C=۱۵، متن روشن روی تیره پنجرهٔ ۵۱/C=۱۲، جداسازی جوهر ۲۵۵ منهای بیشینهٔ کانال‌ها) — هر گام با توضیح فارسیِ عین عملیات و چیپ روشنایی/کنتراست همان تصویر؛ (۲) <b>خوانش خام هر نسخه</b> (متن پیوسته به‌ترتیب y,x + تعداد قطعه + میانگین اطمینان) قبل از ادغام بهترین-اول و رأی‌گیری؛ (۳) چرخش ۹۰ درجهٔ خودکار هم در مسیر نمایش داده می‌شود و تصاویر نسخه‌ها از گذرِ برنده هستند؛ پیاده‌سازی در <code>js/preprocess.js</code> (خروجی trace از buildVariants) + <code>js/app.js</code> + راهنمای درون‌برنامه‌ای «trace»؛ نتیجهٔ نهایی و گیت‌ها دست‌نخورده؛ ۵ آزمون Node جدید + ران واقعی مرورگر با شاهد تصویری؛ کش SW → v19.</p></div>
     <div class="tl-item reveal"><h4>دیدن گام‌به‌گام کار OpenCV و خوانش خام OCR در دسکتاپ <span class="ver">v2.6.0</span></h4>
@@ -985,7 +1067,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 </section>
 
 <footer class="docfoot">
-  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۲.۰.۰ · توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
+  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۲.۹.۰ · توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
   <div class="links">
     <a href="index.html">🚀 برنامه</a>
     <a href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ GitHub</a>

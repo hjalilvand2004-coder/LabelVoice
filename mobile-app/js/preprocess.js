@@ -88,6 +88,37 @@
     return canvas;
   }
 
+  // ---------- یکنواخت‌سازی نور (v2.9.0 — معادل flatten_illumination دسکتاپ) ----------
+  // پس‌زمینهٔ روشنایی با میانگین جعبه‌ای بزرگ (تصویر انتگرالی، شعاع ≈ ۱/۸ کوتاه‌ترین
+  // ضلع) برآورد و تصویر بر آن تقسیم می‌شود: سایه و گرادیان نور حذف و متن
+  // تیرهٔ پرکنتراست می‌شود — پیش‌نیاز درست CLAHE و آستانه‌گذاری در عکس سایه‌دار.
+  function flattenGray(gray, w, h) {
+    var r = Math.max(15, Math.floor(Math.min(w, h) / 8));
+    var integral = new Float64Array((w + 1) * (h + 1));
+    for (var y = 0; y < h; y++) {
+      var rowSum = 0;
+      for (var x = 0; x < w; x++) {
+        rowSum += gray[y * w + x];
+        integral[(y + 1) * (w + 1) + (x + 1)] = integral[y * (w + 1) + (x + 1)] + rowSum;
+      }
+    }
+    var out = new Uint8ClampedArray(gray.length);
+    for (var y2 = 0; y2 < h; y2++) {
+      var y0 = Math.max(0, y2 - r), y1 = Math.min(h - 1, y2 + r);
+      for (var x2 = 0; x2 < w; x2++) {
+        var x0 = Math.max(0, x2 - r), x1 = Math.min(w - 1, x2 + r);
+        var area = (y1 - y0 + 1) * (x1 - x0 + 1);
+        var sum = integral[(y1 + 1) * (w + 1) + (x1 + 1)] -
+          integral[y0 * (w + 1) + (x1 + 1)] -
+          integral[(y1 + 1) * (w + 1) + x0] +
+          integral[y0 * (w + 1) + x0];
+        var bg = Math.max(1, sum / area);
+        out[y2 * w + x2] = Math.min(255, Math.round(gray[y2 * w + x2] / bg * 255));
+      }
+    }
+    return out;
+  }
+
   // CLAHE سبک: هیستوگرام موضعی 8×8 با محدودسازی و درون‌یابی دوخطی
   function clahe(gray, w, h, clipLimit, tileSize) {
     var out = new Uint8ClampedArray(gray.length);
@@ -364,13 +395,18 @@
       metrics: grayStats(scaled.grayData)
     });
     var gray = scaled.grayData;
-    var claheGray = clahe(gray, scaled.w, scaled.h,
+    // v2.9.0: یکنواخت‌سازی نور قبل از CLAHE و آستانه‌گذاری — سایه/گرادیان نور
+    // حذف می‌شود تا متن در ناحیهٔ سایه هم پرکنتراست باشد (همتای دسکتاپ).
+    var flat = flattenGray(gray, scaled.w, scaled.h);
+    var claheGray = clahe(flat, scaled.w, scaled.h,
       settings.clahe_clip_limit, settings.clahe_tile_size);
     variants[VARIANT_GRAY_CLAHE] = grayToCanvas(claheGray, scaled.w, scaled.h);
     trace.push({
       key: VARIANT_GRAY_CLAHE,
-      title_fa: 'خاکستری‌سازی + یکنواخت‌سازی هیستوگرام موضعی (CLAHE)',
+      title_fa: 'خاکستری‌سازی + یکنواخت‌سازی نور + هیستوگرام موضعی (CLAHE)',
       desc_fa: 'هر پیکسل با میانگین وزنی کانال‌های رنگ (۲۹۹R، ۵۸۷G، ۱۱۴B) خاکستری می‌شود؛ ' +
+        'سپس یکنواخت‌سازی نور (v2.9.0): پس‌زمینهٔ روشنایی با میانگین جعبه‌ای بزرگ برآورد و تصویر بر آن ' +
+        'تقسیم می‌شود تا سایه و گرادیان نور حذف شود؛ ' +
         'سپس هیستوگرام در کاشی‌های ' + settings.clahe_tile_size + '×' + settings.clahe_tile_size +
         ' با محدودسازی کنتراست (clip=' + settings.clahe_clip_limit +
         ') و درون‌یابی دوخطی یکنواخت می‌شود تا متن در سایه و انعکاس نور هم دیده شود.',
@@ -391,14 +427,16 @@
       });
     }
     if (settings.use_binarized_variant) {
-      var bw = binarize(gray, scaled.w, scaled.h, 31, 15);
+      // v2.9.0: آستانه‌گذاری روی نسخهٔ یکنواخت‌شدهٔ نور — در عکس با سایه،
+      // آستانهٔ تطبیقی روی گرادیان روشنایی خطای دوگانه می‌دهد.
+      var bw = binarize(flat, scaled.w, scaled.h, 31, 15);
       variants[VARIANT_BINARIZED] = grayToCanvas(bw, scaled.w, scaled.h);
       trace.push({
         key: VARIANT_BINARIZED,
         title_fa: 'آستانه‌گذاری تطبیقی (سیاه‌وسفید)',
-        desc_fa: 'معادل adaptiveThreshold گاوسی: پنجرهٔ ۳۱×۳۱ محاسبه‌شده با تصویر انتگرالی؛ ' +
+        desc_fa: 'معادل adaptiveThreshold گاوسی روی نسخهٔ یکنواخت‌شدهٔ نور (v2.9.0): پنجرهٔ ۳۱×۳۱ محاسبه‌شده با تصویر انتگرالی؛ ' +
           'هر پیکسل روشن‌تر از میانگین همسایگی منهای ۱۵ → سفید، بقیه → سیاه. ' +
-          'نویز پس‌زمینه و تنوع نور حذف می‌شود.',
+          'نویز پس‌زمینه، سایه و تنوع نور حذف می‌شود.',
         canvas: variants[VARIANT_BINARIZED],
         metrics: grayStats(bw)
       });
@@ -452,6 +490,7 @@
     loadImage: loadImage,
     drawScaled: drawScaled,
     toGrayData: toGrayData,
+    flattenGray: flattenGray,
     clahe: clahe,
     binarize: binarize,
     whiteOnDark: whiteOnDark,

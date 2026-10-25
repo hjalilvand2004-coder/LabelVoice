@@ -24,6 +24,7 @@ from .ocr.tesseract_provider import TesseractProvider
 from .preprocess import auto_deskew, build_variants, build_variants_traced, crop_fraction
 from .preprocess import (
     VARIANT_BINARIZED, VARIANT_GRAY_CLAHE, VARIANT_INK_ISOLATED, VARIANT_ORIGINAL,
+    VARIANT_SHADOW_FREE, VARIANT_SHARPENED,
 )
 from .quality import assess_quality
 from .stages import image_quality_metrics
@@ -192,9 +193,15 @@ class LabelReaderPipeline:
                 {n.strip() for n in _vv.split(",") if n.strip()}
                 | {VARIANT_ORIGINAL})
         by_variant: dict[str, list] = {}
+        # v2.9.0: واریانت‌های «مکمل دامنهٔ خاکستری» (shadow_free/sharpened/binarized)
+        # وقتی خوانش نسخه‌های اصلی خوب است (میانگین اطمینان ≥ ۰٫۸) اجرا نمی‌شوند —
+        # سرعت بیشتر بدون از دست دادن پوشش. واریانت‌های پلاریتی متفاوت
+        # (white_on_dark/ink_isolated) همیشه اجرا می‌شوند چون نویز نجات‌دهندهٔ
+        # پلاریتی مخالف‌اند نه مکمل دامنهٔ خاکستری.
+        _gated_variants = {VARIANT_BINARIZED, VARIANT_SHADOW_FREE, VARIANT_SHARPENED}
         for name, image in variants.items():
-            if name == VARIANT_BINARIZED:
-                # نسخه دودویی فقط برای مقایسه؛ وقتی خوانش نسخه‌های اصلی ضعیف است
+            if name in _gated_variants:
+                # نسخه‌های مکمل فقط برای مقایسه؛ وقتی خوانش نسخه‌های اصلی ضعیف است
                 mean_conf = [p.confidence for vps in by_variant.values()
                              for p in vps if p.confidence is not None]
                 if mean_conf and float(np.mean(mean_conf)) >= 0.8:
