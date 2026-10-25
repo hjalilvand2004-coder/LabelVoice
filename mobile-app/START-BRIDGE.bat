@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-title LabelVoice - OCR Bridge (Desktop Engine Server) v2.5.0
+title LabelVoice - OCR Bridge (Desktop Engine Server) v2.8.0
 cd /d "%~dp0.."
 echo ============================================
-echo   LabelVoice - OCR Bridge (v2.5.0)
+echo   LabelVoice - OCR Bridge (v2.8.0)
 echo   Read heavy engines on THIS computer for
 echo   the web / mobile app (same Wi-Fi):
 echo     EasyOCR - Surya - Qwen3-VL-2B-Instruct

@@ -19,11 +19,12 @@ MOBILE = REPO / 'mobile-app'
 PORTABLE = REPO / 'portable'
 OUT = Path('/home/z/my-project/download')
 
-VERSION = "2.7.0"
+VERSION = "2.8.0"
 ROOT_NAME = 'LabelVoice-Portable-Web'
 
 # فایل‌هایی که از mobile-app به ریشهٔ بسته می‌روند (نه داخل webapp/)
 ROOT_MOVERS = {
+    'VERSION.txt',
     'label-reader-singlefile.html',
     'README-MOBILE-fa.md',
     'START-WINDOWS.bat',
@@ -73,6 +74,9 @@ def main() -> None:
             n_files += 1
         z.write(MOBILE / 'README-MOBILE-fa.md', f'{ROOT_NAME}/README-MOBILE-fa.md')
         n_files += 1
+        if (MOBILE / 'VERSION.txt').exists():
+            z.write(MOBILE / 'VERSION.txt', f'{ROOT_NAME}/VERSION.txt')
+            n_files += 1
 
         # --- _APK (اختیاری) ---
         apk = Path(args.apk) if args.apk else None

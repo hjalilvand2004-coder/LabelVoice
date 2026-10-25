@@ -4,6 +4,17 @@ cd /d "%~dp0"
 echo ============================================
 echo   LabelVoice - Smart Label Reader (Portable)
 echo   Mobile version - no Python, no PyQt needed
+echo.
+set APPVER=
+if exist VERSION.txt set /p APPVER=<VERSION.txt
+if "%APPVER%"=="" set APPVER=unknown
+echo   Folder version : v%APPVER%
+echo   Latest release : github.com/hjalilvand2004-coder/LabelVoice/releases/latest
+echo.
+echo   If these do NOT match, this folder is an OLD
+echo   copy (features like the OpenCV steps viewer
+echo   will be missing). Download the new ZIP and
+echo   extract it to a NEW folder, then start there.
 echo ============================================
 echo.
 if not exist "server-windows.ps1" (

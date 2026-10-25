@@ -425,7 +425,7 @@
       stages: stageRecords,
       metadata: {
         total_ms: state.result && state.result.metadata ? state.result.metadata.durations_ms.total_ms : null,
-        app_version: '2.0.0-mobile',
+        app_version: '2.8.0-mobile',
         timestamp_utc: new Date().toISOString()
       }
     };
@@ -1054,13 +1054,34 @@
       d.textContent = step.desc_fa;
       card.appendChild(d);
       if (step.canvas) {
+        // v2.8.0 — خواستهٔ صریح کاربر: تصویر خروجی هر گام «با دکمه» نمایش
+        // داده شود؛ پیش‌فرض بسته است و با زدن دکمه، تصویرِ همان لحظه پس از
+        // انجام عملیات باز/بسته می‌شود.
         var wrap = document.createElement('div');
-        wrap.className = 'cv-step-imgwrap';
+        wrap.className = 'cv-step-imgwrap hidden';
         var c = step.canvas;
         c.className = 'cv-step-img';
         c.setAttribute('role', 'img');
         c.setAttribute('aria-label', 'خروجی تصویری گام: ' + step.title_fa);
         wrap.appendChild(c);
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-secondary cv-step-btn';
+        btn.setAttribute('aria-expanded', 'false');
+        btn.textContent = '👁 نمایش تصویر پس از این عملیات';
+        btn.addEventListener('click', function () {
+          var willOpen = wrap.classList.contains('hidden');
+          if (willOpen) {
+            wrap.classList.remove('hidden');
+            btn.textContent = '🙈 پنهان‌کردن تصویر این گام';
+            btn.setAttribute('aria-expanded', 'true');
+          } else {
+            wrap.classList.add('hidden');
+            btn.textContent = '👁 نمایش تصویر پس از این عملیات';
+            btn.setAttribute('aria-expanded', 'false');
+          }
+        });
+        card.appendChild(btn);
         card.appendChild(wrap);
       }
       list.appendChild(card);

@@ -1009,6 +1009,12 @@ html.dark .models-table td code { background: var(--surface-2, #14293d); }
   background: #fff; line-height: 0;
 }
 .cv-step-img { width: 100%; height: auto; display: block; }
+/* v2.8.0: دکمهٔ نمایش/پنهان‌کردن تصویر خروجی هر گام (خواستهٔ کاربر) */
+.cv-step-btn {
+  width: 100%; margin: .45rem 0 .2rem; justify-content: center;
+  font-size: .86rem;
+}
+.cv-step-btn + .cv-step-imgwrap { margin-top: .45rem; }
 .vr-text {
   font-size: .74rem; line-height: 2; white-space: pre-wrap; word-break: break-word;
   background: var(--gray-bg, #f8fafc); border-radius: 8px; padding: .5rem .6rem; margin: 0;

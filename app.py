@@ -536,7 +536,14 @@ if page == "read":
                 "این بخش فقط برای شفافیت است و تغییری در نتیجه ایجاد نمی‌کند.")
 
             if _opencv_trace:
-                st.markdown("**۱) مسیر تصویر در پیش‌پردازش — خروجی هر عملیات:**")
+                st.markdown(
+                    "**۱) مسیر تصویر در پیش‌پردازش — برای دیدن تصویر پس از هر "
+                    "عملیات، دکمهٔ همان گام را بزنید:**")
+                _show_all = st.toggle(
+                    "نمایش همهٔ تصاویر یک‌جا",
+                    key="cv_trace_show_all", value=False,
+                    help="با روشن‌کردن این کلید، تصویر خروجی همهٔ گام‌ها همیشه "
+                         "نمایش داده می‌شود و نیازی به دکمهٔ هر گام نیست.")
                 _tcols = st.columns(2)
                 for _i, _entry in enumerate(_opencv_trace):
                     with _tcols[_i % 2]:
@@ -546,13 +553,31 @@ if page == "read":
                             f'{_entry.get("title_fa", "")}</div>',
                             unsafe_allow_html=True)
                         st.caption(_entry.get("desc_fa", ""))
-                        if _entry.get("image") is not None:
-                            st.image(_entry["image"], use_container_width=True)
                         _m = _entry.get("metrics") or {}
                         st.caption(
                             f"📊 تیزی {_m.get('sharpness', '—')} · "
                             f"کنتراست {_m.get('contrast', '—')} · "
                             f"روشنایی {_m.get('brightness', '—')}")
+                        if _entry.get("image") is not None:
+                            if _show_all:
+                                st.image(_entry["image"], use_container_width=True)
+                            else:
+                                _skey = f"cv_step_open_{_i}"
+                                _open = bool(st.session_state.get(_skey, False))
+                                _btn_label = (
+                                    "🙈 پنهان‌کردن تصویر این گام" if _open
+                                    else "👁 نمایش تصویر پس از این عملیات")
+                                if st.button(
+                                        _btn_label, key=f"cv_step_btn_{_i}",
+                                        use_container_width=True,
+                                        type="primary" if _open else "secondary"):
+                                    st.session_state[_skey] = not _open
+                                if st.session_state.get(_skey, False):
+                                    st.image(
+                                        _entry["image"],
+                                        caption=f"خروجی گام {_i + 1} — "
+                                                f"{_entry.get('title_fa', '')}",
+                                        use_container_width=True)
 
             if _ocr_readings:
                 st.markdown("**۲) خوانش خام هر نسخه — OCR دقیقاً چه خواند؟**")

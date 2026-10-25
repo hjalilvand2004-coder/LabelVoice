@@ -18,6 +18,46 @@ $root = $PSScriptRoot
 if (-not $root) { $root = Split-Path -Parent $MyInvocation.MyCommand.Path }
 Set-Location $root
 
+$ErrorActionPreference = 'Stop'
+$root = $PSScriptRoot
+if (-not $root) { $root = Split-Path -Parent $MyInvocation.MyCommand.Path }
+Set-Location $root
+
+# ---- v2.8.0: version banner + outdated-copy check (pure ASCII on purpose) ----
+# Why: users kept launching OLD extracted folders via START-WINDOWS.bat and
+# reported "the new feature is missing". The folder version is shown and
+# compared with the latest GitHub release; on mismatch the download page
+# opens automatically so the user can grab the current ZIP.
+$appVersion = 'unknown'
+$verFile = Join-Path $root 'VERSION.txt'
+if (Test-Path $verFile) {
+  $appVersion = (Get-Content $verFile -TotalCount 1).Trim()
+}
+Write-Host ''
+Write-Host ('  Folder version : v' + $appVersion)
+try {
+  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+  $latest = Invoke-RestMethod -Uri 'https://api.github.com/repos/hjalilvand2004-coder/LabelVoice/releases/latest' -TimeoutSec 6 -Headers @{ 'User-Agent' = 'LabelVoice-Launcher' }
+  $latestTag = $latest.tag_name
+  Write-Host ('  Latest release : ' + $latestTag)
+  if ($latestTag -and ($latestTag -ne ('v' + $appVersion))) {
+    Write-Host ''
+    Write-Host '  ===================================================='
+    Write-Host '   WARNING: THIS COPY IS OUTDATED.'
+    Write-Host '   Newer features (e.g. the OpenCV steps viewer and'
+    Write-Host '   the raw OCR reading panel) are MISSING here.'
+    Write-Host ('   Please download version ' + $latestTag + ' and extract it to')
+    Write-Host '   a NEW folder, then run START-WINDOWS.bat from there:'
+    Write-Host '   https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest'
+    Write-Host '   (opening the download page in your browser...)'
+    Write-Host '  ==================================================== '
+    try { Start-Process 'https://github.com/hjalilvand2004-coder/LabelVoice/releases/latest' } catch {}
+  }
+} catch {
+  Write-Host '  Latest release : (offline - update check skipped)'
+}
+Write-Host ''
+
 # ---- find a free port in 8765..8775 ------------------------
 $port = $null
 foreach ($p in 8765..8775) {

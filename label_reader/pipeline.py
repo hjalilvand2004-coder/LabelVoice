@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 
 from .config import Settings, load_settings
+from . import __version__ as _APP_VERSION
 from .models import (
     AnalysisResult, BoundingBox, FieldRecord, FieldStatus, OcrPiece,
     ProcessingMetadata, ProductType, QualityIssue, RawLine, now_utc_iso,
@@ -431,6 +432,7 @@ class LabelReaderPipeline:
             warnings_fa=warnings_fa,
             notes_fa=notes,
             timestamp_utc=now_utc_iso(),
+            app_version=_APP_VERSION,  # v2.8.0: بازگشت نسخهٔ واقعی (بازنویسی v2.0 جا افتاده بود)
         )
         return AnalysisResult(
             product_type=product_type,
