@@ -1076,7 +1076,7 @@ try { if (localStorage.getItem('lbr_dark') === '1') document.documentElement.cla
     </label>
   </div>
   <div class="sb-foot">
-    <div class="sb-ver">نسخهٔ وب ۲.۱۰.۰</div>
+    <div class="sb-ver">نسخهٔ وب ۲.۱۰.۱</div>
     <div>حمید جلیلوند و نوید بدری</div>
     <div>همه پردازش‌ها روی همین دستگاه</div>
   </div>
@@ -4951,7 +4951,7 @@ window.LBR_SAMPLES = [
         'به‌صورت PWA قابل نصب است (افزودن به صفحه اصلی) و پس از بار اول کاملاً آفلاین کار می‌کند.',
         'پاسخ فقط از روی شواهد OCR ساخته می‌شود؛ اطلاعات غایب از اینترنت یا حافظه تکمیل نمی‌شود.',
         '«قدرت درج‌شده» فقط به‌معنای عدد روی بسته است، نه دوز مصرف.',
-        '👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری — نسخه ۱.۴.۰'
+        '👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری — نسخه ۲.۱۰.۱'
       ],
       tech: [
         { t: 'PWA (Web App Manifest)', r: 'قابل نصب بودن به‌صورت اپ روی گوشی', c: 'std' },
@@ -6717,6 +6717,18 @@ window.LBR_SAMPLES = [
     // ثبت Service Worker فقط در حالت http(s) (در file:// بی‌معناست)
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       Promise.reject(new Error('singlefile: no sw')).catch(function () { /* نادیده */ });
+      // v2.10.1 — درمان خودکار «نسخهٔ قدیم»: اگر سرویس‌ورکرِ استخراج قبلی روی همین
+      // 127.0.0.1 باقی مانده باشد، صفحهٔ اول از کش قدیم سرو می‌شود؛ به‌محض آنکه
+      // سرویس‌ورکر جدید (کش lbr-mobile-v23) کنترل را بگیرد، صفحه یک‌بار تازه می‌شود.
+      var wasControlled = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!wasControlled) { return; } /* بازدید اول: SW برای نخستین بار کنترل می‌گیرد */
+        try {
+          if (sessionStorage.getItem('lv_reloaded_v23')) { return; }
+          sessionStorage.setItem('lv_reloaded_v23', '1');
+        } catch (e) { return; }
+        location.reload();
+      });
     }
 
     // یادداشت حالت اجرا
