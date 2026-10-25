@@ -3,7 +3,7 @@
  * - موتور OCR و داده زبان: cache-first پس از نخستین بارگیری (پشتیبانی آفلاین کامل)
  * - هیچ درخواستی به سرور خارجی از این سرویس‌کار صادر نمی‌شود.
  */
-var CACHE = 'lbr-mobile-v22'; /* v2.10.0: ممیزی مهندسی — رفع جایگزینی عدد کوتاه (۵۰/۵۰۰)، حذف دوقلوی سرگردان (الگوی «Keeping Keeping») با قاعدهٔ هندسه‌آگاه و شناسه‌گذاری قطعه‌ها در موبایل */
+var CACHE = 'lbr-mobile-v23'; /* v2.10.1: رفع «لانچر نسخهٔ قدیم را نشان می‌دهد» — فلگ پاکسازی وابسته به نسخه در START-HERE + رفرش خودکار یک‌باره هنگام تحویل‌گرفتن کنترل توسط SW جدید + راهنمای چیدمان Full-Project در لانچر قابل‌حمل */
 
 var SHELL = [
   './',
@@ -37,7 +37,9 @@ var SHELL = [
   './assets/fonts/Vazirmatn-Bold.ttf'
 ];
 
+var WAS_UPDATE = false; /* v2.10.1: آیا این نصب، «به‌روزرسانی روی SW قبلی» است؟ (نصب اول نیست) */
 self.addEventListener('install', function (event) {
+  WAS_UPDATE = !!self.registration.active; /* اگر SW فعالی از قبل هست، این یک آپدیت است */
   event.waitUntil(
     caches.open(CACHE).then(function (cache) {
       return cache.addAll(SHELL).catch(function () {
@@ -54,7 +56,19 @@ self.addEventListener('activate', function (event) {
       return Promise.all(keys.map(function (k) {
         return (k === CACHE) ? null : caches.delete(k);
       }));
-    }).then(function () { return self.clients.claim(); })
+    }).then(function () { return self.clients.claim(); }).then(function () {
+      /* v2.10.1 — درمان خودکار «نسخهٔ قدیم»: اگر این SW جای SW قدیمی گرفته باشد،
+         صفحه‌هایی که با DOM کهنه (از کش SW قبلی) باز مانده‌اند را خودش تازه می‌کند؛
+         چون page-side listener در صفحات قدیمی وجود ندارد، navigate از سمت SW
+         تنها راه مطمئن است. فقط در آپدیت (نه نصب اول) اجرا می‌شود تا حلقه نشود. */
+      if (!WAS_UPDATE) { return null; }
+      return self.clients.matchAll({ type: 'window' }).then(function (cs) {
+        cs.forEach(function (c) {
+          try { if (c.url && typeof c.navigate === 'function') { c.navigate(c.url); } } catch (e) { /* نادیده */ }
+        });
+        return null;
+      });
+    })
   );
 });
 

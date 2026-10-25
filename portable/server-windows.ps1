@@ -58,6 +58,28 @@ try {
 }
 Write-Host ''
 
+# ---- v2.10.1: layout detection -------------------------------------------
+# Inside the FULL PROJECT folder this portable\ folder has no app files next
+# to it (single-file, webapp\, index.html live in mobile-app\). In that case
+# hand over to the correct launcher instead of serving a start page whose
+# links lead to "Page not found".
+$haveAppHere = (Test-Path (Join-Path $root 'label-reader-singlefile.html')) -or
+               (Test-Path (Join-Path $root 'webapp')) -or
+               (Test-Path (Join-Path $root 'index.html'))
+if (-not $haveAppHere) {
+  $mobPs1 = Join-Path $root '..\mobile-app\server-windows.ps1'
+  if (Test-Path $mobPs1) {
+    Write-Host ''
+    Write-Host '  ===================================================='
+    Write-Host '   FULL-PROJECT layout detected (no app files in this'
+    Write-Host '   portable\ folder). Handing over to the correct'
+    Write-Host '   launcher: mobile-app\START-WINDOWS.bat equivalent...'
+    Write-Host '  ===================================================='
+    & $mobPs1
+    exit $LASTEXITCODE
+  }
+}
+
 # ---- find a free port in 8765..8775 ------------------------
 $port = $null
 foreach ($p in 8765..8775) {

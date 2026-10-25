@@ -19,7 +19,7 @@ MOBILE = REPO / 'mobile-app'
 PORTABLE = REPO / 'portable'
 OUT = Path('/home/z/my-project/download')
 
-VERSION = "2.10.0"
+VERSION = "2.10.1"
 ROOT_NAME = 'LabelVoice-Portable-Web'
 
 # فایل‌هایی که از mobile-app به ریشهٔ بسته می‌روند (نه داخل webapp/)

@@ -1369,6 +1369,18 @@
     // ثبت Service Worker فقط در حالت http(s) (در file:// بی‌معناست)
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('./sw.js').catch(function () { /* نادیده */ });
+      // v2.10.1 — درمان خودکار «نسخهٔ قدیم»: اگر سرویس‌ورکرِ استخراج قبلی روی همین
+      // 127.0.0.1 باقی مانده باشد، صفحهٔ اول از کش قدیم سرو می‌شود؛ به‌محض آنکه
+      // سرویس‌ورکر جدید (کش lbr-mobile-v23) کنترل را بگیرد، صفحه یک‌بار تازه می‌شود.
+      var wasControlled = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!wasControlled) { return; } /* بازدید اول: SW برای نخستین بار کنترل می‌گیرد */
+        try {
+          if (sessionStorage.getItem('lv_reloaded_v23')) { return; }
+          sessionStorage.setItem('lv_reloaded_v23', '1');
+        } catch (e) { return; }
+        location.reload();
+      });
     }
 
     // یادداشت حالت اجرا
