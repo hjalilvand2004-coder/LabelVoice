@@ -3,7 +3,7 @@
  * - موتور OCR و داده زبان: cache-first پس از نخستین بارگیری (پشتیبانی آفلاین کامل)
  * - هیچ درخواستی به سرور خارجی از این سرویس‌کار صادر نمی‌شود.
  */
-var CACHE = 'lbr-mobile-v27'; /* v2.12.0: موتور صوتی کاملاً لوکال — مدل Piper fa_IR-amir-medium باندل‌شده در vendor/tts (onnxruntime-web + piper-phonemize)؛ حذف کامل مسیرهای آنلاین */
+var CACHE = 'lbr-mobile-v28'; /* v2.12.0: موتور صوتی کاملاً لوکال — مدل Piper fa_IR-amir-medium باندل‌شده در vendor/tts (onnxruntime-web + piper-phonemize)؛ حذف کامل مسیرهای آنلاین */
 
 var SHELL = [
   './',

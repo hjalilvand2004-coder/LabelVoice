@@ -23,7 +23,7 @@
         'به‌صورت PWA قابل نصب است (افزودن به صفحه اصلی) و پس از بار اول کاملاً آفلاین کار می‌کند.',
         'پاسخ فقط از روی شواهد OCR ساخته می‌شود؛ اطلاعات غایب از اینترنت یا حافظه تکمیل نمی‌شود.',
         '«قدرت درج‌شده» فقط به‌معنای عدد روی بسته است، نه دوز مصرف.',
-        '👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری — نسخه ۲.۱۲.۲'
+        '👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری — نسخه ۲.۱۲.۳'
       ],
       tech: [
         { t: 'PWA (Web App Manifest)', r: 'قابل نصب بودن به‌صورت اپ روی گوشی', c: 'std' },
@@ -45,8 +45,8 @@
         'استخراج فیلدها و پاسخ فارسی: الگوها و قواعد فارسی + نگهبان ایمنی — بدون مدل زبانی ابری.',
         'خوانش صوتی (v2.12.0): مدل لوکال Piper fa_IR-amir-medium — وزن‌ها داخل vendor/tts باندل شده و با onnxruntime-web روی همین دستگاه اجرا می‌شود؛ نه سرویس ابری و نه TTS خود گوشی.',
         'نسخهٔ دسکتاپ (Streamlit): Tesseract 5 (fas+eng) + EasyOCR (fa+en) با رأی اجماعی + صدای Piper لوکال (fa_IR-amir-medium) بدون اینترنت.',
-        'نوع و مسیر فایل مدل‌ها (v2.12.2) — باندل‌شده در پروژه: مدل صوتی Piper fa_IR-amir-medium (فایل ONNX) در models/tts/piper-fa_IR-amir/ (دسکتاپ: model.onnx fp32 ۶۳MB + model.int8.onnx ۱۸٫۶MB + tokens.txt + espeak-ng-data) و mobile-app/vendor/tts/ (مرورگر/APK: نسخهٔ int8 ~۱۸MB)؛ دادهٔ زبان Tesseract (traineddata) در models/tessdata/ (fas ۳٫۳MB + eng ۴٫۱MB)؛ موتور مرورگر Tesseract.js در vendor/tesseract + vendor/core با دادهٔ زبان lang/integer و lang/best.',
-        'نوع و مسیر فایل مدل‌ها (v2.12.2) — نصب جداگانه (وزن در نخستین اجرا دانلود و روی همین دستگاه ذخیره می‌شود): EasyOCR (CRNN) → ~/.EasyOCR/model/؛ Surya (ترنسفورمر) → کش Hugging Face ~/.cache/huggingface/hub؛ Qwen3-VL-2B-Instruct (مدل زبانی-بینایی) → ~/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/. جدول کامل: راهنمای دسکتاپ ← «مدل‌ها و موتورها».',
+        'نوع و مسیر فایل مدل‌ها (v2.12.3) — باندل‌شده در پروژه: مدل صوتی Piper fa_IR-amir-medium (فایل ONNX) در models/tts/piper-fa_IR-amir/ (دسکتاپ: model.onnx fp32 ۶۳MB + model.int8.onnx ۱۸٫۶MB + tokens.txt + espeak-ng-data) و mobile-app/vendor/tts/ (مرورگر/APK: نسخهٔ int8 ~۱۸MB)؛ دادهٔ زبان Tesseract (traineddata) در models/tessdata/ (fas ۳٫۳MB + eng ۴٫۱MB)؛ موتور مرورگر Tesseract.js در vendor/tesseract + vendor/core با دادهٔ زبان lang/integer و lang/best.',
+        'نوع و مسیر فایل مدل‌ها (v2.12.3) — نصب جداگانه (وزن در نخستین اجرا دانلود و روی همین دستگاه ذخیره می‌شود): EasyOCR (CRNN) → ~/.EasyOCR/model/؛ Surya (ترنسفورمر) → کش Hugging Face ~/.cache/huggingface/hub؛ Qwen3-VL-2B-Instruct (مدل زبانی-بینایی) → ~/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/. جدول کامل: راهنمای دسکتاپ ← «مدل‌ها و موتورها».',
         'موتور سوم دسکتاپ (v2.2.0 — اختیاری به انتخاب کاربر): Surya OCR — تشخیص خط + بازشناسی ترنسفورمری با پشتیبانی فارسی؛ نصب: pip install surya-ocr؛ خروجی آن از همان گیت کیفیت و رأی اجماعی عبور می‌کند. (در نسخهٔ مرورگر پشتیبانی نمی‌شود — مرورگر فقط WebAssembly اجرا می‌کند.)',
         'موتور چهارم دسکتاپ (v2.3.0 — اختیاری به انتخاب کاربر): Qwen/Qwen3-VL-2B-Instruct — مدل زبانی-بینایی که کل تصویر را یکجا سطر به سطر می‌خواند؛ نصب: pip install "transformers>=4.57" accelerate؛ در سایدبار گزینهٔ «Qwen3-VL-2B-Instruct» را انتخاب کنید. (در نسخهٔ مرورگر پشتیبانی نمی‌شود.)',
         'خلاصهٔ انتخاب موتور در دسکتاپ: کاربر یکی از پنج گزینه را برمی‌گزیند — Tesseract 5 (پیش‌فرض) · EasyOCR · Surya · Qwen3-VL-2B-Instruct · خودکار — همه از گیت کیفیت + رأی اجماعی می‌گذرند.',

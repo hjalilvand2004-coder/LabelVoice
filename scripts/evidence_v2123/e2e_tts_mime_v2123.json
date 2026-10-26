@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-10-26T19:46:09.109Z",
+  "broken_case": {
+    "case": "A-broken-mjs-mime (ps1 قدیمی)",
+    "seconds": "0.3",
+    "ok": false,
+    "fa": "راه‌اندازی موتور اجرا (onnxruntime) ناموفق بود: no available backend found. ERR: [wasm] TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:8793/vendor/tts/ort-wasm-simd-threaded.mjs. اگر صفحه را با سرور محلی (START-WINDOWS.bat) باز کرده‌اید، لطفاً از نسخهٔ جدید بسته اطمینان حاصل کنید.",
+    "message": "راه‌اندازی موتور اجرا (onnxruntime) ناموفق بود: no available backend found. ERR: [wasm] TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:8793/vendor/tts/ort-wasm-simd-threaded.",
+    "pageErrors": []
+  },
+  "fixed_case": {
+    "case": "B-fixed-mjs-mime (ps1 اصلاح‌شده v2.12.3)",
+    "seconds": "7.0",
+    "ok": true,
+    "via": "local",
+    "bytes": 93740,
+    "pageErrors": []
+  },
+  "assertions": {
+    "broken_failed_as_expected": true,
+    "broken_error_is_persian_wrapped": true,
+    "fixed_succeeded": true
+  },
+  "all_pass": true
+}

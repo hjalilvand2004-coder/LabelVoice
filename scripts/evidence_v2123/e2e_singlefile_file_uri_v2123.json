@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-10-26T19:46:49.664Z",
+  "protocol": "file://",
+  "hasTts": true,
+  "embedded": true,
+  "modelIsData": true,
+  "version": "2.12.3",
+  "ok": true,
+  "via": "local",
+  "bytes": 108588,
+  "pageErrors": [],
+  "assertions": {
+    "engine_present": true,
+    "assets_embedded_as_data_urls": true,
+    "synthesis_ok_offline": true,
+    "no_page_errors": true
+  },
+  "all_pass": true
+}

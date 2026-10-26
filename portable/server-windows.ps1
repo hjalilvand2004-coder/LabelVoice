@@ -104,6 +104,16 @@ $mime = @{
   '.svg'  = 'image/svg+xml'
   '.ico'  = 'image/x-icon'
   '.wasm' = 'application/wasm'
+  # v2.12.3 fix: ES modules (.mjs) MUST be served with a JavaScript MIME type.
+  # Chrome/Edge/WebView reject dynamic import() of modules served as
+  # application/octet-stream ("Failed to load module script ... MIME type is
+  # not executable"). onnxruntime-web imports ort-wasm-simd-threaded.mjs at
+  # session-creation time, so a wrong MIME here silently killed the local
+  # Piper TTS engine (generic "vendor/tts" error in the UI).
+  '.mjs'  = 'text/javascript; charset=utf-8'
+  '.onnx' = 'application/octet-stream'
+  '.data' = 'application/octet-stream'
+  '.txt'  = 'text/plain; charset=utf-8'
   '.gz'   = 'application/gzip'
   '.ttf'  = 'font/ttf'
   '.woff' = 'font/woff'

@@ -1,4 +1,4 @@
-/* LabelVoice TTS v2.12.0 — موتور صوتی کاملاً لوکال (Piper فارسی)
+/* LabelVoice TTS v2.12.3 — موتور صوتی کاملاً لوکال (Piper فارسی)
  *
  * v2.12.0 — «مدل دانلودشده در فایل‌های پروژه؛ بدون هیچ سرویس اینترنتی»:
  *   - مدل: VITS Piper «fa_IR-amir-medium» (نسخهٔ کوانتیزهٔ int8 — ۱۸.۶MB)
@@ -15,7 +15,7 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '2.12.0';
+  var VERSION = '2.12.3';
   var VOICE_ID = 'fa_IR-amir-medium';
   var VOICE_LABEL = 'امیر — Piper فارسی (لوکال، int8)';
   var DEFAULT_RATE = '+0%';
@@ -54,6 +54,26 @@
     var e = new Error(fa);
     e.fa = fa;
     return e;
+  }
+
+  /* v2.12.3: اگر صفحه با file:// باز شده باشد، fetch() مسدود می‌شود و خطا
+     بدون پیام فارسی به رابط می‌رسید (پیغام عمومی گمراه‌کننده). اکنون از
+     همان ابتدا تشخیص داده و راهنمای دقیق فارسی نشان داده می‌شود. */
+  function isFileProtocol() {
+    try { return global.location && global.location.protocol === 'file:'; }
+    catch (e) { return false; }
+  }
+
+  /* v2.12.3: پوشش خطاهای شبکه‌ای fetch (TypeError بدون fa) با پیام فارسی */
+  function wrapFetchError(err, asset) {
+    if (err && err.fa) return err;
+    if (isFileProtocol()) {
+      return faError('این صفحه با file:// باز شده است؛ مرورگر بارگیری فایل‌های مدل صوتی را مسدود می‌کند.' +
+        ' لطفاً "START-WINDOWS.bat" را اجرا کنید (سرور محلی) یا از فایل تک‌فایلی "label-reader-singlefile.html" استفاده کنید.');
+    }
+    return faError('بارگیری فایل مدل صوتی ناموفق بود (' + asset + ')' +
+      (err && err.message ? ': ' + err.message : '') +
+      '. فایل‌های vendor/tts باید کنار برنامه باشند و صفحه از طریق سرور محلی (START-WINDOWS.bat) باز شود.');
   }
 
   /* ---------- ابزارهای خالص (آزمون‌پذیر در Node) ---------- */
@@ -148,6 +168,10 @@
 
   function ensureConfig() {
     if (cfg) return Promise.resolve();
+    if (isFileProtocol() && !global.__LBR_TTS_ASSETS__) {
+      return Promise.reject(faError('این صفحه با file:// باز شده است؛ بارگیری مدل صوتی در این حالت مسدود می‌شود.' +
+        ' لطفاً "START-WINDOWS.bat" را اجرا کنید (سرور محلی) یا از فایل تک‌فایلی "label-reader-singlefile.html" استفاده کنید.'));
+    }
     return fetch(rurl(ASSETS.config)).then(function (r) {
       if (!r.ok) throw faError('پیکربندی مدل صوتی یافت نشد (' + ASSETS.config + ').');
       return r.json();
@@ -156,6 +180,8 @@
         throw faError('پیکربندی مدل صوتی نامعتبر است.');
       }
       cfg = j;
+    }).catch(function (err) {
+      throw wrapFetchError(err, ASSETS.config);
     });
   }
 
@@ -201,8 +227,17 @@
       return ortRef.InferenceSession.create(new Uint8Array(buf), {
         executionProviders: ['wasm'],
         graphOptimizationLevel: 'all'
+      }).catch(function (err) {
+        /* v2.12.3: خطای ساخت نشست ort (مثلاً شکست import ماژول mjs با
+           MIME نادرست در سرور محلی) بدون fa بود و پیغام عمومی می‌داد */
+        throw faError('راه‌اندازی موتور اجرا (onnxruntime) ناموفق بود' +
+          (err && err.message ? ': ' + err.message : '') +
+          '. اگر صفحه را با سرور محلی (START-WINDOWS.bat) باز کرده‌اید، لطفاً از نسخهٔ جدید بسته اطمینان حاصل کنید.');
       });
-    }).then(function (s) { session = s; });
+    }).then(function (s) { session = s; })
+      .catch(function (err) {
+        throw (err && err.fa) ? err : wrapFetchError(err, ASSETS.model);
+      });
   }
 
   /** فونِم‌سازی یک قطعه — هر بار نمونهٔ تازهٔ ماژول (الگوی رسمی piper-web) */

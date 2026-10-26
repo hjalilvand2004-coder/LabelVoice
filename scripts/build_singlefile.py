@@ -60,7 +60,7 @@ prelude = (
 )
 
 offline_js = '<script>window.__LBR_OFFLINE__ = ' + json.dumps({
-    'v': '2.12.2',
+    'v': '2.12.3',
     'prelude': prelude,
 }) + ';</script>'
 tag = re.search(r'<script src="js/offline-engine\.js(?:\?v=[^"]*)?"></script>', html)
@@ -91,8 +91,8 @@ tts_assets = {
 }
 tts_js = ('<script>window.__LBR_TTS_ASSETS__ = ' +
           json.dumps(tts_assets) + ';</script>')
-html = html.replace('<script src="js/tts.js?v=2.12.2"></script>',
-                    tts_js + '<script src="js/tts.js?v=2.12.2"></script>')
+html = re.sub(r'<script src="js/tts\.js(?:\?v=[^"]*)?"></script>',
+              tts_js + '<script src="js/tts.js"></script>', html)
 
 def inline_script(m: 're.Match') -> str:
     src = m.group(1)
@@ -107,8 +107,9 @@ def inline_script(m: 're.Match') -> str:
 html = re.sub(r'<script src="([^"]+)"></script>', inline_script, html)
 
 # نظارت: دارایی‌های صوتی تعبیه شده باشند
-if '__LBR_TTS_ASSETS__' not in html or 'fa_IR-amir-medium.int8.onnx' not in html:
-    raise SystemExit('تعبیهٔ دارایی‌های صوتی در تک‌فایل انجام نشد')
+MODEL_DATA_MARK = '\"./vendor/tts/fa_IR-amir-medium.int8.onnx\": \"data:application/octet-stream;base64,'
+if '__LBR_TTS_ASSETS__' not in html or MODEL_DATA_MARK not in html:
+    raise SystemExit('تعبیهٔ دارایی‌های صوتی در تک‌فایل انجام نشد (data: URL مدل یافت نشد)')
 
 # جلوگیری از ثبت Service Worker در نسخه تک‌فایل (pathهای محلی وجود ندارند)
 html = html.replace(

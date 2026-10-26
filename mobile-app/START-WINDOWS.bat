@@ -36,9 +36,12 @@ if %errorlevel%==0 (
 echo.
 echo ============================================
 echo  Server stopped.
-echo  Alternative without a server (needs internet):
-echo    double-click "index.html" (or "webapp\index.html" in the portable ZIP)
-echo    or "label-reader-singlefile.html"
+echo  Alternative WITHOUT a server (fully offline):
+echo    double-click "label-reader-singlefile.html"
+echo    (single file, includes the local audio engine)
+echo  NOTE: "index.html" opened directly from Explorer
+echo  (file://) cannot load the local voice and camera
+echo  models - use THIS server for them.
 echo ============================================
 pause
 

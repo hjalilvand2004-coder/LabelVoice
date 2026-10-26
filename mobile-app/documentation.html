@@ -349,7 +349,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 
 <header class="hero" id="top">
   <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
-  <span class="kicker">📘 سند فنی رسمی — نسخه ۲.۱۲.۲</span>
+  <span class="kicker">📘 سند فنی رسمی — نسخه ۲.۱۲.۳</span>
   <h1>برچسب‌خوان هوشمند دارو و محصولات<br><span class="grad">LabelVoice — معماری، کارکرد و فناوری</span></h1>
   <p class="lede">
     سامانه‌ای دو زیرسیستمی (دسکتاپ + موبایل) که فقط «متن روی بسته» را با OCR می‌خواند،
@@ -814,6 +814,8 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <p class="sub">همه چیزهایی که این سامانه روی آن ساخته شده — با نقش دقیق و محل استفاده در پروژه.</p>
   <div class="note reveal" style="margin-top:.9rem">
     <b>📱 اپ موبایل با چه رویکرد و ابزاری توسعه داده شده؟</b> رویکرد اصلی <b>PWA (Progressive Web App)</b> است: یک اپ وب تک‌صفحه‌ای با <b>HTML/CSS/JavaScript خالص</b> (بدون هیچ فریم‌ورک) که با <b>Web App Manifest</b> روی اندروید/iOS نصب می‌شود و با <b>Service Worker</b> (کش cache-first) کاملاً آفلاین اجرا می‌شود. OCR داخل مرورگر با <b>Tesseract.js 6 روی WebAssembly</b> و دادهٔ زبان fas+eng تعبیه‌شده انجام می‌شود؛ دوربین زنده با استاندارد <b>getUserMedia</b> (انتخاب تیزترین فریم از ۳ فریم)؛ پردازش تصویر با <b>Canvas API</b> (پورت عین قواعد OpenCV دسکتاپ)؛ خوانش صوتی از نسخهٔ ۲.۱۲.۰ با <b>مدل Piper فارسی (fa_IR-amir-medium)</b> انجام می‌شود که وزن‌هایش داخل فایل‌های برنامه باندل شده و با <b>onnxruntime-web (WASM)</b> روی همین دستگاه اجرا می‌شود — نه سرویس ابری و نه TTS خود گوشی؛ و بستهٔ اندروید (APK) همان PWA داخل <b>Android WebView</b> است (MainActivity.java + AndroidManifest، ساخت با اسکریپت <code>android/build_apk.sh</code>). نسخهٔ تک‌فایلیِ بدون پایتون نیز با اسکریپت <code>scripts/build_singlefile.py</code> ساخته می‌شود. نتیجه: یک پایگاه کد قاعده‌محور مشترک بین دسکتاپ (پایتون) و موبایل (جاوااسکریپت) با آزمون‌های پاریتی Node.</div>
+  <div class="note reveal" style="margin-top:.9rem; border-right-color:#e53935">
+    <b>🔊 عیب‌یابی پخش صوتی در وب/موبایل (به‌روز v2.12.3):</b> پیام «تولید صدا ناموفق بود…» دو علت مشخص دارد و هر دو برطرف شده‌اند: (۱) اگر صفحه از طریق لانچر سرور محلی باز شده باشد، نسخهٔ قبلی سرور ویندوز (<code>server-windows.ps1</code>) ماژول <code>ort-wasm-simd-threaded.mjs</code> را با MIME نادرست می‌فرستاد — راه‌حل: از بستهٔ v2.12.3 به بعد استفاده کنید که <code>.mjs</code> را با <code>text/javascript</code> سرو می‌کند. (۲) اگر صفحه با دوبارکلیک مستقیم از Explorer باز شده باشد (نشانی با <code>file://</code> شروع می‌شود)، مرورگر بارگیری مدل‌های کنار برنامه را مسدود می‌کند — راه‌حل: اجرای <code>START-WINDOWS.bat</code> (سرور محلی http://127.0.0.1:8765) یا استفاده از <code>label-reader-singlefile.html</code> که موتور صوتی و مدل داخل خودش تعبیه شده و حتی با دوبارکلیک هم صدا کار می‌کند. در نسخهٔ ۲.۱۲.۳ پیام خطا در هر دو حالت دقیق و فارسی است و علت را صریح می‌گوید.</div>
   </div>
   <div class="techgrid">
     <div class="techcard reveal" style="--tc:#3776ab"><div class="glyph">Py</div><h4>Python 3.12</h4><div class="role">زبان اصلی زیرسیستم دسکتاپ و همه اسکریپت‌ها و آزمون‌ها</div><span class="where">label_reader/ · scripts/ · tests/</span></div>
@@ -902,7 +904,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
   </div>
   <div class="grid2">
     <div class="card reveal"><h3><span class="icon">🔒</span> پردازش صددرصد محلی</h3>
-      <p>در هر دو زیرسیستم، OCR و استخراج روی دستگاه اجرا می‌شود. تنها استثنا، گفتار دسکتاپ است که فقط با رضایت صریح کاربر به سرویس TTS ارسال می‌شود و نسخه موبایل حتی آن را هم ندارد (گفتار روی خود گوشی).</p></div>
+      <p>در هر دو زیرسیستم، OCR، استخراج و خوانش صوتی کاملاً روی دستگاه اجرا می‌شود؛ هیچ متنی یا تصویری به هیچ سرویسی ارسال نمی‌شود. خوانش صوتی در همهٔ رابط‌ها (دسکتاپ، وب/موبایل، APK) با مدل باندل‌شدهٔ Piper (fa_IR-amir-medium) و به‌صورت آفلاین انجام می‌شود (v2.12.0) — مسیرهای آنلاین Edge TTS/gTTS از معماری حذف شده‌اند.</p></div>
     <div class="card reveal"><h3><span class="icon">🛡️</span> نگهبان پاسخ</h3>
       <p>پاسخ پیش از نمایش بازبینی می‌شود: واژه‌های ممنوع (از جمله «دوز مصرف») رد می‌شوند، هر عدد باید در شواهد OCR موجود باشد و ادعای کاربرد/تشخیص/توصیه مسدود است. سلب مسئولیت به پاسخ تزریق می‌شود.</p></div>
     <div class="card reveal"><h3><span class="icon">🧾</span> پاسخ مبتنی بر شواهد</h3>
@@ -1038,6 +1040,8 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <h2>تاریخچه نسخه‌ها</h2>
   </div>
   <div class="timeline">
+    <div class="tl-item reveal"><h4>رفع خطای پخش صوتی در بستهٔ پرتیبل + پیام‌های خطای شفاف <span class="ver">v2.12.3</span></h4>
+      <p>بر اساس بررسی و تحلیل صورت گرفته روی گزارش «تولید صدا ناموفق بود» در بستهٔ پرتیبل، دو علت شناسایی و رفع شد: (۱) جدول MIME سرور محلی ویندوز (<code>server-windows.ps1</code>) فایل‌های <code>.mjs</code> را با <code>application/octet-stream</code> می‌فرستاد — مرورگرها import ماژول ES با MIME غیرجاوااسکریپتی را رد می‌کنند و راه‌اندازی onnxruntime-web در همان مرحله شکست می‌خورد؛ اکنون <code>.mjs</code> با <code>text/javascript</code> سرو می‌شود (به‌همراه تعریف صریح <code>.onnx</code>/<code>.data</code>/<code>.txt</code>) در هر دو نسخهٔ سرور (پرتیبل و Full-Project) و آزمون رگرسیون برای آن اضافه شد. (۲) بازکردن مستقیم <code>webapp/index.html</code> از Explorer (حالت file://) بارگیری مدل‌ها را مسدود می‌کرد و خطا بدون پیام فارسی نمایش داده می‌شد؛ اکنون موتور صوتی پروتکل file:// را تشخیص می‌دهد و راهنمای دقیق فارسی (اجرای START-WINDOWS.bat یا استفاده از تک‌فایل) نشان می‌دهد، همهٔ خطاهای fetch/راه‌اندازی موتور با پیام فارسیِ قابل‌اقدام پوشش شده‌اند، START-HERE در حالت file:// هشدار درج می‌کند و متن گمراه‌کنندهٔ لانچر («نیاز به اینترنت») اصلاح شد. شواهد E2E: سنتز زندهٔ مرورگر با سرورِ MIME نادرست ← شکستِ بازتولیدشده، و با سرورِ اصلاح‌شده ← ساخت WAV موفق (<code>scripts/evidence_v2123/</code>). نسخه‌ها: کش SW → <code>lbr-mobile-v28</code>؛ تک‌فایل بازساخت؛ APK versionCode 27 (2.12.3).</p></div>
     <div class="tl-item reveal"><h4>جدول «نوع، نام و مسیر فایل هر مدل» + بازنویسی مستندات با لحن بررسی و تحلیل <span class="ver">v2.12.2</span></h4>
       <p>بر اساس بررسی و تحلیل صورت گرفته روی مستندات: (۱) هر مدل — باندل‌شده یا نصب جداگانه — با «نوع + نام + مسیر دقیق فایل» مستند شد (جدول رسمی در بخش «مدل‌ها و موتورها» همین سند، README، راهنمای درون‌اپی و START-HERE؛ تک‌منبع حقیقت: تابع <code>models_paths_markdown_fa</code> در <code>label_reader/models_info.py</code>) — مدل صوتی Piper در <code>models/tts/piper-fa_IR-amir/</code> (model.onnx fp32 ۶۳MB + model.int8.onnx ۱۸٫۶MB + tokens.txt + espeak-ng-data) و <code>mobile-app/vendor/tts/</code> برای مرورگر/APK؛ دادهٔ زبان Tesseract در <code>models/tessdata/</code>؛ موتور مرورگر در <code>vendor/tesseract</code> + <code>vendor/core</code> با دادهٔ زبان <code>lang/integer|best</code>؛ برای موتورهای نصب‌جداگانه مسیر ذخیره‌سازی وزن‌ها مستند شد (EasyOCR <code>~/.EasyOCR/model/</code>؛ Surya و Qwen3-VL در کش Hugging Face). (۲) عبارت‌های نقل‌قولی از درخواست/گزارش‌ها («بازخورد کاربر: …») از همهٔ مستندات حذف و به «بر اساس بررسی و تحلیل صورت گرفته …» بازنویسی شد — محتوا همان، روایت یکدست. (۳) بازمانده‌های قدیمی حذف شد: اشارهٔ Web Speech API در جدول مدل‌های همین سند و راهنمای درون‌اپی، و راهنمای کهنهٔ «مرورگر Edge» در عیب‌یابی INSTALL. نسخه‌ها: کش SW → <code>lbr-mobile-v27</code>؛ تک‌فایل و ZIPها بازساخت؛ PDF v2.12.2 بازتولید شد.</p></div>
     <div class="tl-item reveal"><h4>هم‌خوانی همهٔ نمایشگرهای نسخه با ریلیز <span class="ver">v2.12.1</span></h4>
@@ -1102,7 +1106,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 </section>
 
 <footer class="docfoot">
-  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۲.۱۲.۲ · توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
+  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۲.۱۲.۳ · توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
   <div class="links">
     <a href="index.html">🚀 برنامه</a>
     <a href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ GitHub</a>
