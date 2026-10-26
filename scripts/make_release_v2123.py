@@ -207,15 +207,17 @@ def main() -> None:
 
     for path, name, _ in ASSETS:
         data = path.read_bytes()
-        boundary = "----labelvoice2123boundary"
-        pre = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; "
-               f"filename=\"{name}\"\r\nContent-Type: application/octet-stream\r\n\r\n").encode()
-        body = pre + data + f"\r\n--{boundary}--\r\n".encode()
+        # ⚠️ روش صحیح آپلود دارایی GitHub: باینری خام فایل + Content-Type
+        # application/octet-stream. اندپوینت uploads.github.com بدنه را عیناً
+        # به‌عنوان محتوای فایل ذخیره می‌کند؛ ارسال multipart باعث می‌شد کل
+        # بدنهٔ HTTP (شامل باندری و هدرها) به‌عنوان فایل ذخیره شود و دارایی
+        # (از جمله APK) خراب از آب دربیاید (باگ v2.9.0 تا v2.12.3).
         url = (f"https://uploads.github.com/repos/{REPO}/releases/{rel_id}/assets"
                f"?name={name}")
-        req = urllib.request.Request(url, method="POST", data=body, headers={
+        req = urllib.request.Request(url, method="POST", data=data, headers={
             "Authorization": f"token {TOKEN}",
-            "Content-Type": f"multipart/form-data; boundary={boundary}",
+            "Content-Type": "application/octet-stream",
+            "Content-Length": str(len(data)),
             "User-Agent": "labelvoice-release"})
         with urllib.request.urlopen(req) as r:
             res = json.loads(r.read())
