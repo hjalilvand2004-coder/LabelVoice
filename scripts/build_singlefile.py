@@ -60,7 +60,7 @@ prelude = (
 )
 
 offline_js = '<script>window.__LBR_OFFLINE__ = ' + json.dumps({
-    'v': '2.12.0',
+    'v': '2.12.1',
     'prelude': prelude,
 }) + ';</script>'
 tag = re.search(r'<script src="js/offline-engine\.js(?:\?v=[^"]*)?"></script>', html)
@@ -91,8 +91,8 @@ tts_assets = {
 }
 tts_js = ('<script>window.__LBR_TTS_ASSETS__ = ' +
           json.dumps(tts_assets) + ';</script>')
-html = html.replace('<script src="js/tts.js?v=2.12.0"></script>',
-                    tts_js + '<script src="js/tts.js?v=2.12.0"></script>')
+html = html.replace('<script src="js/tts.js?v=2.12.1"></script>',
+                    tts_js + '<script src="js/tts.js?v=2.12.1"></script>')
 
 def inline_script(m: 're.Match') -> str:
     src = m.group(1)
