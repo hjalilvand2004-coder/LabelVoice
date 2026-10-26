@@ -275,7 +275,7 @@
     { key: 'tts', num: '۵', color: '#db2777', icon: '🔊',
       title: 'خوانش صوتی و نمایش (TTS + رابط)',
       req: 'TTS + Streamlit (خواندن اطلاعات و نمایش متن استخراج‌شده)',
-      files: 'js/tts.js (Edge TTS — همان مدل دسکتاپ) ⇄ desktop: label_reader/tts/* + app.py' }
+      files: 'js/tts.js (Piper لوکال روی onnxruntime-web — vendor/tts) ⇄ desktop: label_reader/tts/local_provider.py (sherpa-onnx) + app.py' }
   ];
   var STAGE_BY_KEY_FA = {};
   STAGES_FA.forEach(function (s) { STAGE_BY_KEY_FA[s.key] = s; });
@@ -868,17 +868,16 @@
         renderResult();
         // اعلام مرحله ۵ (TTS + نمایش) — پایان همه مراحل
         stageRun('tts');
-        var directTts = window.LVTts && window.LVTts.edgeDirectSupported();
         stageDone('tts', {
           status: 'done',
           duration_ms: 0,
           outputs: [
             'متن استخراج‌شده نمایش داده شد (بخش «پاسخ»). پخش صوتی با دکمه «پخش صوتی پاسخ» انجام می‌شود.',
-            'صدا با همان مدل دسکتاپ (صداهای نورال فارسی Microsoft Edge) ساخته می‌شود؛ از TTS خود گوشی استفاده نمی‌شود. متن فقط با رضایت شما به سرویس صوتی می‌رود.'
+            'صدا با مدل Piper فارسی (fa_IR-amir-medium) که داخل فایل‌های برنامه است و کاملاً لوکال اجرا می‌شود ساخته می‌شود؛ نه TTS گوشی و نه هیچ سرویس اینترنتی.'
           ],
           metrics: [
-            { n: 'موتور خوانش', v: 'Edge TTS فارسی (fa-IR-FaridNeural/DilaraNeural — همان مدل دسکتاپ)', status: 'ok' },
-            { n: 'مسیر پخش', v: directTts ? 'مستقیم (این مرورگر Edge/APK) یا پل دسکتاپ' : 'پل دسکتاپ (/api/tts) — در این مرورگر مسیر مستقیم پذیرفته نمی‌شود', status: directTts ? 'ok' : 'warn' },
+            { n: 'موتور خوانش', v: 'Piper فارسی — fa_IR-amir-medium (باندل‌شده، کاملاً لوکال)', status: 'ok' },
+            { n: 'اجرا', v: 'onnxruntime-web (WASM) داخل همین مرورگر/WebView — بدون اینترنت', status: 'ok' },
             { n: 'طول متن پاسخ', v: result.response_fa.length + ' نویسه', status: 'ok' }
           ]
         });
@@ -1227,18 +1226,16 @@
   }
 
   // ---------- عملکردهای پاسخ ----------
-  // v2.11.0: «همان مدل صوتی دسکتاپ در موبایل — بدون TTS خود گوشی»
-  // پخش فقط با صداهای نورال فارسی Microsoft Edge (fa-IR-FaridNeural/DilaraNeural)
-  // انجام می‌شود، از یکی از دو مسیر زیر (هر دو «همان مدل دسکتاپ»اند):
-  //   ۱) پل دسکتاپ: POST {پل}/api/tts — همان کد label_reader/tts دسکتاپ
-  //   ۲) کلاینت مستقیم Edge (js/tts.js) — فقط در مرورگر Edge یا WebView اندروید
-  // speechSynthesis مرورگر و پل بومی TextToSpeech اندروید دیگر استفاده نمی‌شوند
-  // (خواستهٔ صریح کاربر: «از قابلیت گفتار به صدای گوشی استفاده نکن»).
+  // v2.12.0: «مدل دانلودشده در فایل‌های پروژه؛ خوانش صوتی کاملاً لوکال»
+  // پخش فقط با موتور Piper فارسی (fa_IR-amir-medium) انجام می‌شود که:
+  //   - وزن‌هایش داخل vendor/tts/ باندل شده‌اند؛
+  //   - با onnxruntime-web (WASM) روی همین دستگاه اجرا می‌شود؛
+  //   - هیچ درخواستی به اینترنت و هیچ سرویس ابری ندارد؛
+  //   - speechSynthesis/TTS گوشی هم به‌کلی استفاده نمی‌شود
+  //     (خواستهٔ صریح کاربر: «از قابلیت گفتار به صدای گوشی استفاده نکن»).
   function ttsSettings() {
-    var st = { voice: window.LVTts ? window.LVTts.defaultVoice : 'fa-IR-FaridNeural', rate: '+0%' };
+    var st = { voice: window.LVTts ? window.LVTts.defaultVoice : 'Piper fa_IR-amir', rate: '+0%' };
     try {
-      var v = localStorage.getItem('lbr_tts_voice');
-      if (v && window.LVTts && window.LVTts.voices.indexOf(v) >= 0) st.voice = v;
       var r = localStorage.getItem('lbr_tts_rate');
       if (r && /^[+-]\d{1,3}%$/.test(r)) st.rate = r;
     } catch (e) { /* نادیده */ }
@@ -1257,34 +1254,24 @@
       note.textContent = 'ماژول صوتی (js/tts.js) بارگیری نشده است؛ صفحه را دوباره باز کنید.';
       return;
     }
-    var consentEl = $('tts-consent');
-    var consent = !!(consentEl && consentEl.checked);
     var st = ttsSettings();
-    var bridgeHost = '';
-    try { bridgeHost = localStorage.getItem('lbr_bridge_host') || ''; } catch (e) { /* نادیده */ }
     var btn = $('btn-tts');
     var oldLabel = btn.textContent;
     btn.disabled = true;
     btn.textContent = '⏳ در حال ساخت صدا…';
     LVTts.speak(text, {
-      consent: consent,
-      voice: st.voice,
       rate: st.rate,
-      bridgeHost: bridgeHost || null,
       onStatus: function (m) { note.textContent = m; }
     }).then(function (res) {
       LVTts.playBytes(res.bytes);
       btn.disabled = false;
       btn.textContent = oldLabel;
-      note.textContent = (res.via === 'bridge'
-        ? 'پخش با همان مدل دسکتاپ (از پل، صدای ' + st.voice + '). '
-        : 'پخش با مدل Edge (همان مدل دسکتاپ، صدای ' + st.voice + '). ')
-        + 'متن فقط با رضایت شما و فقط برای همین یک درخواست به سرویس صوتی ارسال شد؛ ذخیره نمی‌شود.';
+      note.textContent = 'پخش با مدل Piper فارسی (fa_IR-amir-medium) — کاملاً لوکال و بدون اینترنت. هیچ متنی از دستگاه شما خارج نشد.';
     }).catch(function (err) {
       btn.disabled = false;
       btn.textContent = oldLabel;
       note.textContent = (err && err.fa) ? err.fa
-        : 'تولید صدا ناموفق بود. اتصال اینترنت یا پل دسکتاپ (START-BRIDGE) را بررسی کنید.';
+        : 'تولید صدا ناموفق بود. فایل‌های vendor/tts باید کنار برنامه باشند و صفحه از طریق سرور محلی باز شود.';
     });
   }
 
@@ -1422,17 +1409,7 @@
     var pingBtn = $('btn-bridge-ping');
     if (pingBtn) pingBtn.addEventListener('click', pingBridge);
 
-    // v2.11.0: ذخیرهٔ فوری تنظیمات صدا (نوع صدا و سرعت خوانش)
-    var ttsVoiceSel = $('tts-voice');
-    if (ttsVoiceSel) {
-      try {
-        var savedVoice = localStorage.getItem('lbr_tts_voice');
-        if (savedVoice) ttsVoiceSel.value = savedVoice;
-      } catch (e) { /* نادیده */ }
-      ttsVoiceSel.addEventListener('change', function () {
-        try { localStorage.setItem('lbr_tts_voice', ttsVoiceSel.value); } catch (e) { /* نادیده */ }
-      });
-    }
+    // v2.12.0: ذخیرهٔ سرعت خوانش — صدا فقط Piper لوکال است (انتخاب صدا حذف شد)
     var ttsRateSel = $('tts-rate');
     if (ttsRateSel) {
       try {
