@@ -153,10 +153,26 @@ python scripts/evaluate.py             # جدول واقعی دقت/زمان ر�
 | `LBR_SURYA_MODEL_DIR` | — | مسیر اختصاصی کش مدل‌های سوریا (اختیاری) |
 | `LBR_LLM_BASE_URL` / `LBR_LLM_MODEL` / `LBR_LLM_API_KEY` | — | فقط با فعال‌سازی صریح؛ کلید از متغیر محیط |
 
+## محل فایل مدل‌ها (v2.12.2 — نوع، نام و مسیر هر مدل)
+
+مدل‌های سامانه دو دسته‌اند: **باندل‌شده در پروژه** (فایل مدل داخل مخزن است و همراه بستهٔ قابل حمل آمادهٔ اجرا آفلاین می‌آید) و **نصب جداگانه** (موتور/کتابخانه با pip یا نصاب سیستمی؛ وزن‌ها در نخستین اجرا دانلود و روی همین دستگاه ذخیره می‌شود):
+
+| نقش | نوع | نام مدل / داده | وضعیت | مسیر فایل |
+|---|---|---|---|---|
+| دادهٔ زبان Tesseract فارسی/انگلیسی | traineddata (LSTM) | fas (tessdata_best) + eng | باندل‌شده در پروژه | `models/tessdata/fas.traineddata` (~۳٫۳MB) · `models/tessdata/eng.traineddata` (~۴٫۱MB)؛ جایگزین: `LBR_TESSDATA_DIR` |
+| خوانش صوتی — مدل | VITS — فایل ONNX | Piper «fa_IR-amir-medium» | باندل‌شده در پروژه | `models/tts/piper-fa_IR-amir/` — `model.onnx` (fp32 ~۶۳MB) + `model.int8.onnx` (~۱۸٫۶MB) + `tokens.txt` + `fa_IR-amir-medium.onnx.json` + `espeak-ng-data/` (۳۵۵ فایل)؛ جایگزین: `LBR_TTS_MODEL_DIR` |
+| خوانش صوتی — مدل مرورگر/APK | همان مدل، کوانتیزهٔ int8 | `fa_IR-amir-medium.int8.onnx` | باندل‌شده در پروژه | `mobile-app/vendor/tts/` (+ onnxruntime-web و piper-phonemize WASM) |
+| OCR موتور دوم (اختیاری) | CRNN + CRAFT | EasyOCR 1.7 (fa+en) | نصب جداگانه (pip) + دانلود وزن | وزن‌ها: `~/.EasyOCR/model/`؛ جایگزین: `LBR_EASYOCR_MODEL_DIR` |
+| OCR موتور سوم (اختیاری) | ترنسفورمر تشخیص خط + بازشناسی | Surya (surya-ocr) | نصب جداگانه (pip) + دانلود وزن | وزن‌ها: کش Hugging Face `~/.cache/huggingface/hub`؛ جایگزین: `LBR_SURYA_MODEL_DIR` |
+| OCR موتور چهارم + دستیار دوم (اختیاری) | مدل زبانی-بینایی (VLM) | Qwen/Qwen3-VL-2B-Instruct | نصب جداگانه (transformers) + دانلود وزن | `~/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/` (safetensors، ~۴ تا ۵GB) |
+| موتور اجرای صوت دسکتاپ | کتابخانه استنتاج ONNX | sherpa-onnx 1.12.40 | نصب جداگانه (pip) | فونِم‌ساز espeak-ng داخلی — بدون فایل مدل جداگانه |
+
+> موتور اول OCR (Tesseract 5) و کتابخانهٔ پیش‌پردازش (OpenCV) فایل مدل ندارند: باینری سیستمی نصب می‌شوند. جدول کامل و همیشه‌به‌روز: `label_reader/models_info.py` (تابع `models_paths_markdown_fa`).
+
 ## عیب‌یابی
 
 - **«tesseract نصب نیست»**: مسیر باینری در PATH نیست؛ در ویندوز مسیر نصب را اضافه کنید.
 - **«داده زبان فارسی یافت نشد»**: `python scripts/download_tessdata.py` را اجرا کنید.
 - **«مدل صوتی لوکال یافت نشد»**: پوشهٔ `models/tts/piper-fa_IR-amir/` (یا `LBR_TTS_MODEL_DIR`) باید مدل و tokens.txt را داشته باشد؛ TTS کاملاً لوکال است و به اینترنت نیازی ندارد.
-- **«پخش صوتی مستقیم در این مرورگر ممکن نیست» (وب/موبایل)**: سرویس صوتی فقط درخواست‌های مرورگر Edge را می‌پذیرد؛ «START-BRIDGE» را روی رایانه اجرا کنید و نشانی آن را در تنظیمات موبایل وارد کنید، یا صفحه را در Edge باز کنید (در APK اینترنت گوشی کافی است).
+- **«پخش صوتی انجام نمی‌شود» (وب/موبایل)**: موتور صوتی کاملاً لوکال است (Piper روی onnxruntime-web) و به اینترنت نیاز ندارد؛ اگر صدا نشنیدید، دکمهٔ پخش را یک‌بار دیگر بزنید (WebView اندروید پخش را بعد از تعامل کاربر مجاز می‌کند) و حجم دستگاه را بررسی کنید. در دسکتاپ هم بستهٔ `sherpa-onnx==1.12.40` نصب باشد.
 - **خوانش ضعیف ارقام فارسی**: محدودیت شناخته‌شده Tesseract است؛ موتور easyocr را امتحان کنید یا فیلد را با «اصلاح دستی» تصحیح کنید (docs/LIMITATIONS.md).

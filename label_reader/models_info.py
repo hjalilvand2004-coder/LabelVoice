@@ -98,6 +98,7 @@ MODEL_REGISTRY: list[dict] = [
         "role_fa": "بهبود وضوح (CLAHE)، صاف‌کردن زاویه، ساخت نسخه‌های "
                    "original/gray_clahe/binarized/white_on_dark/ink_isolated",
         "where": "label_reader/preprocess.py ⇄ mobile-app/js/preprocess.js",
+        "files_fa": "کتابخانه opencv-python-headless (نصب جداگانه با pip) — بدون فایل مدل؛ سمت وب Canvas داخلی مرورگر",
         "privacy_fa": "کاملاً آفلاین",
         "optional": False,
     },
@@ -107,6 +108,9 @@ MODEL_REGISTRY: list[dict] = [
         "runtime": "tesseract",
         "role_fa": "خوانش چندگذری با PSMهای 3/6/11 و گذرهای زبانی جداگانهٔ فارسی/انگلیسی",
         "where": "label_reader/ocr/tesseract_provider.py",
+        "files_fa": "موتور: باینری سیستمی tesseract (نصب جداگانه — در ویندوز نصاب UB Mannheim)؛ "
+                   "دادهٔ زبان باندل‌شده در پروژه: models/tessdata/fas.traineddata (فارسی، tessdata_best، ~۳٫۳MB) "
+                   "+ models/tessdata/eng.traineddata (انگلیسی، ~۴٫۱MB)؛ مسیر جایگزین: LBR_TESSDATA_DIR",
         "privacy_fa": "کاملاً آفلاین",
         "optional": False,
     },
@@ -116,6 +120,9 @@ MODEL_REGISTRY: list[dict] = [
         "runtime": "easyocr",
         "role_fa": "پر کردن نواحی‌ای که تسراکت ضعیف خوانده؛ خروجی با همان گیت کیفیت و رأی اجماعی ادغام می‌شود",
         "where": "label_reader/ocr/easyocr_provider.py",
+        "files_fa": "کتابخانه: نصب جداگانه pip install easyocr (اختیاری)؛ وزن‌ها در نخستین اجرا دانلود و ذخیره می‌شوند در "
+                   "~/.EasyOCR/model/ (تشخیص ناحیه craft_mlt_25k + بازشناس زبان‌های عربی/لاتین — نام استاندارد فایل‌های EasyOCR)؛ "
+                   "مسیر جایگزین: LBR_EASYOCR_MODEL_DIR؛ باندل‌شده در پروژه نیست",
         "privacy_fa": "کاملاً آفلاین (پس از دانلود اولیهٔ وزن‌ها)",
         "optional": True,
     },
@@ -125,6 +132,9 @@ MODEL_REGISTRY: list[dict] = [
         "runtime": "surya",
         "role_fa": "گزینهٔ سوم خوانش به انتخاب صریح کاربر؛ خروجی با همان گیت کیفیت و رأی اجماعی ادغام می‌شود (فقط دسکتاپ)",
         "where": "label_reader/ocr/surya_provider.py",
+        "files_fa": "کتابخانه: نصب جداگانه pip install surya-ocr (اختیاری)؛ وزن‌های تشخیص خط و بازشناسی در نخستین اجرا "
+                   "از Hugging Face دانلود و در کش استاندارد HF (~/.cache/huggingface/hub) یا مسیر "
+                   "LBR_SURYA_MODEL_DIR (متغیر SURYA_MODEL_CACHE_DIR) ذخیره می‌شود؛ باندل‌شده در پروژه نیست",
         "privacy_fa": "کاملاً آفلاین (پس از دانلود اولیهٔ وزن‌ها از Hugging Face)",
         "optional": True,
     },
@@ -134,6 +144,10 @@ MODEL_REGISTRY: list[dict] = [
         "runtime": "qwen3-vl",
         "role_fa": "گزینهٔ چهارم خوانش به انتخاب صریح کاربر (v2.3.0)؛ کل تصویر را یکجا سطر به سطر می‌خواند؛ خروجی با همان گیت کیفیت و رأی اجماعی ادغام می‌شود (فقط دسکتاپ)",
         "where": "label_reader/ocr/vlm_provider.py",
+        "files_fa": "کتابخانه: نصب جداگانه pip install transformers>=4.57 accelerate (اختیاری)؛ وزن مدل VLM در نخستین اجرا "
+                   "از Hugging Face دانلود و در کش استاندارد transformers "
+                   "~/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/ (فایل‌های safetensors، ~۴ تا ۵GB) "
+                   "ذخیره می‌شود؛ باندل‌شده در پروژه نیست",
         "privacy_fa": "اجرای کاملاً محلی (پس از دانلود اولیهٔ وزن از Hugging Face)",
         "optional": True,
     },
@@ -143,6 +157,7 @@ MODEL_REGISTRY: list[dict] = [
         "runtime": "vlm",
         "role_fa": "خوانش مکمل سطرهایی که OCR از دست داده؛ فقط سطرهای تازه (بدون تکرار) با شناسهٔ شاهد vlm-* اضافه می‌شود؛ وقتی همین مدل موتور اصلی است دوباره اجرا نمی‌شود",
         "where": "label_reader/ocr/vlm_provider.py",
+        "files_fa": "همان مدل و همان مسیر ردیف قبل (~/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/) — مدل جداگانه‌ای دانلود نمی‌شود",
         "privacy_fa": "اجرای کاملاً محلی؛ پیش‌فرض خاموش",
         "optional": True,
     },
@@ -170,6 +185,13 @@ MODEL_REGISTRY: list[dict] = [
         "runtime": "sherpa-onnx",
         "role_fa": "خواندن همان پاسخ تأییدشده با اجرای کاملاً محلی؛ نسخهٔ وب/موبایل همان مدل با onnxruntime-web",
         "where": "label_reader/tts/local_provider.py + models/tts/piper-fa_IR-amir/",
+        "files_fa": "باندل‌شده در پروژه — دسکتاپ: models/tts/piper-fa_IR-amir/ شامل model.onnx (fp32، ~۶۳MB) "
+                   "+ model.int8.onnx (کوانتیزه، ~۱۸٫۶MB) + tokens.txt (نگاشت فونم) + fa_IR-amir-medium.onnx.json "
+                   "(پیکربندی) + espeak-ng-data/ (دادهٔ فونِم‌ساز، ۳۵۵ فایل) + MODEL_CARD + quantization-report.json؛ "
+                   "موتور اجرا: sherpa-onnx==1.12.40 (نصب جداگانه pip)؛ مسیر جایگزین: LBR_TTS_MODEL_DIR. "
+                   "مرورگر/APK: mobile-app/vendor/tts/ شامل fa_IR-amir-medium.int8.onnx (~۱۸MB) + همان پیکربندی + "
+                   "ort.wasm.min.js و ort-wasm-simd-threaded.wasm/.mjs (onnxruntime-web 1.18) + piper-phonemize.js "
+                   "+ piper_phonemize.wasm و piper_phonemize.data (espeak تریم‌شدهٔ fa+en)",
         "privacy_fa": "هیچ متنی از دستگاه خارج نمی‌شود — بدون اینترنت",
         "optional": False,
     },
@@ -179,6 +201,11 @@ MODEL_REGISTRY: list[dict] = [
         "runtime": None,
         "role_fa": "همان خط پردازش داخل مرورگر: OCR با دادهٔ fas+eng تعبیه‌شده، پاسخ قاعده‌محور، خوانش صوتی با مدل لوکال روی خود دستگاه",
         "where": "mobile-app/js/ocr.js + pipeline.js + responder.js + tts.js",
+        "files_fa": "باندل‌شده در پروژه — موتور OCR: mobile-app/vendor/tesseract/ (tesseract.min.js + worker.min.js) "
+                   "+ mobile-app/vendor/core/ (tesseract-core-simd-lstm.wasm و همتایان — core 6.1.2)؛ "
+                   "دادهٔ زبان: mobile-app/lang/integer/*.traineddata.gz و mobile-app/lang/best/*.traineddata.gz (fas + eng)؛ "
+                   "موتور صوتی: mobile-app/vendor/tts/ (مدل int8 + onnxruntime-web + piper-phonemize — ردیف TTS)؛ "
+                   "در تک‌فایل همهٔ این‌ها تعبیه می‌شوند",
         "privacy_fa": "کاملاً آفلاین (تک‌فایل) / پس از بار اول (PWA)",
         "optional": False,
     },
@@ -188,6 +215,7 @@ MODEL_REGISTRY: list[dict] = [
         "runtime": "streamlit",
         "role_fa": "رابط فارسی راست‌به‌چپ، خط‌زمان مراحل رنگی، حالت تاریک",
         "where": "app.py + label_reader/ui_theme.py",
+        "files_fa": "کتابخانه streamlit==1.66.1 (نصب جداگانه pip) — بدون فایل مدل؛ فونت وزیرمتن در mobile-app/assets/fonts/",
         "privacy_fa": "کاملاً محلی",
         "optional": False,
     },
@@ -215,9 +243,51 @@ def models_table_rows() -> list[dict]:
             "نقش در سامانه": m["role_fa"],
             "نسخه روی این دستگاه": version,
             "محل پیاده‌سازی": m["where"],
+            "فایل‌های مدل و مسیر": m.get("files_fa", "—"),
             "حریم خصوصی": m["privacy_fa"],
         })
     return rows
+
+
+def models_paths_markdown_fa() -> str:
+    """جدول «نوع، نام و مسیر فایل هر مدل» (v2.12.2) — باندل‌شده در برابر نصب جداگانه.
+
+    تک‌منبع حقیقت پاسخ به این پرسش که «هر مدل چه نوعی است و فایلش کجاست»؛
+    عین همین جدول در README، documentation.html و راهنمای درون‌اپی می‌آید.
+    """
+    rows = [
+        ("پیش‌پردازش تصویر", "کتابخانه بینایی کلاسیک (بدون مدل یادگیری)", "OpenCV 4.13 — opencv-python-headless",
+         "نصب جداگانه (pip)", "بدون فایل مدل؛ کد: label_reader/preprocess.py ⇄ mobile-app/js/preprocess.js"),
+        ("OCR موتور اول (دسکتاپ)", "موتور OCR متن‌باز (LSTM)", "Tesseract 5",
+         "نصب جداگانه (باینری سیستمی)", "کد: label_reader/ocr/tesseract_provider.py"),
+        ("دادهٔ زبان Tesseract", "traineddata (LSTM)", "fas (tessdata_best) + eng",
+         "باندل‌شده در پروژه", "models/tessdata/fas.traineddata (~۳٫۳MB) · models/tessdata/eng.traineddata (~۴٫۱MB)"),
+        ("OCR موتور دوم (دسکتاپ، اختیاری)", "CRNN + تشخیص ناحیه CRAFT", "EasyOCR 1.7 (fa+en)",
+         "نصب جداگانه (pip) + دانلود وزن در اولین اجرا", "وزن‌ها: ~/.EasyOCR/model/ (craft_mlt_25k + بازشناس عربی/لاتین) یا LBR_EASYOCR_MODEL_DIR؛ کد: label_reader/ocr/easyocr_provider.py"),
+        ("OCR موتور سوم (دسکتاپ، اختیاری)", "ترنسفورمر تشخیص خط + بازشناسی", "Surya (surya-ocr)",
+         "نصب جداگانه (pip) + دانلود وزن در اولین اجرا", "وزن‌ها: کش Hugging Face (~/.cache/huggingface/hub) یا LBR_SURYA_MODEL_DIR؛ کد: label_reader/ocr/surya_provider.py"),
+        ("OCR موتور چهارم + دستیار دوم (دسکتاپ، اختیاری)", "مدل زبانی-بینایی (VLM)", "Qwen/Qwen3-VL-2B-Instruct",
+         "نصب جداگانه (transformers) + دانلود وزن در اولین اجرا", "وزن: ~/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/ (safetensors، ~۴ تا ۵GB)؛ کد: label_reader/ocr/vlm_provider.py"),
+        ("OCR موتور مرورگر/موبایل", "WebAssembly", f"Tesseract.js {TESSERACT_JS_VERSION} + core 6.1.2",
+         "باندل‌شده در پروژه", "mobile-app/vendor/tesseract/ + mobile-app/vendor/core/ (tesseract-core-simd-lstm.wasm و همتایان)"),
+        ("دادهٔ زبان OCR مرورگر", "traineddata.gz (integer و best)", "fas + eng",
+         "باندل‌شده در پروژه", "mobile-app/lang/integer/*.traineddata.gz · mobile-app/lang/best/*.traineddata.gz (تک‌فایل: تعبیه‌شده)"),
+        ("خوانش صوتی — مدل (هر سه رابط)", "VITS — فایل ONNX", "Piper «fa_IR-amir-medium» (منبع: rhasspy/piper-voices v1.0.0)",
+         "باندل‌شده در پروژه", "دسکتاپ: models/tts/piper-fa_IR-amir/ — model.onnx (fp32 ~۶۳MB) + model.int8.onnx (~۱۸٫۶MB) + tokens.txt + fa_IR-amir-medium.onnx.json + espeak-ng-data/ (۳۵۵ فایل) · مرورگر/APK: mobile-app/vendor/tts/fa_IR-amir-medium.int8.onnx (~۱۸MB)"),
+        ("خوانش صوتی — موتور اجرا (دسکتاپ)", "کتابخانه استنتاج ONNX", "sherpa-onnx 1.12.40 (فونِم‌ساز espeak-ng داخلی)",
+         "نصب جداگانه (pip)", "کد: label_reader/tts/local_provider.py؛ مسیر مدل جایگزین: LBR_TTS_MODEL_DIR"),
+        ("خوانش صوتی — موتور اجرا (مرورگر/APK)", "WebAssembly", "onnxruntime-web 1.18 + piper-phonemize",
+         "باندل‌شده در پروژه", "mobile-app/vendor/tts/ — ort.wasm.min.js + ort-wasm-simd-threaded.wasm/.mjs + piper_phonemize.wasm/.data (espeak تریم‌شدهٔ fa+en) + piper-phonemize.js"),
+        ("پردازش متن، فیلدها و پاسخ", "قواعد و الگوها (بدون مدل زبانی)", "regex دو زبانه + نرمال‌سازی + گیت کیفیت + رأی اجماعی",
+         "— (بدون مدل)", "کد: label_reader/textnorm.py + extraction/* + response/* ⇄ mobile-app/js/*"),
+    ]
+    lines = [
+        "| نقش | نوع | نام مدل / داده | وضعیت | مسیر فایل |",
+        "|---|---|---|---|---|",
+    ]
+    for r in rows:
+        lines.append("| " + " | ".join(r) + " |")
+    return "\n".join(lines)
 
 
 def models_markdown_fa() -> str:

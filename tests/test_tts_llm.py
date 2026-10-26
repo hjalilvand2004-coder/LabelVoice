@@ -4,6 +4,7 @@
 v2.12.0: سرویس‌های آنلاین (edge-tts/gTTS) حذف شدند؛ تبدیل گفتار فقط
 «لوکال» است — مدل Piper fa_IR-amir-medium داخل فایل‌های پروژه.
 """
+from label_reader.bridge import BRIDGE_VERSION
 from label_reader.config import Settings
 from label_reader.response.tts_prep import number_to_fa_words, prepare_for_tts
 
@@ -197,7 +198,7 @@ def test_bridge_ping_without_tts_block():
         with urllib.request.urlopen(
                 f"http://127.0.0.1:{port}/ping", timeout=10) as r:
             ping = _json.load(r)
-        assert ping["ok"] and ping["version"] == "2.12.0"
+        assert ping["ok"] and ping["version"] == BRIDGE_VERSION  # با ثابت پل مقایسه شود — نه نسخهٔ ثابت شکننده
         assert "tts" not in ping          # v2.12.0: بلوک TTS حذف شد
         assert isinstance(ping["engines"], list)
     finally:

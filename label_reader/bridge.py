@@ -37,7 +37,7 @@ from .ocr import OcrUnavailableError, make_provider
 
 __all__ = ["BridgeServer", "start_bridge_server", "list_engines", "main"]
 
-BRIDGE_VERSION = "2.12.0"
+BRIDGE_VERSION = "2.12.2"
 DEFAULT_PORT = 8770
 MAX_BODY = 20 * 1024 * 1024  # سقف امن حجم تصویر (۲۰MB)
 

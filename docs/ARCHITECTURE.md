@@ -60,6 +60,29 @@ validation   quality        preprocess        ocr/*          extraction/*
 - محتوای OCR غیرقابل اعتماد تلقی می‌شود: هیچ `eval`/اجرایی وجود ندارد؛ آزمون‌های `test_security.py` تزریق دستور، کد و «SYSTEM: …» را می‌پوشانند.
 - چندمحصولی: تناقض علامت‌گذاری و از کاربر برش یک بسته خواسته می‌شود؛ ادغام انجام نمی‌شود. بارکدخوان در این نسخه نیست و همین در خروجی اعلام می‌شود.
 
+### ۲٫۸) مدل‌ها — نوع، نام و مسیر فایل (v2.12.2)
+
+هر مدل سامانه با «نوع + نام + مسیر دقیق فایل» مستند می‌شود؛ تفکیک دو وضعیت:
+**باندل‌شده در پروژه** (فایل مدل داخل مخزن — همراه بسته آمادهٔ اجرای آفلاین) و
+**نصب جداگانه** (موتور/کتابخانه با pip یا نصاب سیستمی؛ وزن‌ها در نخستین اجرا دانلود و روی همین دستگاه ذخیره می‌شود).
+
+| نقش | نوع | نام مدل / داده | وضعیت | مسیر فایل |
+|---|---|---|---|---|
+| پیش‌پردازش تصویر | کتابخانه بینایی کلاسیک | OpenCV 4.13 | نصب جداگانه (pip) | بدون فایل مدل — کد: `label_reader/preprocess.py` ⇄ `mobile-app/js/preprocess.js` |
+| OCR موتور اول (دسکتاپ) | موتور OCR متن‌باز (LSTM) | Tesseract 5 | نصب جداگانه (باینری سیستمی) | کد: `label_reader/ocr/tesseract_provider.py` |
+| دادهٔ زبان Tesseract | traineddata (LSTM) | fas (tessdata_best) + eng | باندل‌شده در پروژه | `models/tessdata/fas.traineddata` (~۳٫۳MB) · `models/tessdata/eng.traineddata` (~۴٫۱MB) |
+| OCR موتور دوم (اختیاری) | CRNN + تشخیص ناحیه CRAFT | EasyOCR 1.7 (fa+en) | نصب جداگانه (pip) + دانلود وزن | وزن‌ها: `~/.EasyOCR/model/` یا `LBR_EASYOCR_MODEL_DIR` |
+| OCR موتور سوم (اختیاری) | ترنسفورمر تشخیص خط + بازشناسی | Surya (surya-ocr) | نصب جداگانه (pip) + دانلود وزن | کش Hugging Face `~/.cache/huggingface/hub` یا `LBR_SURYA_MODEL_DIR` |
+| OCR موتور چهارم + دستیار دوم (اختیاری) | مدل زبانی-بینایی (VLM) | Qwen/Qwen3-VL-2B-Instruct | نصب جداگانه (transformers) + دانلود وزن | `~/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/` (safetensors) |
+| OCR موتور مرورگر/موبایل | WebAssembly | Tesseract.js 6.0.1 + core 6.1.2 | باندل‌شده در پروژه | `mobile-app/vendor/tesseract/` + `mobile-app/vendor/core/` |
+| دادهٔ زبان OCR مرورگر | traineddata.gz (integer/best) | fas + eng | باندل‌شده در پروژه | `mobile-app/lang/integer/*.traineddata.gz` · `mobile-app/lang/best/*.traineddata.gz` |
+| خوانش صوتی — مدل | VITS — فایل ONNX | Piper «fa_IR-amir-medium» | باندل‌شده در پروژه | دسکتاپ: `models/tts/piper-fa_IR-amir/` (model.onnx fp32 ~۶۳MB + model.int8.onnx ~۱۸٫۶MB + tokens.txt + پیکربندی + espeak-ng-data/) · مرورگر/APK: `mobile-app/vendor/tts/fa_IR-amir-medium.int8.onnx` (~۱۸MB) |
+| خوانش صوتی — موتور اجرا (دسکتاپ) | کتابخانه استنتاج ONNX | sherpa-onnx 1.12.40 | نصب جداگانه (pip) | فونِم‌ساز espeak-ng داخلی — کد: `label_reader/tts/local_provider.py` |
+| خوانش صوتی — موتور اجرا (مرورگر/APK) | WebAssembly | onnxruntime-web 1.18 + piper-phonemize | باندل‌شده در پروژه | `mobile-app/vendor/tts/` (ort + piper_phonemize WASM/data) |
+| پردازش متن، فیلدها و پاسخ | قواعد و الگوها | regex دو زبانه + گیت کیفیت + رأی اجماعی | بدون مدل | کد: `label_reader/textnorm.py` + `extraction/*` + `response/*` ⇄ `mobile-app/js/*` |
+
+تک‌منبع حقیقت این جدول: `label_reader/models_info.py` (تابع `models_paths_markdown_fa`) — عین آن در README، راهنمای درون‌اپی و documentation.html می‌آید.
+
 ## ۳) مدل داده (خلاصه)
 
 ```json
