@@ -1,0 +1,45 @@
+{
+  "pairs": {
+    "fp32": [
+      {
+        "duration_s": 3.58,
+        "rate": 22050,
+        "peak": 13781,
+        "rms": 3062.6,
+        "frames": 78996,
+        "gen_s": 0.33,
+        "tag": "fp32"
+      },
+      {
+        "duration_s": 4.09,
+        "rate": 22050,
+        "peak": 21118,
+        "rms": 3127.3,
+        "frames": 90112,
+        "gen_s": 0.34,
+        "tag": "fp32"
+      }
+    ],
+    "int8": [
+      {
+        "duration_s": 3.6,
+        "rate": 22050,
+        "peak": 15125,
+        "rms": 2935.4,
+        "frames": 79392,
+        "gen_s": 2.24,
+        "tag": "int8"
+      },
+      {
+        "duration_s": 4.4,
+        "rate": 22050,
+        "peak": 19367,
+        "rms": 3092.3,
+        "frames": 97024,
+        "gen_s": 2.65,
+        "tag": "int8"
+      }
+    ]
+  },
+  "accepted": true
+}

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""ساخت نسخه تک‌فایل برچسب‌خوان (label-reader-singlefile.html) — v1.8.3
+"""ساخت نسخه تک‌فایل برچسب‌خوان (label-reader-singlefile.html) — v2.12.0
 
 همه فایل‌های محلی js/css به‌صورت inline در یک HTML قرار می‌گیرند و برخلاف
 نسخه‌های قبل، موتور OCR (worker + هسته WASM + داده زبان فارسی/انگلیسی)
-نیز داخل فایل تزریق می‌شود (window.__LBR_OFFLINE__)؛ نتیجه: فایل تک‌فایلی
-حتی بدون اینترنت و بدون پایتون روی هر سیستمی کار می‌کند.
+و نیز **موتور صوتی لوکال Piper** (مدل int8 + onnxruntime-web + فونِم‌ساز)
+داخل فایل تزریق می‌شود؛ نتیجه: فایل تک‌فایلی حتی بدون اینترنت و بدون
+پایتون روی هر سیستمی کار می‌کند — هم خوانش متن هم خوانش صوتی.
 
 کاربرد: python3 scripts/build_singlefile.py
 """
@@ -59,13 +60,39 @@ prelude = (
 )
 
 offline_js = '<script>window.__LBR_OFFLINE__ = ' + json.dumps({
-    'v': '1.8.3',
+    'v': '2.12.0',
     'prelude': prelude,
 }) + ';</script>'
 tag = re.search(r'<script src="js/offline-engine\.js(?:\?v=[^"]*)?"></script>', html)
 if not tag:
     raise SystemExit('تگ js/offline-engine.js در index.html یافت نشد')
 html = html[:tag.start()] + offline_js + html[tag.end():]
+
+# ---- v2.12.0: تعبیهٔ موتور صوتی لوکال (Piper) در تک‌فایل ----
+# js/tts.js مسیرها را از window.__LBR_TTS_ASSETS__ حل می‌کند (rurl)؛
+# در تک‌فایل همهٔ دارایی‌ها data: URL هستند — بدون هیچ درخواست شبکه‌ای.
+tts_assets = {
+    './vendor/tts/ort.wasm.min.js': 'data:text/javascript;base64,' + b64(
+        (ROOT / 'vendor/tts/ort.wasm.min.js').read_bytes()),
+    './vendor/tts/ort-wasm-simd-threaded.mjs': 'data:text/javascript;base64,' + b64(
+        (ROOT / 'vendor/tts/ort-wasm-simd-threaded.mjs').read_bytes()),
+    './vendor/tts/ort-wasm-simd-threaded.wasm': 'data:application/wasm;base64,' + b64(
+        (ROOT / 'vendor/tts/ort-wasm-simd-threaded.wasm').read_bytes()),
+    './vendor/tts/piper-phonemize.js': 'data:text/javascript;base64,' + b64(
+        (ROOT / 'vendor/tts/piper-phonemize.js').read_bytes()),
+    './vendor/tts/piper_phonemize.wasm': 'data:application/wasm;base64,' + b64(
+        (ROOT / 'vendor/tts/piper_phonemize.wasm').read_bytes()),
+    './vendor/tts/piper_phonemize.data': 'data:application/octet-stream;base64,' + b64(
+        (ROOT / 'vendor/tts/piper_phonemize.data').read_bytes()),
+    './vendor/tts/fa_IR-amir-medium.int8.onnx': 'data:application/octet-stream;base64,' + b64(
+        (ROOT / 'vendor/tts/fa_IR-amir-medium.int8.onnx').read_bytes()),
+    './vendor/tts/fa_IR-amir-medium.onnx.json': 'data:application/json;base64,' + b64(
+        (ROOT / 'vendor/tts/fa_IR-amir-medium.onnx.json').read_bytes()),
+}
+tts_js = ('<script>window.__LBR_TTS_ASSETS__ = ' +
+          json.dumps(tts_assets) + ';</script>')
+html = html.replace('<script src="js/tts.js?v=2.12.0"></script>',
+                    tts_js + '<script src="js/tts.js?v=2.12.0"></script>')
 
 def inline_script(m: 're.Match') -> str:
     src = m.group(1)
@@ -78,6 +105,10 @@ def inline_script(m: 're.Match') -> str:
     return '<script>\n' + code + '\n</script>'
 
 html = re.sub(r'<script src="([^"]+)"></script>', inline_script, html)
+
+# نظارت: دارایی‌های صوتی تعبیه شده باشند
+if '__LBR_TTS_ASSETS__' not in html or 'fa_IR-amir-medium.int8.onnx' not in html:
+    raise SystemExit('تعبیهٔ دارایی‌های صوتی در تک‌فایل انجام نشد')
 
 # جلوگیری از ثبت Service Worker در نسخه تک‌فایل (pathهای محلی وجود ندارند)
 html = html.replace(

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""آزمون آماده‌سازی TTS، ارائه‌دهنده‌های صوت و ماژول LLM."""
+"""آزمون آماده‌سازی TTS، ارائه‌دهندهٔ صوتی لوکال و ماژول LLM (v2.12.0).
+
+v2.12.0: سرویس‌های آنلاین (edge-tts/gTTS) حذف شدند؛ تبدیل گفتار فقط
+«لوکال» است — مدل Piper fa_IR-amir-medium داخل فایل‌های پروژه.
+"""
 from label_reader.config import Settings
 from label_reader.response.tts_prep import number_to_fa_words, prepare_for_tts
 
@@ -41,54 +45,117 @@ def test_tts_uncertainty_kept():
     assert "خوانده نشد" in prepare_for_tts(src)
 
 
-# ---------------- TTS providers ----------------
+# ---------------- TTS لوکال (v2.12.0) ----------------
 
 def test_none_provider_raises_fa():
     import pytest
+    from label_reader.tts import NoneTtsProvider
     from label_reader.tts.base import TtsError
-    from label_reader.tts.gtts_provider import NoneTtsProvider
     with pytest.raises(TtsError) as exc:
-        NoneTtsProvider().synthesize("متن", voice="fa", rate="+0%")
+        NoneTtsProvider().synthesize("متن", voice="", rate="+0%")
     assert "غیرفعال" in exc.value.message_fa
 
 
-def test_fallback_chain_uses_gtts(monkeypatch):
-    from label_reader.tts import GttsProvider, synthesize_with_fallback
-    from label_reader.tts.edge_provider import EdgeTtsProvider
+def test_rate_to_speed_parity_with_js():
+    """پاریتی کامل با js/tts.js → rateToSpeed."""
+    from label_reader.tts.local_provider import rate_to_speed
+    assert rate_to_speed("+0%") == 1.0
+    assert rate_to_speed("+10%") == 1.1
+    assert rate_to_speed("-15%") == 0.85
+    assert rate_to_speed("") == 1.0
+    assert rate_to_speed("نامعتبر") == 1.0
+    assert rate_to_speed("+500%") == 2.0   # سقف
+    assert rate_to_speed("-200%") == 0.5   # کف
 
-    class BrokenEdge(EdgeTtsProvider):
-        def synthesize(self, text, *, voice, rate):
-            from label_reader.tts.base import TtsError
-            raise TtsError("شبیه‌سازی قطعی سرویس")
 
-    monkeypatch.setattr(
-        "label_reader.tts.make_tts_provider", lambda name: BrokenEdge())
-    monkeypatch.setattr(
-        GttsProvider, "synthesize",
-        lambda self, text, *, voice, rate: b"fake-mp3")
+def test_local_provider_unavailable_without_model(monkeypatch):
+    from label_reader.tts import local_provider
+
+    monkeypatch.setattr(local_provider, "find_model_dir", lambda: None)
+    prov = local_provider.LocalPiperProvider()
+    ok, hint = prov.available()
+    assert ok is False
+    assert ("sherpa-onnx" in hint) or ("مدل صوتی" in hint)
+
+
+def test_local_provider_unavailable_when_sherpa_missing(monkeypatch):
+    """اگر بسته نصب نباشد، پیام فارسی راهنما برگردد."""
+    import builtins
+    from label_reader.tts import local_provider
+
+    monkeypatch.setattr(local_provider, "find_model_dir", lambda: None)
+    real_import = builtins.__import__
+
+    def fake_import(name, *a, **kw):
+        if name == "sherpa_onnx":
+            raise ImportError("no sherpa")
+        return real_import(name, *a, **kw)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    prov = local_provider.LocalPiperProvider()
+    ok, hint = prov.available()
+    assert ok is False and "sherpa" in hint
+
+
+def test_local_provider_synthesizes_wav(monkeypatch):
+    import struct
+    from label_reader.tts import local_provider
+
+    class FakeAudio:
+        samples = [0.1, -0.1, 0.2, -0.2] * 64
+        sample_rate = 22050
+
+    class FakeTts:
+        def generate(self, text, sid=0, speed=1.0):
+            assert 0.5 <= speed <= 2.0
+            return FakeAudio()
+
+    prov = local_provider.LocalPiperProvider()
+    monkeypatch.setattr(prov, "_get_engine", lambda: FakeTts())
+    data = prov.synthesize("نام درج‌شده: استامینوفن.", voice="", rate="+10%")
+    assert data[:4] == b"RIFF" and data[8:12] == b"WAVE"
+    rate = struct.unpack("<I", data[24:28])[0]
+    assert rate == 22050
+    assert len(data) > 44
+
+
+def test_samples_to_wav_bytes_header():
+    import struct
+    from label_reader.tts.local_provider import samples_to_wav_bytes
+    data = samples_to_wav_bytes([0.0, 0.5, -0.5], 22050)
+    assert struct.unpack("<I", data[40:44])[0] == 6  # ۳ نمونه × ۲ بایت
+    assert struct.unpack("<H", data[22:24])[0] == 1  # مونو
+
+
+def test_fallback_is_local_only(monkeypatch):
+    from label_reader.tts import LocalPiperProvider, synthesize_with_fallback
+
     settings = Settings(_env_file=None)
-    settings.tts_provider = "edge"
+    settings.tts_provider = "local"
+    monkeypatch.setattr(
+        LocalPiperProvider, "synthesize",
+        lambda self, text, *, voice, rate: b"fake-wav")
     audio, used = synthesize_with_fallback("متن آزمون", settings)
-    assert audio == b"fake-mp3" and used == "gtts"
+    assert audio == b"fake-wav" and used == "local"
 
 
-def test_tts_failure_does_not_break_text_path():
-    """شکست TTS نباید مانع نمایش نتیجه متنی شود (خطا مدیریت‌شده بالا می‌رود)."""
-    from label_reader.tts import synthesize_with_fallback
-    from label_reader.tts.base import TtsError
-    import pytest
+def test_no_online_providers_remain():
+    """خط قرمز v2.12.0: هیچ سرویس آنلاینی در کد TTS فراخوانی نشود."""
+    import pathlib
+    tts_dir = pathlib.Path("label_reader/tts")
+    forbidden = ("import edge_tts", "from gtts", "import gtts",
+                 "gTTS(", "Communicate(")
+    for f in tts_dir.glob("*.py"):
+        src = f.read_text(encoding="utf-8")
+        for token in forbidden:
+            assert token not in src, (f, token)
+    assert not (tts_dir / "edge_provider.py").exists()
+    assert not (tts_dir / "gtts_provider.py").exists()
 
-    settings = Settings(_env_file=None)
-    settings.tts_provider = "none"
-    with pytest.raises(TtsError):
-        synthesize_with_fallback("متن", settings)
-    # نتیجه متنی مستقل از TTS معتبر است
-    assert "متن" is not None
 
+# ---------------- پل محلی: فقط OCR (v2.12.0 — TTS حذف شد) ----------------
 
-# ---------------- پل محلی: POST /api/tts (v2.11.0) ----------------
-
-def _start_tts_bridge():
+def _start_bridge():
     import threading
     import time as _time
     from label_reader.bridge import start_bridge_server
@@ -101,122 +168,38 @@ def _start_tts_bridge():
     return server, port
 
 
-def _post_tts(port, payload, monkeypatch=None, provider=b"fake-mp3",
-              provider_name="edge"):
+def test_bridge_tts_endpoint_removed():
+    """POST /api/tts دیگر وجود ندارد (v2.12.0 — صدا کاملاً در مرورگر لوکال)."""
+    import json as _json
+    import urllib.error
+    import urllib.request
+    server, port = _start_bridge()
+    try:
+        body = _json.dumps({"text": "سلام", "consent": True}).encode("utf-8")
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{port}/api/tts", data=body,
+            headers={"Content-Type": "application/json"})
+        try:
+            urllib.request.urlopen(req, timeout=10)
+            assert False, "باید ۴۰۴ می‌داد"
+        except urllib.error.HTTPError as e:
+            assert e.code == 404
+            assert "مسیر ناشناخته" in _json.load(e)["error_fa"]
+    finally:
+        server.shutdown()
+
+
+def test_bridge_ping_without_tts_block():
     import json as _json
     import urllib.request
-
-    if monkeypatch is not None:
-        monkeypatch.setattr(
-            "label_reader.bridge.synthesize_with_fallback",
-            lambda text, settings: (provider, provider_name))
-    body = _json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        f"http://127.0.0.1:{port}/api/tts", data=body,
-        headers={"Content-Type": "application/json"})
-    return urllib.request.urlopen(req, timeout=10)
-
-
-def test_bridge_tts_requires_consent():
-    import json as _json
-    import urllib.error
-    server, port = _start_tts_bridge()
-    try:
-        try:
-            _post_tts(port, {"text": "سلام", "consent": False})
-            assert False, "باید ۴۰۳ می‌داد"
-        except urllib.error.HTTPError as e:
-            assert e.code == 403
-            msg = _json.load(e)["error_fa"]
-            assert "رضایت" in msg
-    finally:
-        server.shutdown()
-
-
-def test_bridge_tts_happy_path(monkeypatch):
-    server, port = _start_tts_bridge()
-    try:
-        with _post_tts(port, {"text": "نام درج‌شده: استامینوفن.",
-                              "consent": True,
-                              "voice": "fa-IR-DilaraNeural",
-                              "rate": "+0%"}, monkeypatch) as r:
-            assert r.status == 200
-            assert r.headers["Content-Type"] == "audio/mpeg"
-            assert r.headers["X-LabelVoice-Provider"] == "edge"
-            assert r.headers["X-LabelVoice-Voice"] == "fa-IR-DilaraNeural"
-            assert r.read() == b"fake-mp3"
-    finally:
-        server.shutdown()
-
-
-def test_bridge_tts_validates_voice_and_rate():
-    import json as _json
-    import urllib.error
-    server, port = _start_tts_bridge()
-    try:
-        for bad in ({"text": "متن", "consent": True, "voice": "en-US-X"},
-                    {"text": "متن", "consent": True, "rate": "سریع"}):
-            try:
-                _post_tts(port, bad)
-                assert False, f"باید ۴۰۰ می‌داد: {bad}"
-            except urllib.error.HTTPError as e:
-                assert e.code == 400
-                assert "error_fa" in _json.load(e)
-    finally:
-        server.shutdown()
-
-
-def test_bridge_tts_error_becomes_fa_502(monkeypatch):
-    import json as _json
-    import urllib.error
-    from label_reader.tts.base import TtsError
-
-    def _broken(text, settings):
-        raise TtsError("سرویس edge-tts پاسخ نداد (شبیه‌سازی).")
-
-    monkeypatch.setattr(
-        "label_reader.bridge.synthesize_with_fallback", _broken)
-    server, port = _start_tts_bridge()
-    try:
-        try:
-            _post_tts(port, {"text": "متن", "consent": True})
-            assert False, "باید ۵۰۲ می‌داد"
-        except urllib.error.HTTPError as e:
-            assert e.code == 502
-            assert "پاسخ نداد" in _json.load(e)["error_fa"]
-    finally:
-        server.shutdown()
-
-
-def test_bridge_ping_reports_tts_block():
-    import json as _json
-    import urllib.request
-    server, port = _start_tts_bridge()
+    server, port = _start_bridge()
     try:
         with urllib.request.urlopen(
                 f"http://127.0.0.1:{port}/ping", timeout=10) as r:
             ping = _json.load(r)
-        assert ping["ok"] and "tts" in ping
-        tts = ping["tts"]
-        assert tts["voice"] in ("fa-IR-FaridNeural", "fa-IR-DilaraNeural")
-        assert "fa-IR-FaridNeural" in tts["voices"]
-        assert isinstance(tts["available"], bool)
-        assert "hint_fa" in tts
-    finally:
-        server.shutdown()
-
-
-def test_bridge_tts_empty_text_rejected():
-    import json as _json
-    import urllib.error
-    server, port = _start_tts_bridge()
-    try:
-        try:
-            _post_tts(port, {"text": "   ", "consent": True})
-            assert False, "باید ۴۰۰ می‌داد"
-        except urllib.error.HTTPError as e:
-            assert e.code == 400
-            assert "متنی" in _json.load(e)["error_fa"]
+        assert ping["ok"] and ping["version"] == "2.12.0"
+        assert "tts" not in ping          # v2.12.0: بلوک TTS حذف شد
+        assert isinstance(ping["engines"], list)
     finally:
         server.shutdown()
 

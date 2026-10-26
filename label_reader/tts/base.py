@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """رابط مشترک ارائه‌دهنده‌های TTS فارسی.
 
-توجه حریم خصوصی: ارائه‌دهنده‌های edge-tts و gTTS متن را به سرویس ابری
-می‌فرستند؛ فراخوانی آن‌ها فقط با رضایت صریح کاربر (چک‌باکس رابط) انجام شود.
+v2.12.0 — حریم خصوصی: تبدیل گفتار «کاملاً محلی» است (Piper fa_IR-amir-medium
+با sherpa-onnx)؛ هیچ متنی به هیچ سرویس ابری ارسال نمی‌شود و رضایتِ
+«ارسال به سرویس ابری» دیگر موضوعیت ندارد.
 """
 from __future__ import annotations
 
@@ -24,10 +25,4 @@ class TtsProvider(abc.ABC):
 
     @abc.abstractmethod
     def synthesize(self, text: str, *, voice: str, rate: str) -> bytes:
-        """تولید صوت mp3؛ در صورت شکست TtsError با پیام فارسی."""
-
-
-EDGE_VOICES = [
-    "fa-IR-FaridNeural",   # مرد
-    "fa-IR-DilaraNeural",  # زن
-]
+        """تولید صوت (WAV)؛ در صورت شکست TtsError با پیام فارسی."""

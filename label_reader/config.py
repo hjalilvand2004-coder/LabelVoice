@@ -122,10 +122,11 @@ class Settings(BaseSettings):
     # ---------- استخراج فیلدها ----------
     low_confidence_threshold: float = 0.55
 
-    # ---------- TTS فارسی ----------
-    # edge | gtts | none
-    tts_provider: str = "edge"
-    tts_voice: str = "fa-IR-FaridNeural"
+    # ---------- TTS فارسی (v2.12.0 — کاملاً لوکال) ----------
+    # local = مدل Piper fa_IR-amir-medium داخل models/tts (بدون اینترنت)
+    # none  = خاموش
+    tts_provider: str = "local"
+    tts_voice: str = "fa_IR-amir-medium (Piper — کاملاً لوکال)"
     tts_rate: str = "+0%"
 
     # ---------- LLM اختیاری (پیش‌فرض: خاموش؛ مسیر اصلی بدون LLM کار می‌کند) ----------

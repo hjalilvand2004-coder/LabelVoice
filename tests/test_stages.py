@@ -152,11 +152,11 @@ def test_no_text_case_marks_ocr_failed_but_pipeline_survives():
 
 
 def test_tts_stage_pending_then_done():
-    p1 = tts_payload("edge-tts", "در دسترس است", "سلام ۵۰۰", synthesized=False)
+    p1 = tts_payload("local", "در دسترس است", "سلام ۵۰۰", synthesized=False)
     item1 = build_stage_item(STAGE_TTS_KEY, p1)
     assert item1["status"] == "pending"
     assert STATUS_FA["pending"] in item1["done_label"]
-    p2 = tts_payload("edge-tts", "تولید شد", "سلام ۵۰۰", synthesized=True)
+    p2 = tts_payload("local", "تولید شد", "سلام ۵۰۰", synthesized=True)
     item2 = build_stage_item(STAGE_TTS_KEY, p2)
     assert item2["status"] == "done"
     m2 = {m["name_fa"]: m["value"] for m in item2["metrics"]}
@@ -168,7 +168,7 @@ def test_tts_stage_pending_then_done():
 def test_summary_rows_and_report_json():
     records = [build_stage_item(k, dict(p)) for k, p in _events_from_pipe()]
     records.append(build_stage_item(
-        STAGE_TTS_KEY, tts_payload("edge-tts", "در دسترس", "x", False)))
+        STAGE_TTS_KEY, tts_payload("local", "در دسترس", "x", False)))
     rows = summary_rows(records)
     assert len(rows) == 5
     assert all("الزام استاد" in r for r in rows)

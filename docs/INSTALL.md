@@ -58,7 +58,7 @@ pip install -r requirements.txt
 | numpy | 2.1.3 |
 | pydantic / pydantic-settings | 2.12.5 / 2.13.1 |
 | pytesseract | 0.3.13 |
-| gTTS / edge-tts | 2.5.4 / 7.3.1 |
+| sherpa-onnx | 1.12.40 (فونِم‌ساز داخلی — نسخهٔ 2.x کار نمی‌کند) |
 | pytest | 9.0.2 |
 
 ## ۴) EasyOCR (اختیاری)
@@ -145,8 +145,8 @@ python scripts/evaluate.py             # جدول واقعی دقت/زمان ر�
 |---|---|---|
 | `LBR_OCR_PROVIDER` | tesseract | tesseract / easyocr / surya / auto |
 | `LBR_OCR_LANGUAGES` | fas+eng | زبان‌های Tesseract |
-| `LBR_TTS_PROVIDER` | edge | edge / gtts / none |
-| `LBR_TTS_VOICE` | fa-IR-FaridNeural | صدای فارسی edge-tts (فرید)؛ گزینهٔ دیگر: fa-IR-DilaraNeural (دلارا) |
+| `LBR_TTS_PROVIDER` | local | local / none |
+| `LBR_TTS_VOICE` | fa_IR-amir-medium (Piper — لوکال) | مدل باندل‌شده در `models/tts/piper-fa_IR-amir/`؛ مسیر جایگزین: `LBR_TTS_MODEL_DIR` |
 | `LBR_MAX_FILE_MB` | 10 | سقف حجم فایل تصویر |
 | `LBR_LLM_ENABLED` | false | فعال‌سازی بازنویسی LLM |
 | `LBR_SURYA_VARIANTS` | original,gray_clahe | نسخه‌های پردازشی که سوریا اجرا می‌کند (v2.2.0) |
@@ -157,6 +157,6 @@ python scripts/evaluate.py             # جدول واقعی دقت/زمان ر�
 
 - **«tesseract نصب نیست»**: مسیر باینری در PATH نیست؛ در ویندوز مسیر نصب را اضافه کنید.
 - **«داده زبان فارسی یافت نشد»**: `python scripts/download_tessdata.py` را اجرا کنید.
-- **«سرویس edge-tts پاسخ نداد»**: اینترنت لازم است؛ نتیجه متنی همچنان نمایش داده می‌شود و gTTS جایگزین می‌شود.
+- **«مدل صوتی لوکال یافت نشد»**: پوشهٔ `models/tts/piper-fa_IR-amir/` (یا `LBR_TTS_MODEL_DIR`) باید مدل و tokens.txt را داشته باشد؛ TTS کاملاً لوکال است و به اینترنت نیازی ندارد.
 - **«پخش صوتی مستقیم در این مرورگر ممکن نیست» (وب/موبایل)**: سرویس صوتی فقط درخواست‌های مرورگر Edge را می‌پذیرد؛ «START-BRIDGE» را روی رایانه اجرا کنید و نشانی آن را در تنظیمات موبایل وارد کنید، یا صفحه را در Edge باز کنید (در APK اینترنت گوشی کافی است).
 - **خوانش ضعیف ارقام فارسی**: محدودیت شناخته‌شده Tesseract است؛ موتور easyocr را امتحان کنید یا فیلد را با «اصلاح دستی» تصحیح کنید (docs/LIMITATIONS.md).

@@ -53,7 +53,7 @@ def test_registry_complete_and_consistent():
 
 def test_detect_versions_returns_strings_and_never_crashes():
     ver = models_info.detect_versions()
-    for key in ("opencv", "tesseract", "easyocr", "edge_tts", "gtts",
+    for key in ("opencv", "tesseract", "easyocr", "sherpa_onnx",
                 "transformers", "torch"):
         assert key in ver
         assert isinstance(ver[key], str) and ver[key]
@@ -67,7 +67,7 @@ def test_models_table_rows_and_markdown():
             "نسخه روی این دستگاه", "محل پیاده‌سازی"} <= set(cols)
     md = models_info.models_markdown_fa()
     assert "Qwen/Qwen3-VL-2B-Instruct" in md
-    assert "Tesseract" in md and "edge-tts" in md
+    assert "Tesseract" in md and "Piper" in md
 
 
 # ---------------------------------------------------------------------------

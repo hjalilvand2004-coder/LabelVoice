@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""رابط کاربری Streamlit «برچسب‌خوان هوشمند دارو و محصولات» — v1.8.0.
+"""رابط کاربری Streamlit «برچسب‌خوان هوشمند دارو و محصولات» — v2.12.0.
 
-کاملاً فارسی و راست‌به‌چپ؛ ناوبری سایدبار چهاربخشی، مراحل رنگی زنده و
-گرافیک مدرن. اجرای محلی پردازش؛ ارسال به سرویس ابری فقط برای TTS با رضایت
-صریح کاربر.
+کاملاً فارسی و راست‌به‌چپ؛ ناوبری سایدبار چندبخشی، مراحل رنگی زنده و
+گرافیک مدرن. اجرای محلی پردازش؛ تبدیل گفتار هم کاملاً محلی است (مدل
+Piper fa_IR-amir-medium داخل models/tts — بدون اینترنت و بدون سرویس ابری).
 
 👨‍💻 توسعه و طراحی: حمید جلیلوند و نوید بدری
 """
@@ -137,8 +137,9 @@ with st.sidebar:
              "تصویر را یکجا می‌خواند (اولین اجرا وزن مدل را دانلود می‌کند). "
              "در نسخهٔ مرورگر/موبایل همیشه Tesseract.js روی WASM اجرا می‌شود.",
     )
-    voice = st.selectbox("صدای فارسی (edge-tts)", ["fa-IR-FaridNeural", "fa-IR-DilaraNeural"])
+    voice = st.caption("🎙️ صدا: مدل Piper فارسی «امیر» (fa_IR-amir-medium) — کاملاً لوکال")
     rate = st.select_slider("سرعت خوانش", ["-15%", "-5%", "+0%", "+10%", "+20%"], value="+0%")
+    settings.tts_rate = rate  # v2.12.0: سرعت خوانش واقعاً به موتور لوکال می‌رسد
 
     st.subheader("📣 اعلام مراحل")
     st.checkbox(
@@ -238,8 +239,8 @@ with st.sidebar:
     st.subheader("🔒 حریم خصوصی")
     st.markdown(
         "- پردازش تصویر و متن **کاملاً محلی** انجام می‌شود.\n"
-        "- برای **تبدیل گفتار**، متن پاسخ به سرویس ابری ارسال می‌شود؛ فقط با "
-        "رضایت صریح شما.\n"
+        "- **تبدیل گفتار هم کاملاً محلی** است: مدل Piper فارسی داخل فایل‌های "
+        "پروژه اجرا می‌شود؛ هیچ متنی به سرویس ابری ارسال نمی‌شود.\n"
         "- تصویر و متن برچسب در هیچ لاگی ذخیره نمی‌شود.\n"
         "- یادآوری: نام بیمار یا اطلاعات شخصی ممکن است روی بسته دیده شود."
     )
@@ -418,8 +419,8 @@ if page == "read":
                 stage_records.append(build_stage_item(STAGE_TTS_KEY, tts_payload(
                     provider=(f"{getattr(_prov, 'name', settings.tts_provider)} — "
                               f"مدل صوت: {settings.tts_voice}"),
-                    note_fa=_note or ("در دسترس است" if _ok else
-                                      "در دسترس نیست؛ جایگزین به‌صورت خودکار آزمایش می‌شود"),
+                    note_fa=_note or ("در دسترس است (اجرای کاملاً محلی)" if _ok
+                                      else "در دسترس نیست؛ مدل/بستهٔ لوکال را بررسی کنید"),
                     spoken_text=spoken, synthesized=False)))
             except Exception:  # noqa: BLE001
                 stage_records.append(build_stage_item(STAGE_TTS_KEY, tts_payload(
@@ -719,38 +720,33 @@ if page == "read":
                     st.caption(f"منشأ قبلی «{field.label_fa}»: "
                                f"{' ← '.join(field.previous_values)}")
 
-        # صوت
+        # صوت (v2.12.0 — کاملاً لوکال: مدل Piper داخل فایل‌های پروژه)
         st.subheader("🔊 پخش صوتی فارسی")
         tech_help("tts", "🧩 فناوری تبدیل متن به گفتار", "tt")
         tts_provider = make_tts_provider(settings.tts_provider)
         _, tts_note = tts_provider.available()
-        consent = st.checkbox(
-            "می‌پذیرم که متن پاسخ برای تبدیل گفتار به سرویس ابری (Microsoft Edge TTS "
-            "یا gTTS) ارسال شود. بدون این رضایت، صوتی تولید نمی‌شود.")
+        st.info("🎙️ تولید صدا با مدل **Piper فارسی (fa_IR-amir-medium)** روی همین "
+                "دستگاه انجام می‌شود — بدون اینترنت و بدون ارسال متن به هر سرویسی.",
+                icon="✅")
         col_play, col_info = st.columns([2, 3])
         with col_play:
-            if st.button("▶️ تولید و پخش صدا", disabled=not consent,
-                         use_container_width=True):
-                if not consent:
-                    st.warning("برای تولید صوت باید رضایت ارسال به سرویس ابری را تأیید کنید.")
-                else:
-                    spoken_text = prepare_for_tts(result.response_fa)
-                    try:
-                        audio_bytes, used = synthesize_with_fallback(
-                            spoken_text, settings)
-                        st.session_state["audio_bytes"] = audio_bytes
-                        st.session_state["tts_used"] = used
-                        st.session_state["audio_text_hash"] = hash(result.response_fa)
-                        _recs = st.session_state.get("stage_records") or []
-                        for _i, _r in enumerate(_recs):
-                            if _r.get("key") == STAGE_TTS_KEY:
-                                _recs[_i] = build_stage_item(STAGE_TTS_KEY, tts_payload(
-                                    provider=used,
-                                    note_fa="صوت با موفقیت تولید شد",
-                                    spoken_text=spoken_text, synthesized=True))
-                        st.session_state["stage_records"] = _recs
-                    except TtsError as err:
-                        st.error("🔇 " + err.message_fa)
+            if st.button("▶️ تولید و پخش صدا", use_container_width=True):
+                spoken_text = prepare_for_tts(result.response_fa)
+                try:
+                    audio_bytes, used = synthesize_with_fallback(spoken_text, settings)
+                    st.session_state["audio_bytes"] = audio_bytes
+                    st.session_state["tts_used"] = used
+                    st.session_state["audio_text_hash"] = hash(result.response_fa)
+                    _recs = st.session_state.get("stage_records") or []
+                    for _i, _r in enumerate(_recs):
+                        if _r.get("key") == STAGE_TTS_KEY:
+                            _recs[_i] = build_stage_item(STAGE_TTS_KEY, tts_payload(
+                                provider=used,
+                                note_fa="صوت با موفقیت تولید شد (اجرای کاملاً محلی)",
+                                spoken_text=spoken_text, synthesized=True))
+                    st.session_state["stage_records"] = _recs
+                except TtsError as err:
+                    st.error("🔇 " + err.message_fa)
         with col_info:
             st.caption(tts_note)
             st.caption("متن پخش‌شده دقیقاً همان پاسخ تأییدشده رابط است. فایل صوتی "
@@ -758,12 +754,12 @@ if page == "read":
 
         audio_bytes = get_state("audio_bytes")
         if audio_bytes:
-            st.audio(audio_bytes, format="audio/mp3")
+            st.audio(audio_bytes, format="audio/wav")
             st.download_button(
-                "⬇️ دانلود فایل صوتی (mp3)",
+                "⬇️ دانلود فایل صوتی (wav)",
                 data=audio_bytes,
-                file_name="label-response.mp3",
-                mime="audio/mp3",
+                file_name="label-response.wav",
+                mime="audio/wav",
             )
 
         st.divider()
@@ -995,8 +991,9 @@ else:
     st.subheader("🧰 فناوری‌ها")
     st.markdown(
         "- **دسکتاپ:** Python · Streamlit · OpenCV · Tesseract 5 (fas/eng گذر جدا) · "
-        "EasyOCR (موتور دوم) · Pydantic v2 · edge-tts / gTTS\n"
-        "- **موبایل:** PWA · Tesseract.js 6 (WASM) · Web Speech API · Vazirmatn\n"
-        "- **کیفیت:** pytest (۱۰۶ آزمون) · Node test runner (۵۴ آزمون پاریتی) · "
+        "EasyOCR (موتور دوم) · Pydantic v2 · sherpa-onnx + Piper fa_IR-amir (TTS لوکال)\n"
+        "- **موبایل/وب:** PWA · Tesseract.js 6 (WASM) · موتور صوتی Piper با "
+        "onnxruntime-web (کاملاً لوکال) · Vazirmatn\n"
+        "- **کیفیت:** pytest (۱۷۶+ آزمون) · Node test runner (۸۰+ آزمون پاریتی) · "
         "۱۴ نمونه زمینه‌سنجی‌شده")
     st.caption(f"LabelVoice v{__version__} — 👨‍💻 توسعه و طراحی: {APP_AUTHORS_FA}")

@@ -57,8 +57,7 @@ def detect_versions() -> dict[str, str]:
     except Exception:  # noqa: BLE001
         out["surya"] = "نصب نشده (اختیاری)"
 
-    out["edge_tts"] = _pkg_version("edge-tts") or "نصب نشده"
-    out["gtts"] = _pkg_version("gtts") or "نصب نشده"
+    out["sherpa_onnx"] = _pkg_version("sherpa-onnx") or "نصب نشده"
     out["streamlit"] = _pkg_version("streamlit") or "نامشخص"
     out["pytesseract"] = _pkg_version("pytesseract") or "نامشخص"
     out["transformers"] = _pkg_version("transformers") or "نصب نشده"
@@ -167,19 +166,19 @@ MODEL_REGISTRY: list[dict] = [
     },
     {
         "stage_fa": "۵. خوانش صوتی (TTS)",
-        "model": "edge-tts — صداهای فارسی fa-IR-FaridNeural / fa-IR-DilaraNeural (مایکروسافت)",
-        "runtime": "edge_tts",
-        "role_fa": "خواندن همان پاسخ تأییدشده؛ جایگزین خودکار: gTTS (گوگل)",
-        "where": "label_reader/tts/edge_provider.py + gtts_provider.py",
-        "privacy_fa": "فقط متن پاسخ، با رضایت صریح کاربر ارسال می‌شود",
+        "model": "Piper VITS — صدای فارسی fa_IR-amir-medium (باندل‌شده در models/tts)",
+        "runtime": "sherpa-onnx",
+        "role_fa": "خواندن همان پاسخ تأییدشده با اجرای کاملاً محلی؛ نسخهٔ وب/موبایل همان مدل با onnxruntime-web",
+        "where": "label_reader/tts/local_provider.py + models/tts/piper-fa_IR-amir/",
+        "privacy_fa": "هیچ متنی از دستگاه خارج نمی‌شود — بدون اینترنت",
         "optional": False,
     },
     {
         "stage_fa": "وب / PWA / تک‌فایل",
-        "model": f"Tesseract.js {TESSERACT_JS_VERSION} (WebAssembly) + Web Speech API",
+        "model": f"Tesseract.js {TESSERACT_JS_VERSION} (WebAssembly) + موتور صوتی Piper (onnxruntime-web)",
         "runtime": None,
-        "role_fa": "همان خط پردازش داخل مرورگر: OCR با دادهٔ fas+eng تعبیه‌شده، پاسخ قاعده‌محور، خوانش صوتی روی خود دستگاه",
-        "where": "mobile-app/js/ocr.js + pipeline.js + responder.js",
+        "role_fa": "همان خط پردازش داخل مرورگر: OCR با دادهٔ fas+eng تعبیه‌شده، پاسخ قاعده‌محور، خوانش صوتی با مدل لوکال روی خود دستگاه",
+        "where": "mobile-app/js/ocr.js + pipeline.js + responder.js + tts.js",
         "privacy_fa": "کاملاً آفلاین (تک‌فایل) / پس از بار اول (PWA)",
         "optional": False,
     },

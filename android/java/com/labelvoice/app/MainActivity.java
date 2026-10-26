@@ -31,14 +31,12 @@ import java.util.Map;
  * v1.2.0: پشتیبانی دوربین زنده (getUserMedia) — مجوز CAMERA در مانیفست +
  * پیاده‌سازی onPermissionRequest تا WebView اجازه video capture بدهد.
  *
- * v2.11.0: «همان مدل صوتی دسکتاپ در موبایل — بدون TTS خود گوشی» —
- * پل بومی TextToSpeech (نسخهٔ v2.5.0) به‌کلی حذف شد؛ پخش صوتی حالا فقط با
- * مدل دسکتاپ (صداهای نورال فارسی Microsoft Edge) انجام می‌شود:
- *   ۱) کلاینت مستقیم داخل js/tts.js (WebSocket wss به سرویس Edge) —
- *      سرویس فقط درخواست‌های با UA حاوی «Edg/» را می‌پذیرد (آزمون‌شده)،
- *      پس نشانهٔ «Edg/143.0.3650.75» به UA همین WebView اضافه می‌شود؛
- *   ۲) یا پل دسکتاپ (POST /api/tts) اگر در دسترس باشد.
- * نیازمند اینترنت (مجوز INTERNET موجود است).
+ * v2.12.0: «مدل دانلودشده در فایل‌های پروژه؛ خوانش صوتی کاملاً لوکال» —
+ * هیچ مسیر شبکه‌ای برای صدا وجود ندارد (نشانهٔ Edg/ نسخهٔ v2.11.0 حذف شد؛
+ * UA استاندارد WebView برمی‌گردد). صدا با مدل Piper فارسی (fa_IR-amir-medium)
+ * که در vendor/tts/ باندل شده و با onnxruntime-web (WASM) در همین WebView روی
+ * https://appassets.local (زمینهٔ امن) اجرا می‌شود — نه TTS خود گوشی و نه
+ * هیچ سرویس اینترنتی.
  */
 public class MainActivity extends Activity {
 
@@ -68,14 +66,8 @@ public class MainActivity extends Activity {
         // پخش زنده پیش‌نمایش دوربین بدون نیاز به حرکت کاربر
         s.setMediaPlaybackRequiresUserGesture(false);
 
-        // v2.11.0: نشانهٔ Edge به UA — سرویس TTS مایکروسافت فقط درخواست‌های
-        // با UA حاوی «Edg/» (هماهنگ با Sec-MS-GEC-Version در js/tts.js) را
-        // می‌پذیرد؛ بدون این نشانه مسیر مستقیم صوتی با ۴۰۳ رد می‌شود.
-        // (تست‌شده: UA کروم/فایرفاکس = 403؛ فقط UA با Edg/ پذیرفته می‌شود.)
-        String baseUa = s.getUserAgentString();
-        if (baseUa != null && !baseUa.contains("Edg/")) {
-            s.setUserAgentString(baseUa + " Edg/143.0.3650.75");
-        }
+        // v2.12.0: UA استاندارد WebView — صدای لوکال Piper هیچ نیازی به
+        // نشانهٔ مرورگر Edge ندارد (هک UA نسخهٔ v2.11.0 حذف شد).
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
