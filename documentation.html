@@ -349,7 +349,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 
 <header class="hero" id="top">
   <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
-  <span class="kicker">📘 سند فنی رسمی — نسخه ۲.۱۱.۰</span>
+  <span class="kicker">📘 سند فنی رسمی — نسخه ۲.۱۲.۱</span>
   <h1>برچسب‌خوان هوشمند دارو و محصولات<br><span class="grad">LabelVoice — معماری، کارکرد و فناوری</span></h1>
   <p class="lede">
     سامانه‌ای دو زیرسیستمی (دسکتاپ + موبایل) که فقط «متن روی بسته» را با OCR می‌خواند،
@@ -1017,6 +1017,8 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
     <h2>تاریخچه نسخه‌ها</h2>
   </div>
   <div class="timeline">
+    <div class="tl-item reveal"><h4>هم‌خوانی همهٔ نمایشگرهای نسخه با ریلیز <span class="ver">v2.12.1</span></h4>
+      <p>بازخورد کاربر پس از دانلود نسخهٔ پرتابل: «نه اجرای ویندوز از طریق فایل bat و نه فایل html — هیچ‌کدام نسخهٔ به‌روز نبودند». ممیزی دارایی‌های ریلیز v2.12.0 نشان داد موتور صوتی، مدل‌ها و بقیهٔ محتوا به‌روز بودند اما چند <b>چیپ نمایش نسخه</b> از نسخهٔ قبل جامانده بودند و همین، صفحهٔ شروع را «قدیمی» نشان می‌داد: چیپ قهرمان <code>portable/START-HERE.html</code> (۲.۱۱.۰)، چیپ سایدبار و فوتر <code>index.html</code> («نسخهٔ وب ۲.۱۱.۰»)، مودال «درباره» در <code>help.js</code>، سربرگ و فوتر همین سند، و <code>VERSION.txt</code> ریشهٔ مخزن (۲.۱۱.۰) که لانچر <code>START-WINDOWS.bat</code> به‌عنوان «Folder version» نمایش می‌دهد. همه به ۲.۱۲.۱ هم‌تراز شدند؛ کش سرویس‌ورکر به <code>lbr-mobile-v26</code> رفت تا کلاینت‌های قبلی خودکار به‌روز شوند؛ APK با versionCode 25 (2.12.1) بازساخت شد و تک‌فایل و هر سه ZIP از نو ساخته و منتشر شدند. معیار راستی‌آزمایی نسخه از دید کاربر: خط «Folder version» در bat باید با شمارهٔ آخرین ریلیز یکی باشد و چیپ سایدبار رابط وب همان نسخه را نشان دهد.</p></div>
     <div class="tl-item reveal"><h4>مدل صوتی دانلودشده در فایل‌های پروژه — Piper فارسی، کاملاً لوکال <span class="ver">v2.12.0</span></h4>
       <p>بازخورد کاربر: «در مستند نام Edge TTS و دو صدای فارسی فرید و دلارا آمده است؛ این‌ها صداهای سرویس آنلاین مایکروسافت‌اند نه مدل‌هایی که داخل پروژه دانلود شده باشند. من نیاز دارم یک مدل دانلود کنی و در فایل‌های پروژه قرار بدی و به‌صورت لوکال از مدل در برنامه استفاده کنم — برای همه موارد». پاسخ: <b>مدل Piper VITS «fa_IR-amir-medium»</b> (منبع rhasspy/piper-voices v1.0.0 — لایسنس MIT) دانلود و باندل شد: دسکتاپ <code>models/tts/piper-fa_IR-amir/</code> (model.onnx fp32 ۶۳MB + model.int8.onnx ۱۸.۶MB کوانتیزه‌شدهٔ بازرسی‌شده + tokens.txt + espeak-ng-data ۳۵۵ فایل) و مرورگر/موبایل/APK <code>mobile-app/vendor/tts/</code> (مدل int8 + onnxruntime-web 1.18 + piper-phonemize WASM با دادهٔ espeak تریم‌شدهٔ fa+en — ۱۸.۰۸MB به ۱.۲۸MB با ۴۹۴→۳۸۳ فایل). دسکتاپ با <b>sherpa-onnx 1.12.40</b> (فونِم‌ساز داخلی؛ نسخهٔ 2.x حذفش دارد) و مرورگر با <b>onnxruntime-web (WASM/SIMD)</b> — موتور جدید <code>js/tts.js</code> کامل بازنویسی شد (فونِم‌سازی، استنتاج، سرگذاشتن WAV 22050Hz، شکستن جمله، نرمال‌سازی سرعت با پاریتی پایتون). حذف کامل مسیرهای آنلاین: edge_provider/gtts_provider، اندپوینت <code>POST /api/tts</code> در bridge.py، چک‌باکس رضایت ابری، هک UA «Edg/» در MainActivity و کلاینت WebSocket مستقیم. اعتبارسنجی کوانتیزه: نسبت مدت خوانش int8 به fp32 برای دو جملهٔ فارسی ۱.۰۰۶ و ۱.۰۷۶ (شواهد: models/tts/piper-fa_IR-amir/quantization-report.json + evidence_*.wav). آزمون زندهٔ مرورگر واقعی: سنتز موفق WAV فارسی با دادهٔ تریم‌شده. نسخه‌ها: versionCode 24 (2.12.0) · کش SW → <code>lbr-mobile-v25</code> · تک‌فایل بازساخت با دارایی‌های صوتی تعبیه‌شده · requirements: sherpa-onnx==1.12.40 (حذف edge-tts/gTTS).</p></div>
     <div class="tl-item reveal"><h4>مدل صوتی مشترک دسکتاپ و موبایل — Edge TTS فارسی بدون TTS گوشی <span class="ver">v2.11.0</span></h4>
@@ -1077,7 +1079,7 @@ footer.docfoot .links { display: flex; gap: 1rem; justify-content: center; flex-
 </section>
 
 <footer class="docfoot">
-  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۲.۱۱.۰ · توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
+  <p><b>برچسب‌خوان هوشمند دارو و محصولات — LabelVoice</b> · نسخه ۲.۱۲.۱ · توسعه و طراحی: <b>حمید جلیلوند و نوید بدری</b></p>
   <div class="links">
     <a href="index.html">🚀 برنامه</a>
     <a href="https://github.com/hjalilvand2004-coder/LabelVoice" target="_blank" rel="noopener">⭐ GitHub</a>
